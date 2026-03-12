@@ -14,7 +14,7 @@ import pymupdf4llm
 import requests
 from docx import Document
 from minio import Minio, S3Error
-from sanic import Request
+from fastapi import Request, UploadFile
 
 from common.exception import MyException
 from constants.code_enum import SysCodeEnum as SysCode
@@ -35,8 +35,8 @@ class MinioUtils:
     def _build_client():
         """初始化MinIO客户端（内置默认值，开箱即用）"""
         minio_endpoint = os.getenv("MINIO_ENDPOINT", "127.0.0.1:9000")
-        access_key = os.getenv("MINIO_ACCESS_KEY", "admin")
-        secret_key = os.getenv("MINIO_SECRET_KEY", "admin123")
+        access_key = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
+        secret_key = os.getenv("MINIO_SECRET_KEY", "minioadmin")
         return Minio(
             endpoint=minio_endpoint,
             access_key=access_key,
@@ -118,6 +118,48 @@ class MinioUtils:
             return {"object_key": object_name}
         except Exception as err:
             logger.error(f"Error uploading file from request: {err}")
+            traceback.print_exception(err)
+            raise MyException(SysCode.c_9999)
+
+    async def upload_file_fastapi(
+        self, file: UploadFile, bucket_name: str = "filedata", object_name: str = None
+    ) -> dict:
+        """
+        使用 FastAPI UploadFile 上传到 MinIO
+
+        参数:
+        - file: FastAPI UploadFile 对象
+        - bucket_name: 存储桶名称
+        - object_name: 自定义对象名（可选）
+        返回:
+        - 包含 object_key 的字典
+        """
+        try:
+            # 读取文件内容
+            file_content = await file.read()
+            file_stream = io.BytesIO(file_content)
+            file_length = len(file_content)
+
+            if object_name is None:
+                # uuid 可以避免不同用户上传同名文件导致 minio 的文件被覆盖
+                object_name = f"{uuid4()}__{file.filename}"
+
+            # 确保 bucket 存在
+            self.ensure_bucket(bucket_name)
+
+            # 上传文件
+            self.client.put_object(
+                bucket_name=bucket_name,
+                object_name=object_name,
+                data=file_stream,
+                length=file_length,
+                content_type=file.content_type,
+            )
+            logger.info(f"File successfully uploaded as {object_name}.")
+
+            return {"object_key": object_name}
+        except Exception as err:
+            logger.error(f"Error uploading file (FastAPI): {err}")
             traceback.print_exception(err)
             raise MyException(SysCode.c_9999)
 
