@@ -89,7 +89,7 @@ class MinioUtils:
         从请求中读取文件数据并上传到MinIO服务器，返回预签名URL。
 
         参数:
-        - request: Sanic请求对象
+        - request: Fastapi请求对象
         - bucket_name: 存储桶名称
         返回:
         - 包含object_key的字典
@@ -332,7 +332,7 @@ class MinioUtils:
         上传文件并解析文件内容，返回文件内容key。
 
         参数:
-        - request: Sanic请求对象
+        - request: Fastapi请求对象
         - bucket_name: 存储桶名称
         返回:
         - 文件内容key

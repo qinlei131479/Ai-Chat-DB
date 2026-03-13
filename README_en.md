@@ -86,7 +86,7 @@ Aix-DB is built on the **LangChain/LangGraph** framework, combined with **MCP Sk
 **Layered Architecture Design:**
 
 - **Frontend Layer**: Modern web interface built with Vue 3 + TypeScript, integrated with ECharts and AntV visualization components
-- **API Gateway Layer**: High-performance async API service based on Sanic, providing RESTful interfaces and JWT authentication
+- **API Gateway Layer**: High-performance async API service based on Fastapi, providing RESTful interfaces and JWT authentication
 - **Intelligent Service Layer**: LLM services, Text2SQL Agent, RAG retrieval engine, MCP multi-agent collaboration
 - **Data Storage Layer**: Support for multiple database types including relational databases, vector databases, graph databases, and file storage
 
@@ -230,7 +230,7 @@ npm run dev
 
 ## Tech Stack
 
-**Backend**: Sanic · SQLAlchemy · LangChain/LangGraph · Neo4j · FAISS/Chroma · MinIO
+**Backend**: Fastapi · SQLAlchemy · LangChain/LangGraph · Neo4j · FAISS/Chroma · MinIO
 
 **Frontend**: Vue 3 · TypeScript · Vite 5 · Naive UI · ECharts · AntV
 

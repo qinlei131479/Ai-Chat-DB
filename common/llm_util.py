@@ -8,7 +8,7 @@ pool = get_db_pool()
 
 # 默认超时时间:30分钟
 # 与 deep_research_agent.py 的 DEFAULT_LLM_TIMEOUT 保持一致
-# 超时链路：LLM(15min) < TASK(30min) < Sanic RESPONSE(35min) < 前端 fetch(36min)
+# 超时链路：LLM(15min) < TASK(30min) < Fastapi RESPONSE(35min) < 前端 fetch(36min)
 DEFAULT_LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT", 30 * 60))
 
 

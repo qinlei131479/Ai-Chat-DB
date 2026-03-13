@@ -68,7 +68,7 @@ async def get_answer(
             queue = asyncio.Queue()
 
             class ResponseAdapter:
-                """桥接 Sanic response.write() 模式到 async generator yield 模式"""
+                """桥接 Fastapi response.write() 模式到 async generator yield 模式"""
                 async def write(self, data):
                     await queue.put(data)
 

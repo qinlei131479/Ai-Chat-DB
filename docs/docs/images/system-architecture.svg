@@ -101,7 +101,7 @@
     <rect x="0" y="0" width="900" height="80" rx="12" fill="#eff6ff" stroke="#93c5fd" stroke-width="1" opacity="0.5"/>
     <text x="20" y="25" font-family="system-ui" font-size="12" fill="#2563eb" font-weight="600">API 网关层</text>
 
-    <!-- Sanic API -->
+    <!-- Fastapi API -->
     <g transform="translate(350, 20)" filter="url(#shadow)">
       <rect width="200" height="50" rx="10" fill="url(#backendGrad)"/>
       <text x="100" y="22" text-anchor="middle" font-family="system-ui" font-size="13" fill="#fff" font-weight="600">Sanic API Server</text>
