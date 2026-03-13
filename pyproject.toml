@@ -10,7 +10,9 @@ requires-python = ">=3.11,<3.12"
 
 
 dependencies = [
-    "sanic>=25.0.0,<25.4.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "python-multipart>=0.0.9",
     "sqlalchemy>=2.0.31,<3.0.0",
     "requests>=2.32.3,<3.0.0",
     "redis>=5.0.7,<6.0.0",
@@ -26,7 +28,6 @@ dependencies = [
     "minio>=7.2.8,<8.0.0",
     "pyjwt>=2.9.0,<3.0.0",
     "bs4>=0.0.2,<0.1.0",
-    "sanic-ext>=24.0.0,<=24.12.0",
     "mammoth>=1.9.0,<2.0.0",
     "markdownify>=0.14.1,<0.15.0",
     "pymupdf>=1.25.2,<2.0.0",

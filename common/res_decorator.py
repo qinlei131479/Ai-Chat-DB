@@ -3,137 +3,114 @@ import logging
 import traceback
 from datetime import date, datetime
 from decimal import Decimal
-from functools import wraps
 
 import numpy as np
 from pydantic import BaseModel
-from sanic import response
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 
 from common.exception import MyException
 from constants.code_enum import SysCodeEnum
 
 
 class CustomJSONEncoder(json.JSONEncoder):
-    """
-    自定义的 JSON 编码器，用于处理日期类型、numpy 数组等
-    """
+    """自定义 JSON 编码器，处理日期、Decimal、numpy 等特殊类型"""
 
     def default(self, obj):
-        """
-
-        :param obj:
-        :return:
-        """
         if isinstance(obj, date):
-            # 处理 date 类型
             return obj.strftime("%Y-%m-%d")
         elif isinstance(obj, Decimal):
-            # 将 Decimal 转换为 float 或字符串
-            return float(obj)  # 或者 str(obj) 保留精度
+            return float(obj)
         elif isinstance(obj, datetime):
-            # 处理 datetime 类型
             return obj.strftime("%Y-%m-%d %H:%M:%S")
         elif isinstance(obj, bytes):
-            # 处理 bytes 类型（SQL Server 等数据库可能返回 bytes）
             try:
-                return obj.decode('utf-8')
+                return obj.decode("utf-8")
             except UnicodeDecodeError:
-                # 如果 UTF-8 解码失败，尝试其他编码或返回空字符串
                 try:
-                    return obj.decode('latin-1')
-                except:
+                    return obj.decode("latin-1")
+                except Exception:
                     return ""
         elif isinstance(obj, BaseModel):
-            # 处理 Pydantic 模型
             return obj.model_dump()
         elif isinstance(obj, (np.ndarray, np.generic)):
-            # 处理 numpy 数组和标量
-            # 对于 embedding 字段，通常不需要返回给前端，返回 None
-            # 如果需要返回，可以转换为列表：return obj.tolist()
             return None
-        elif hasattr(obj, 'tolist'):
-            # 处理其他可以转换为列表的对象（如 numpy 数组）
+        elif hasattr(obj, "tolist"):
             return obj.tolist()
         return super().default(obj)
 
 
-def async_json_resp(func):
-    """
-    Decorator for asynchronous json response
-    """
+class CustomJSONResponse(JSONResponse):
+    """使用 CustomJSONEncoder 的 JSON 响应类"""
 
-    @wraps(func)
-    async def http_res_wrapper(request, *args, **kwargs):
-        """
-        :param request:
-        :param args:
-        :param kwargs:
-        :return:
-        """
-     
-        data = None
-        # 获取请求方法和参数
-        method = request.method
-        path = request.path
-        params = request.args
-        content_type = request.content_type
-        content_types = ["application/json"]
-        if content_type in content_types:
-            json_body = request.json if request.json else {}
-        else:
-            json_body = ""
+    def render(self, content) -> bytes:
+        return json.dumps(
+            content, cls=CustomJSONEncoder, ensure_ascii=False
+        ).encode("utf-8")
 
-        try:
-            data = await func(request, *args, **kwargs)
-            body = {
-                "code": SysCodeEnum.c_200.value[0],
-                "msg": SysCodeEnum.c_200.value[1],
-                "data": data,
+
+def success_response(data=None):
+    """统一成功响应，保持与原 @async_json_resp 一致的格式"""
+    return CustomJSONResponse(
+        content={
+            "code": SysCodeEnum.c_200.value[0],
+            "msg": SysCodeEnum.c_200.value[1],
+            "data": data,
+        }
+    )
+
+
+def error_response(code: int, msg: str, data=None, status_code: int = 200):
+    """统一错误响应"""
+    return CustomJSONResponse(
+        status_code=status_code,
+        content={"code": code, "msg": msg, "data": data},
+    )
+
+
+def register_exception_handlers(app: FastAPI):
+    """注册全局异常处理器，替代原 @async_json_resp 中的异常捕获逻辑"""
+
+    @app.exception_handler(MyException)
+    async def my_exception_handler(request: Request, exc: MyException):
+        logging.warning("Business error on %s: %s", request.url.path, exc)
+        return CustomJSONResponse(
+            content={"code": exc.code, "msg": exc.message, "data": None}
+        )
+
+    @app.exception_handler(HTTPException)
+    async def http_exception_handler(request: Request, exc: HTTPException):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"message": exc.detail, "code": exc.status_code},
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(
+        request: Request, exc: RequestValidationError
+    ):
+        errors = []
+        for error in exc.errors():
+            field = ".".join(str(x) for x in error["loc"])
+            msg = error["msg"]
+            errors.append(f"{field}: {msg}")
+        return CustomJSONResponse(
+            content={
+                "code": SysCodeEnum.PARAM_ERROR.value[0],
+                "msg": f"参数验证失败: {'; '.join(errors)}",
+                "data": None,
             }
-            res = response.json(body, dumps=CustomJSONEncoder().encode)
+        )
 
-            # 验证日志配置
-            root_logger = logging.getLogger()
-            logging.info(
-                "Request Path: %s, Method: %s, Params: %s, JSON Body: %s, Response: %s [root logger level: %s, handlers: %d]",
-                path, method, params, json_body, body, root_logger.level, len(root_logger.handlers)
-            )
-
-            return res
-
-        except MyException as e:
-            body = {
-                "code": e.code,
-                "msg": e.message,
-                "data": data,
-            }
-
-            res = response.json(body, dumps=CustomJSONEncoder().encode)
-
-            # 验证日志配置
-            root_logger = logging.getLogger()
-            logging.info(
-                "Request Path: %s, Method: %s, Params: %s, JSON Body: %s, Response: %s [root logger level: %s, handlers: %d]",
-                path, method, params, json_body, body, root_logger.level, len(root_logger.handlers)
-            )
-            return res
-
-        except Exception as e:
-            body = {
+    @app.exception_handler(Exception)
+    async def general_exception_handler(request: Request, exc: Exception):
+        logging.error("Unhandled error on %s: %s", request.url.path, exc)
+        traceback.print_exception(type(exc), exc, exc.__traceback__)
+        return CustomJSONResponse(
+            content={
                 "code": SysCodeEnum.c_9999.value[0],
                 "msg": SysCodeEnum.c_9999.value[1],
-                "data": data,
+                "data": None,
             }
-            res = response.json(body, dumps=CustomJSONEncoder().encode)
-
-            # 验证日志配置
-            root_logger = logging.getLogger()
-            logging.info(
-                "Request Path: %s, Method: %s, Params: %s, JSON Body: %s, Response: %s [root logger level: %s, handlers: %d]",
-                path, method, params, json_body, body, root_logger.level, len(root_logger.handlers)
-            )
-
-            traceback.print_exception(e)
-            return res
-
-    return http_res_wrapper
+        )

@@ -163,6 +163,103 @@ class MinioUtils:
             traceback.print_exception(err)
             raise MyException(SysCode.c_9999)
 
+    async def upload_file_and_parse_fastapi(
+        self, file: UploadFile, bucket_name: str = "filedata"
+    ) -> dict:
+        """
+        使用 FastAPI UploadFile 上传文件并解析内容，返回文件内容key。
+
+        参数:
+        - file: FastAPI UploadFile 对象
+        - bucket_name: 存储桶名称
+        返回:
+        - 文件内容key
+        """
+        try:
+            file_content = await file.read()
+            content = io.BytesIO(file_content)
+            object_name = f"{uuid4()}__{file.filename}"
+            mime_type = file.content_type or "application/octet-stream"
+            file_suffix = ".txt"
+
+            if len(file_content) > 50 * 1024 * 1024:
+                raise MyException(SysCode.c_9999, "文件大小超出限制")
+
+            # 上传源文件
+            file_stream = io.BytesIO(file_content)
+            self.ensure_bucket(bucket_name)
+            self.client.put_object(
+                bucket_name=bucket_name,
+                object_name=object_name,
+                data=file_stream,
+                length=len(file_content),
+                content_type=mime_type,
+            )
+            source_file_key = {"object_key": object_name}
+            logger.info(f"File successfully uploaded as {object_name}.")
+
+            allowed_mimes = {
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "application/msword",
+                "text/plain",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "application/vnd.ms-excel",
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "application/vnd.ms-powerpoint",
+                "application/pdf",
+                "text/csv",
+            }
+
+            file_size = len(file_content)
+
+            if mime_type not in allowed_mimes:
+                raise ValueError("不支持的文件格式")
+
+            if mime_type in (
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "application/msword",
+            ):
+                doc = Document(content)
+                full_text = "\n".join([para.text for para in doc.paragraphs])
+            elif mime_type == "text/plain":
+                content.seek(0)
+                full_text = content.read().decode("utf-8")
+            elif mime_type == "text/csv":
+                content.seek(0)
+                full_text = self._parse_csv(content)
+            elif mime_type in (
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "application/vnd.ms-excel",
+            ):
+                content.seek(0)
+                full_text = self._parse_excel(content, mime_type)
+            elif mime_type in (
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "application/vnd.ms-powerpoint",
+            ):
+                content.seek(0)
+                full_text = self.read_pdf_text_from_bytes(content.getvalue())
+            elif mime_type == "application/pdf":
+                content.seek(0)
+                full_text = self.read_pdf_text_from_bytes(content.getvalue())
+            else:
+                raise ValueError("不支持的文件格式")
+
+            parse_file_key = self.upload_to_minio_form_stream(
+                io.BytesIO(full_text.encode("utf-8")),
+                bucket_name,
+                object_name + file_suffix,
+            )
+            return {
+                "source_file_key": source_file_key["object_key"],
+                "parse_file_key": parse_file_key,
+                "file_size": self._format_file_size(file_size),
+            }
+        except Exception as err:
+            logger.error(f"Error uploading file and parsing (FastAPI): {err}")
+            traceback.print_exception(type(err), err, err.__traceback__)
+            raise MyException(SysCode.c_9999) from err
+
     def upload_to_minio_form_stream(
         self,
         file_stream: io.BytesIO,

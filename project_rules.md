@@ -13,7 +13,7 @@
 
 | 层级 | 技术选型 |
 |------|----------|
-| **后端框架** | Sanic (异步 Python Web 框架) |
+| **后端框架** | FastAPI + Uvicorn (异步 Python Web 框架) |
 | **AI 框架** | LangChain / LangGraph |
 | **数据库** | PostgreSQL (含 pgvector 向量)、MinIO (文件存储) |
 | **前端框架** | Vue 3 + TypeScript + Vite 5 |
@@ -32,7 +32,7 @@
 │                      前端层 (Vue 3 + TypeScript)            │
 │         views/  components/  store/  router/  api/           │
 ├─────────────────────────────────────────────────────────────┤
-│                    API 网关层 (Sanic)                        │
+│                    API 网关层 (FastAPI)                       │
 │              controllers/  common/  services/                │
 ├─────────────────────────────────────────────────────────────┤
 │                     智能服务层                               │
@@ -54,7 +54,7 @@
 
 ```
 Ai-Chat-DB/
-├── serv.py                      # 应用入口 (Sanic)
+├── serv.py                      # 应用入口 (FastAPI + Uvicorn)
 ├── pyproject.toml                # Python 依赖管理
 ├── requirements.txt              # 依赖列表
 ├── Makefile                      # 构建命令
@@ -82,6 +82,10 @@ Ai-Chat-DB/
 │   └── datasource_models.py      # 数据源模型
 │
 ├── common/                       # 公共工具
+│   ├── token_decorator.py         # JWT 认证（FastAPI Depends 依赖注入）
+│   ├── res_decorator.py           # 统一响应 & 全局异常处理器
+│   ├── permission_util.py         # 权限校验（FastAPI Depends 依赖注入）
+│   ├── param_parser.py            # 参数解析工具（向后兼容）
 │   ├── llm_util.py               # LLM 工具
 │   ├── datasource_util.py        # 数据源工具
 │   ├── minio_util.py             # MinIO 文件存储
@@ -144,11 +148,13 @@ Ai-Chat-DB/
 
 #### 4.1.1 入口文件 (`serv.py`)
 
-- 基于 Sanic 框架的异步 Web 服务
-- 支持多 Worker 部署
-- 自动发现并注册路由（`autodiscover`）
-- 配置 SSE 流式响应超时（最长 35 分钟）
-- 支持 MinIO 文件存储初始化
+- 基于 FastAPI 框架 + Uvicorn ASGI 服务器
+- 支持多 Worker 部署（`uvicorn --workers N`）
+- 使用 `app.include_router()` 显式注册路由
+- 使用 `lifespan` 上下文管理器初始化 MinIO 等资源
+- SSE 流式响应通过 `StreamingResponse` 实现
+- 全局异常处理器统一错误响应格式
+- 内置 OpenAPI/Swagger 文档（`/docs`）
 
 #### 4.1.2 控制器层 (`controllers/`)
 
@@ -268,32 +274,56 @@ model/            # 数据模型
 
 #### 5.1.3 API 设计规范
 
-- 基于 Sanic 框架的 RESTful API
-- 使用 Pydantic 进行请求/响应验证
-- 统一响应格式：
+- 基于 FastAPI 框架的 RESTful API
+- 使用 Pydantic 进行请求/响应验证（FastAPI 原生支持）
+- 使用 `Depends()` 依赖注入进行认证和权限校验
+- 使用 `APIRouter` 组织路由（替代原 Sanic Blueprint）
+- 统一响应格式（通过 `success_response()` 和全局异常处理器）：
 
 ```python
-# 成功响应
+# 成功响应 - 使用 success_response(data)
 {
     "code": 200,
-    "data": {...},
-    "message": "success"
+    "msg": "ok",
+    "data": {...}
 }
 
-# 错误响应
+# 业务错误响应 - 抛出 MyException，由全局异常处理器捕获
 {
     "code": 500,
-    "message": "错误信息"
+    "msg": "错误信息",
+    "data": null
 }
 ```
 
-#### 5.1.4 数据库操作
+#### 5.1.4 认证与权限模式
+
+```python
+# 需要登录的接口：使用 Depends(get_current_user)
+@router.post("/api")
+async def handler(user: dict = Depends(get_current_user)):
+    ...
+
+# 需要管理员权限的接口：使用 Depends(get_admin_user)
+@router.post("/admin-api")
+async def admin_handler(user: dict = Depends(get_admin_user)):
+    ...
+
+# SSE 流式响应
+@router.post("/stream")
+async def stream_handler():
+    async def generator():
+        yield "data: chunk\n\n"
+    return StreamingResponse(generator(), media_type="text/event-stream")
+```
+
+#### 5.1.5 数据库操作
 
 - 使用 SQLAlchemy ORM 进行数据库操作
 - 使用 pgvector 进行向量存储
 - 避免直接写原始 SQL，优先使用 ORM
 
-#### 5.1.5 LLM 调用规范
+#### 5.1.6 LLM 调用规范
 
 ```python
 # 通过 llm_service.py 统一封装
@@ -403,8 +433,10 @@ uv venv --python 3.11
 source .venv/bin/activate
 uv sync
 
-# 3. 启动后端
+# 3. 启动后端（FastAPI + Uvicorn）
 python serv.py
+# 或使用 uvicorn 命令行
+# uvicorn serv:app --host 0.0.0.0 --port 8088 --reload
 
 # 4. 启动前端
 cd web
@@ -445,11 +477,15 @@ npm run dev
 ### 8.1 环境变量
 
 ```
+SERVER_HOST=0.0.0.0
 SERVER_PORT=8088
 SERVER_WORKERS=2
+UVICORN_KEEP_ALIVE_TIMEOUT=120
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 MINIO_ENDPOINT=localhost:9000
+MINIO_DEFAULT_BUCKET=filedata
+JWT_SECRET_KEY=550e8400-e29b-41d4-a716-446655440000
 LLM_PROVIDER=openai
 LLM_API_KEY=sk-xxx
 ```
@@ -465,10 +501,11 @@ LLM_API_KEY=sk-xxx
 ## 九、注意事项
 
 1. **OpenMP 兼容性问题**：设置 `KMP_DUPLICATE_LIB_OK=TRUE` 避免向量库初始化冲突
-2. **多 Worker 部署**：每个 Worker 启动时需要重新加载日志配置
-3. **SSE 超时**：DeepAgent 报告生成可能耗时较长，需配置长超时
+2. **多 Worker 部署**：使用 `uvicorn --workers N` 或 `gunicorn -k uvicorn.workers.UvicornWorker`
+3. **SSE 超时**：DeepAgent 报告生成可能耗时较长，Nginx 需配置 `proxy_read_timeout`
 4. **数据库连接池**：外部数据库连接使用连接池管理
 5. **向量检索**：pgvector 用于术语和训练数据的向量相似度搜索
+6. **前端 API 前缀**：前端统一使用 `/sanic` 前缀，Vite 和 Nginx 均做 rewrite 去掉前缀后转发到后端
 
 ---
 
@@ -483,7 +520,8 @@ LLM_API_KEY=sk-xxx
 
 ### 10.2 技术文档链接
 
-- Sanic: https://sanic.dev/
+- FastAPI: https://fastapi.tiangolo.com/
+- Uvicorn: https://www.uvicorn.org/
 - LangChain: https://python.langchain.com/
 - LangGraph: https://langchain-ai.github.io/langgraph/
 - Vue 3: https://vuejs.org/

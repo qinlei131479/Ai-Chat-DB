@@ -175,8 +175,8 @@ docker-compose up -d
 **PostgreSQL 数据库**
 - 连接地址：`localhost:15432`
 - 数据库名：`aix_db`
-- 用户名：`aix_db`
-- 密码：`1`
+- 用户名：`postgres`
+- 密码：`postgres`
 
 ### 本地开发
 

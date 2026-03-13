@@ -1,9 +1,7 @@
-from sanic import Blueprint, Request
-from sanic_ext import openapi
+from fastapi import APIRouter, Depends
 
-from common.res_decorator import async_json_resp
-from common.token_decorator import check_token
-from common.param_parser import parse_params
+from common.res_decorator import success_response
+from common.token_decorator import get_current_user
 from services.terminology_service import (
     query_terminology_list,
     create_terminology,
@@ -11,93 +9,73 @@ from services.terminology_service import (
     delete_terminology,
     enable_terminology,
     get_terminology_detail,
-    generate_synonyms_by_llm
+    generate_synonyms_by_llm,
 )
 from model.schemas import (
-    get_schema,
     QueryTerminologyRequest,
-    TerminologyListResponse,
     SaveTerminologyRequest,
-    BaseResponse,
     DeleteTerminologyRequest,
     GenerateSynonymsRequest,
-    GenerateSynonymsResponse
 )
 
-bp = Blueprint("terminology", url_prefix="/terminology")
+router = APIRouter(prefix="/terminology", tags=["术语管理"])
 
-@bp.post("/list")
-@openapi.summary("分页查询术语")
-@openapi.tag("术语管理")
-@openapi.body({"application/json": {"schema": get_schema(QueryTerminologyRequest)}}, required=True)
-@openapi.response(200, {"application/json": {"schema": get_schema(TerminologyListResponse)}})
-@check_token
-@async_json_resp
-@parse_params
-async def list_terminology(request: Request, body: QueryTerminologyRequest):
-    return await query_terminology_list(body.page, body.size, body.word, body.dslist)
 
-@bp.post("/save")
-@openapi.summary("保存术语(新增/修改)")
-@openapi.tag("术语管理")
-@openapi.body({"application/json": {"schema": get_schema(SaveTerminologyRequest)}}, required=True)
-@openapi.response(200, {"application/json": {"schema": get_schema(BaseResponse)}})
-@check_token
-@async_json_resp
-@parse_params
-async def save_term(request: Request, body: SaveTerminologyRequest):
+@router.post("/list", summary="分页查询术语")
+async def list_terminology(
+    body: QueryTerminologyRequest, user: dict = Depends(get_current_user)
+):
+    result = await query_terminology_list(body.page, body.size, body.word, body.dslist)
+    return success_response(result)
+
+
+@router.post("/save", summary="保存术语(新增/修改)")
+async def save_term(
+    body: SaveTerminologyRequest, user: dict = Depends(get_current_user)
+):
     if body.id:
-        return await update_terminology(
-            body.id, 
-            body.word, 
-            body.description, 
-            body.other_words, 
-            body.specific_ds, 
-            body.datasource_ids
+        result = await update_terminology(
+            body.id,
+            body.word,
+            body.description,
+            body.other_words,
+            body.specific_ds,
+            body.datasource_ids,
         )
     else:
-        return await create_terminology(
-            body.word, 
-            body.description, 
-            body.other_words, 
-            body.specific_ds, 
-            body.datasource_ids
+        result = await create_terminology(
+            body.word,
+            body.description,
+            body.other_words,
+            body.specific_ds,
+            body.datasource_ids,
         )
+    return success_response(result)
 
-@bp.post("/delete")
-@openapi.summary("删除术语")
-@openapi.tag("术语管理")
-@openapi.body({"application/json": {"schema": get_schema(DeleteTerminologyRequest)}}, required=True)
-@openapi.response(200, {"application/json": {"schema": get_schema(BaseResponse)}})
-@check_token
-@async_json_resp
-@parse_params
-async def delete_term(request: Request, body: DeleteTerminologyRequest):
-    return await delete_terminology(body.ids)
 
-@bp.get("/<id:int>/enable/<enabled:int>")
-@openapi.summary("启用/禁用术语")
-@openapi.tag("术语管理")
-@check_token
-@async_json_resp
-async def enable_term(request: Request, id: int, enabled: int):
-    return await enable_terminology(id, bool(enabled))
+@router.post("/delete", summary="删除术语")
+async def delete_term(
+    body: DeleteTerminologyRequest, user: dict = Depends(get_current_user)
+):
+    result = await delete_terminology(body.ids)
+    return success_response(result)
 
-@bp.get("/<id:int>")
-@openapi.summary("获取术语详情")
-@openapi.tag("术语管理")
-@check_token
-@async_json_resp
-async def get_term(request: Request, id: int):
-    return await get_terminology_detail(id)
 
-@bp.post("/generate_synonyms")
-@openapi.summary("AI生成同义词")
-@openapi.tag("术语管理")
-@openapi.body({"application/json": {"schema": get_schema(GenerateSynonymsRequest)}}, required=True)
-@openapi.response(200, {"application/json": {"schema": get_schema(GenerateSynonymsResponse)}})
-@check_token
-@async_json_resp
-@parse_params
-async def gen_synonyms(request: Request, body: GenerateSynonymsRequest):
-    return await generate_synonyms_by_llm(body.word)
+@router.get("/{id}/enable/{enabled}", summary="启用/禁用术语")
+async def enable_term(id: int, enabled: int, user: dict = Depends(get_current_user)):
+    result = await enable_terminology(id, bool(enabled))
+    return success_response(result)
+
+
+@router.get("/{id}", summary="获取术语详情")
+async def get_term(id: int, user: dict = Depends(get_current_user)):
+    result = await get_terminology_detail(id)
+    return success_response(result)
+
+
+@router.post("/generate_synonyms", summary="AI生成同义词")
+async def gen_synonyms(
+    body: GenerateSynonymsRequest, user: dict = Depends(get_current_user)
+):
+    result = await generate_synonyms_by_llm(body.word)
+    return success_response(result)

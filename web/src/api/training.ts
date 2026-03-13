@@ -31,7 +31,7 @@ export const trainingApi = {
   },
   
   updateEmbedded: (data: any) => {
-    const url = new URL(`${BASE_URL}/`)
+    const url = new URL(`${BASE_URL}`)
     const req = new Request(url, {
       mode: 'cors',
       method: 'put',
@@ -42,7 +42,7 @@ export const trainingApi = {
   },
   
   deleteEmbedded: (params: any) => {
-    const url = new URL(`${BASE_URL}/`)
+    const url = new URL(`${BASE_URL}`)
     const req = new Request(url, {
       mode: 'cors',
       method: 'delete',
