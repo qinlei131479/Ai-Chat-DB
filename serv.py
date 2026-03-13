@@ -42,8 +42,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Aix-DB API",
-    description="Aix-DB API 接口文档",
+    title="Ai-Chat-DB API",
+    description="Ai-Chat-DB API 接口文档",
     version="1.0.0",
     lifespan=lifespan,
     docs_url="/docs",

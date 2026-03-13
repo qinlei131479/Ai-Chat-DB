@@ -1,34 +1,17 @@
 <p align="center">
-  <a href="https://github.com/apconw/Aix-DB">
-    <img src="docs/images/logo.svg" alt="Aix-DB" width="160"/>
+  <a href="https://github.com/qinlei131479/Ai-Chat-DB">
+    <img src="docs/images/logo.svg" alt="Ai-Chat-DB" width="160"/>
   </a>
 </p>
 
-<h3 align="center">Aix-DB - LLM Data Assistant</h3>
+<h3 align="center">Ai-Chat-DB - LLM Data Assistant</h3>
 
 <p align="center">
   An intelligent data analytics system powered by Large Language Models and RAG technology, enabling conversational data analysis (ChatBI) for rapid data extraction and visualization
 </p>
 
-
-
-<p align="center">
-  <a href="https://github.com/apconw/Aix-DB/releases"><img src="https://img.shields.io/github/v/release/apconw/Aix-DB" alt="Release Version" /></a>
-  <a href="https://github.com/apconw/Aix-DB/stargazers"><img src="https://img.shields.io/github/stars/apconw/Aix-DB?style=flat" alt="GitHub Stars" /></a>
-  <a href="https://github.com/apconw/Aix-DB/blob/master/LICENSE"><img src="https://img.shields.io/github/license/apconw/Aix-DB" alt="License" /></a>
-  <a href="https://hub.docker.com/r/apcon/aix-db"><img src="https://img.shields.io/docker/pulls/apcon/aix-db" alt="Docker Pulls" /></a>
-</p>
-
 <p align="center">
   <a href="./README.md">简体中文</a> | <a href="./README_en.md">English</a>
-</p>
-
-<p align="center">
-  <b>🚀 Looking for Enterprise AI Solutions?</b>
-</p>
-
-<p align="center">
-  <a href="http://www.aixhub.top/"><img src="https://img.shields.io/badge/🤖_AiX--Bot-8A2BE2?style=for-the-badge&logoColor=white" alt="AiX-Bot" /></a>
 </p>
 
 <p align="center">
@@ -37,20 +20,13 @@
 </p>
 
 <p align="center">
-  <b>👇 Click to Experience Now 👇</b>
-</p>
-
-<p align="center">
   <a href="YOUR_CHAT_URL"><img src="https://img.shields.io/badge/💬_AI_Chat-4A90D9?style=for-the-badge" alt="AI Chat" /></a>
   <a href="YOUR_DATA_URL"><img src="https://img.shields.io/badge/📊_Data_Q&A-10B981?style=for-the-badge" alt="Data Q&A" /></a>
   <a href="http://www.aixhub.top:5006"><img src="https://img.shields.io/badge/📈_Report_Gen-F59E0B?style=for-the-badge" alt="Report Generation" /></a>
 </p>
 
-<p align="center">
-  <sub>💼 For business inquiries, please contact us via WeChat (note "Business Cooperation") | <a href="http://www.aixhub.top/">Contact Us</a></sub>
-</p>
 
-Aix-DB is built on the **LangChain/LangGraph** framework, combined with **MCP Skills** multi-agent collaboration architecture, enabling end-to-end transformation from natural language to data insights.
+Ai-Chat-DB is built on the **LangChain/LangGraph** framework, combined with **MCP Skills** multi-agent collaboration architecture, enabling end-to-end transformation from natural language to data insights.
 
 **Core Capabilities**: General Q&A · Data Q&A (Text2SQL) · Spreadsheet Q&A · Deep Research · Data Visualization · MCP Multi-Agent
 
@@ -58,24 +34,6 @@ Aix-DB is built on the **LangChain/LangGraph** framework, combined with **MCP Sk
 
 ---
 
-## Demo Video
-
-<table align="center">
-  <tr>
-    <th>🎯 Skill Mode</th>
-    <th>💬 Standard Mode</th>
-  </tr>
-  <tr>
-    <td>
-      <video src="https://github.com/user-attachments/assets/ee09d321-4534-4ccf-aa71-ecab83d91caf" controls="controls" muted="muted" style="max-height:320px; min-height: 150px;"></video>
-    </td>
-    <td>
-      <video src="https://github.com/user-attachments/assets/462f4e2e-86e0-4d2a-8b78-5d6ca390c03c" controls="controls" muted="muted" style="max-height:320px; min-height: 150px;"></video>
-    </td>
-  </tr>
-</table>
-
----
 
 ## System Architecture
 
@@ -134,31 +92,7 @@ Aix-DB is built on the **LangChain/LangGraph** framework, combined with **MCP Sk
 ### Deploy with Docker (Recommended)
 
 ```bash
-docker run -d \
-  --name aix-db \
-  --restart unless-stopped \
-  -e TZ=Asia/Shanghai \
-  -e SERVER_HOST=0.0.0.0 \
-  -e SERVER_PORT=8088 \
-  -e SERVER_WORKERS=2 \
-  -e LANGFUSE_TRACING_ENABLED=false \
-  -e LANGFUSE_SECRET_KEY= \
-  -e LANGFUSE_PUBLIC_KEY= \
-  -e LANGFUSE_BASE_URL= \
-  -p 18080:80 \
-  -p 18088:8088 \
-  -p 15432:5432 \
-  -p 9000:9000 \
-  -p 9001:9001 \
-  -v ./volume/pg_data:/var/lib/postgresql/data \
-  -v ./volume/minio/data:/data \
-  -v ./volume/logs/supervisor:/var/log/supervisor \
-  -v ./volume/logs/nginx:/var/log/nginx \
-  -v ./volume/logs/aix-db:/var/log/aix-db \
-  -v ./volume/logs/minio:/var/log/minio \
-  -v ./volume/logs/postgresql:/var/log/postgresql \
-  --add-host host.docker.internal:host-gateway \
-  crpi-7xkxsdc0iki61l0q.cn-hangzhou.personal.cr.aliyuncs.com/apconw/aix-db:1.2.3
+
 ```
 
 > **Note**: To enable Langfuse full-chain tracing, set `LANGFUSE_TRACING_ENABLED=true` and configure the corresponding keys and URL.
@@ -166,8 +100,8 @@ docker run -d \
 ### Deploy with Docker Compose
 
 ```bash
-git clone https://github.com/apconw/Aix-DB.git
-cd Aix-DB/docker
+git clone https://github.com/qinlei131479/Ai-Chat-DB.git
+cd Ai-Chat-DB/docker
 cp .env.template .env  # Copy env template, modify as needed
 docker-compose up -d
 ```
@@ -182,15 +116,15 @@ docker-compose up -d
 **PostgreSQL Database**
 - Connection: `localhost:15432`
 - Database: `aix_db`
-- Username: `aix_db`
-- Password: `1`
+- Username: `postgres`
+- Password: `postgres`
 
 ### Local Development
 
 **① Clone the Repository**
 ```bash
-git clone https://github.com/apconw/Aix-DB.git
-cd Aix-DB
+git clone https://github.com/qinlei131479/Ai-Chat-DB.git
+cd Ai-Chat-DB
 ```
 
 **② Start Middleware Dependencies** (PostgreSQL, MinIO, etc.)
@@ -241,33 +175,6 @@ npm run dev
 ## Documentation
 - [Configuration Guide](docs/index.md)
 - [API Documentation](http://localhost:8088/docs) (available after startup)
-
-
----
-
-## Contributing
-
-We welcome Issues and Pull Requests!
-
-1. Fork this repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## Contact Us
-
-If you have any questions, feel free to reach out:
-
-- [GitHub Issues](https://github.com/apconw/Aix-DB/issues)
-
----
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=apconw/Aix-DB&type=Date)](https://star-history.com/#apconw/Aix-DB&Date)
 
 ---
 
