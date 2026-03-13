@@ -1,5 +1,5 @@
 # ============================================================
-# AIX-DB 基础镜像 (Base Image)
+# Ai-Chat-DB 基础镜像 (Base Image)
 # 包含：Python 依赖 + 前端构建产物 + 运行时服务
 # 
 # 构建时机：当 Python 或前端依赖变更时手动构建
@@ -40,7 +40,7 @@ FROM ghcr.io/astral-sh/uv:0.8.0 AS uv-bin
 
 FROM python:3.11-slim-bookworm AS backend-builder
 
-WORKDIR /aix-db
+WORKDIR /ai-chat-db
 
 # 从官方镜像复制 uv 二进制（buildx 会自动为目标架构拉取对应的镜像）
 COPY --from=uv-bin /uv /usr/local/bin/uv
@@ -142,7 +142,7 @@ RUN set -eux; \
     rm -rf /usr/share/doc /usr/share/man /usr/share/locale && \
     rm -rf /usr/share/nginx/html/* && \
     # 创建必要的目录
-    mkdir -p /var/log/aix-db /var/log/nginx /var/log/supervisor /var/log/minio /var/log/postgresql && \
+    mkdir -p /var/log/ai-chat-db /var/log/nginx /var/log/supervisor /var/log/minio /var/log/postgresql && \
     mkdir -p /var/run/postgresql && \
     chown -R postgres:postgres /var/run/postgresql && \
     # 精简 nginx 配置
@@ -154,7 +154,7 @@ ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
 # 从构建阶段复制虚拟环境
-COPY --from=backend-builder /aix-db/.venv /aix-db/.venv
+COPY --from=backend-builder /ai-chat-db/.venv /ai-chat-db/.venv
 
 # 复制前端构建结果
 COPY --from=frontend-builder /app/web/dist /usr/share/nginx/html
@@ -171,7 +171,7 @@ RUN mkdir -p /var/lib/postgresql/data && \
     chmod 700 /var/lib/postgresql/data
 
 # 创建日志目录
-RUN mkdir -p /var/log/supervisor /var/log/nginx /var/log/aix-db /var/log/minio /var/log/postgresql /var/run /data
+RUN mkdir -p /var/log/supervisor /var/log/nginx /var/log/ai-chat-db /var/log/minio /var/log/postgresql /var/run /data
 
 # 复制 supervisor 配置文件
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
@@ -215,18 +215,18 @@ RUN echo 'from __future__ import annotations' > /tmp/otel_fix.py && \
     echo '    return _RUNTIME_CONTEXT.detach(token)' >> /tmp/otel_fix.py && \
     echo '_SUPPRESS_INSTRUMENTATION_KEY = create_key("suppress_instrumentation")' >> /tmp/otel_fix.py && \
     echo '_SUPPRESS_HTTP_INSTRUMENTATION_KEY = create_key("suppress_http_instrumentation")' >> /tmp/otel_fix.py && \
-    cp /tmp/otel_fix.py /aix-db/.venv/lib/python3.11/site-packages/opentelemetry/context/__init__.py && \
+    cp /tmp/otel_fix.py /ai-chat-db/.venv/lib/python3.11/site-packages/opentelemetry/context/__init__.py && \
     rm /tmp/otel_fix.py && \
-    find /aix-db/.venv -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
-    find /aix-db/.venv -name "*.pyc" -delete && \
-    find /aix-db/.venv -name "*.pyo" -delete
+    find /ai-chat-db/.venv -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
+    find /ai-chat-db/.venv -name "*.pyc" -delete && \
+    find /ai-chat-db/.venv -name "*.pyo" -delete
 
 # 复制启动脚本
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # 设置环境变量
-ENV PATH="/aix-db/.venv/bin:${PATH}" \
+ENV PATH="/ai-chat-db/.venv/bin:${PATH}" \
     SERVER_HOST="127.0.0.1" \
     SERVER_PORT="8088" \
     PYTHONUNBUFFERED=1 \

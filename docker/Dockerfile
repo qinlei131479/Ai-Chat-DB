@@ -1,5 +1,5 @@
 # ============================================================
-# AIX-DB 应用镜像 (App Image)
+# Ai-Chat-DB 应用镜像 (App Image)
 # 基于基础镜像，构建前端 + 复制后端源代码
 # 
 # 构建时机：每次发版或修复 bug 时
@@ -8,7 +8,7 @@
 # ============================================================
 
 # 全局 ARG（必须在第一个 FROM 之前声明，才能在 FROM 中使用）
-ARG BASE_IMAGE=apconw/aix-db-base:latest
+ARG BASE_IMAGE=apconw/ai-chat-db-base:latest
 
 # ============ 阶段1: 构建前端 ============
 FROM node:18-alpine AS frontend-builder
@@ -30,7 +30,7 @@ RUN pnpm run build
 # ============ 阶段2: 应用镜像 ============
 FROM ${BASE_IMAGE}
 
-WORKDIR /aix-db
+WORKDIR /ai-chat-db
 
 # ============ 复制前端构建产物（覆盖基础镜像中的） ============
 COPY --from=frontend-builder /app/web/dist /usr/share/nginx/html

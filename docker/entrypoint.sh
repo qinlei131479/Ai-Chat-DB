@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-echo "Starting AIX-DB All-in-One container..."
+echo "Starting Ai-Chat-DB All-in-One container..."
 
 # 创建必要的目录
-mkdir -p /var/log/supervisor /var/log/nginx /var/log/aix-db /var/log/minio /var/log/postgresql /var/run /data
+mkdir -p /var/log/supervisor /var/log/nginx /var/log/Ai-Chat-DB /var/log/minio /var/log/postgresql /var/run /data
 mkdir -p /var/run/postgresql
 mkdir -p /docker-entrypoint-initdb.d
 
@@ -67,7 +67,7 @@ else
 fi
 
 # 确保环境变量传递给 supervisor
-export PATH="/aix-db/.venv/bin:${PATH}"
+export PATH="/Ai-Chat-DB/.venv/bin:${PATH}"
 export PYTHONUNBUFFERED=1
 export PYTHONDONTWRITEBYTECODE=1
 export OTEL_PYTHON_CONTEXT=contextvars_context

@@ -1,10 +1,10 @@
-# AIX-DB 镜像构建配置
+# Ai-Chat-DB 镜像构建配置
 # 包含：基础镜像 + 应用镜像
 
 # ============ 版本配置 ============
 
 # 项目名称和应用版本
-PROJECT_NAME = aix-db
+PROJECT_NAME = ai-chat-db
 VERSION = 1.2.3
 
 # 基础镜像版本（依赖变更时更新此版本号）
@@ -159,7 +159,7 @@ clean-all:
 
 help:
 	@echo ""
-	@echo "AIX-DB Docker 镜像构建命令"
+	@echo "Ai-Chat-DB Docker 镜像构建命令"
 	@echo "=========================="
 	@echo ""
 	@echo "📦 基础镜像（依赖变更时执行）:"

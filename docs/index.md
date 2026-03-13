@@ -1,6 +1,6 @@
 # 配置说明
 
-> Aix-DB 系统配置指南
+> Ai-Chat-DB 系统配置指南
 
 
 
@@ -13,7 +13,7 @@
     - [第二步：配置数据源](#第二步配置数据源)
     - [第三步：配置全链路监控（可选）](#第三步配置全链路监控可选)
       - [安装 Langfuse](#安装-langfuse)
-      - [配置 Aix-DB](#配置-aix-db)
+      - [配置 Ai-Chat-DB](#配置-Ai-Chat-DB)
   - [下一步](#下一步)
 
 
@@ -83,7 +83,7 @@
 
 ### 第三步：配置全链路监控（可选）
 
-Aix-DB 支持 [Langfuse](https://langfuse.com/) 进行 LLM 调用的全链路监控和追踪。
+Ai-Chat-DB 支持 [Langfuse](https://langfuse.com/) 进行 LLM 调用的全链路监控和追踪。
 
 #### 安装 Langfuse
 
@@ -98,7 +98,7 @@ docker compose up
 
 启动后访问 `http://localhost:3000` 创建项目并获取 API 密钥。
 
-#### 配置 Aix-DB
+#### 配置 Ai-Chat-DB
 
 **本地开发环境**
 
