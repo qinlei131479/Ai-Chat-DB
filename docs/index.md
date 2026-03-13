@@ -26,7 +26,7 @@
 
 进入 **系统设置 → 模型配置**，添加您的大模型服务。
 
-![大模型配置](./images/llm_setting.png)
+![大模型配置](images/llm_setting.png)
 
 **支持的模型类型：**
 
@@ -52,7 +52,7 @@
 
 进入 **系统设置 → 库表配置**，添加您要查询的数据库。
 
-![数据源配置](./images/datasource_setting.png)
+![数据源配置](images/datasource_setting.png)
 
 **支持的数据源：**
 

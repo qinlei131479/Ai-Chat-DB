@@ -514,7 +514,7 @@ LLM_API_KEY=sk-xxx
 ### 10.1 相关文档
 
 - [README.md](./README.md) - 项目主文档
-- [docs/docs/index.md](./docs/docs/index.md) - 配置说明
+- [docs/docs/index.md](docs/index.md) - 配置说明
 - [agent/deepagent/AGENTS.md](./agent/deepagent/AGENTS.md) - Agent 指令
 - [agent/deepagent/skills/report-generation/SKILL.md](./agent/deepagent/skills/report-generation/SKILL.md) - 报告生成技能
 

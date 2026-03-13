@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/apconw/Aix-DB">
-    <img src="./docs/docs/images/logo.svg" alt="Aix-DB" width="160"/>
+    <img src="docs/images/logo.svg" alt="Aix-DB" width="160"/>
   </a>
 </p>
 
@@ -80,7 +80,7 @@ Aix-DB is built on the **LangChain/LangGraph** framework, combined with **MCP Sk
 ## System Architecture
 
 <p align="center">
-  <img src="./docs/docs/images/system-architecture.svg" alt="System Architecture" width="100%" />
+  <img src="docs/images/system-architecture.svg" alt="System Architecture" width="100%" />
 </p>
 
 **Layered Architecture Design:**
@@ -114,7 +114,7 @@ Aix-DB is built on the **LangChain/LangGraph** framework, combined with **MCP Sk
 
 
 <p align="center">
-  <img src="./docs/docs/images/architecture-flow.svg" alt="Data Q&A Workflow" width="100%" />
+  <img src="docs/images/architecture-flow.svg" alt="Data Q&A Workflow" width="100%" />
 </p>
 
 | Step | Module | Description |
@@ -239,7 +239,7 @@ npm run dev
 ---
 
 ## Documentation
-- [Configuration Guide](./docs/docs/index.md)
+- [Configuration Guide](docs/index.md)
 - [API Documentation](http://localhost:8088/docs) (available after startup)
 
 

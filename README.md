@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/apconw/Aix-DB">
-    <img src="./docs/docs/images/logo.svg" alt="Aix-DB" width="160"/>
+    <img src="docs/images/logo.svg" alt="Aix-DB" width="160"/>
   </a>
 </p>
 
@@ -78,7 +78,7 @@ Aix-DB 基于 **LangChain/LangGraph** 框架，结合 **MCP Skills** 多智能�
 ## 系统架构
 
 <p align="center">
-  <img src="./docs/docs/images/system-architecture.svg" alt="系统架构图" width="100%" />
+  <img src="docs/images/system-architecture.svg" alt="系统架构图" width="100%" />
 </p>
 
 **分层架构设计：**
@@ -111,7 +111,7 @@ Aix-DB 基于 **LangChain/LangGraph** 框架，结合 **MCP Skills** 多智能�
 
 
 <p align="center">
-  <img src="./docs/docs/images/architecture-flow.svg" alt="数据问答核心流程" width="100%" />
+  <img src="docs/images/architecture-flow.svg" alt="数据问答核心流程" width="100%" />
 </p>
 
 | 步骤  | 模块             | 说明                                                               |
@@ -232,7 +232,7 @@ npm run dev
 
 
 ## 文档
-- [配置说明](./docs/docs/index.md)
+- [配置说明](docs/index.md)
 - [API 文档](http://localhost:8088/docs) (启动后访问)
 
 
@@ -257,7 +257,7 @@ npm run dev
     <td align="center"><b>微信公众号</b></td>
   </tr>
   <tr>
-    <td align="center"><img src="./docs/docs/images/qrcode.jpg" alt="微信公众号" width="180"/></td>
+    <td align="center"><img src="docs/images/qrcode.jpg" alt="微信公众号" width="180"/></td>
   </tr>
 </table>
 
