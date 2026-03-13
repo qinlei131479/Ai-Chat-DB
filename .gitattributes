@@ -1,2 +1,0 @@
-models/**/blobs/* filter=lfs diff=lfs merge=lfs -text
-models/**/*.safetensors filter=lfs diff=lfs merge=lfs -text
