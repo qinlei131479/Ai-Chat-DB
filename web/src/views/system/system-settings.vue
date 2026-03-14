@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { computed, defineAsyncComponent, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import {computed, defineAsyncComponent, ref} from 'vue'
+import {useRouter} from 'vue-router'
 
 const router = useRouter()
 const activeTab = ref('datasource')
@@ -16,13 +16,13 @@ const SqlExampleLibrary = defineAsyncComponent(() => import('@/views/system/conf
 const EmbeddingMigration = defineAsyncComponent(() => import('@/views/system/config/embedding-migration.vue'))
 
 const menuItems = [
-  { key: 'datasource', label: '库表配置', icon: 'i-material-symbols:database-outline' },
-  { key: 'llm', label: '模型配置', icon: 'i-material-symbols:settings-outline' },
-  { key: 'user', label: '用户管理', icon: 'i-material-symbols:person-outline' },
-  { key: 'permission', label: '权限配置', icon: 'i-material-symbols:lock-outline' },
-  { key: 'terminology', label: '术语配置', icon: 'i-material-symbols:book-outline' },
-  { key: 'sql', label: 'SQL示例', icon: 'i-material-symbols:code' },
-  { key: 'embedding', label: '数据迁移', icon: 'i-material-symbols:sync' },
+  {key: 'datasource', label: '库表配置', icon: 'i-material-symbols:database-outline'},
+  {key: 'llm', label: '模型配置', icon: 'i-material-symbols:settings-outline'},
+  {key: 'terminology', label: '术语配置', icon: 'i-material-symbols:book-outline'},
+  {key: 'sql', label: 'SQL示例', icon: 'i-material-symbols:code'},
+  {key: 'user', label: '用户管理', icon: 'i-material-symbols:person-outline'},
+  {key: 'permission', label: '权限配置', icon: 'i-material-symbols:lock-outline'},
+  {key: 'embedding', label: '数据迁移', icon: 'i-material-symbols:sync'},
 ]
 
 const toggleSidebar = () => {
@@ -31,7 +31,7 @@ const toggleSidebar = () => {
 
 // 返回对话页面
 const handleBack = () => {
-  router.push({ name: 'ChatIndex' })
+  router.push({name: 'ChatIndex'})
 }
 </script>
 
@@ -39,58 +39,58 @@ const handleBack = () => {
   <div class="system-settings-page-container">
     <!-- Left Sidebar -->
     <div
-      class="page-sidebar"
-      :class="{ collapsed: isSidebarCollapsed }"
+        class="page-sidebar"
+        :class="{ collapsed: isSidebarCollapsed }"
     >
       <div class="sidebar-header">
         <div
-          v-show="!isSidebarCollapsed"
-          class="title"
+            v-show="!isSidebarCollapsed"
+            class="title"
         >
           系统设置
         </div>
         <div
-          class="collapse-btn"
-          @click="toggleSidebar"
+            class="collapse-btn"
+            @click="toggleSidebar"
         >
           <div
-            class="i-hugeicons:menu-01 text-20 transition-transform duration-300"
-            :class="{ 'rotate-180': isSidebarCollapsed }"
+              class="i-hugeicons:menu-01 text-20 transition-transform duration-300"
+              :class="{ 'rotate-180': isSidebarCollapsed }"
           ></div>
         </div>
       </div>
       <div class="sidebar-menu">
         <div
-          v-for="item in menuItems"
-          :key="item.key"
-          class="menu-item"
-          :class="{ active: activeTab === item.key, collapsed: isSidebarCollapsed }"
-          :title="isSidebarCollapsed ? item.label : ''"
-          @click="activeTab = item.key"
+            v-for="item in menuItems"
+            :key="item.key"
+            class="menu-item"
+            :class="{ active: activeTab === item.key, collapsed: isSidebarCollapsed }"
+            :title="isSidebarCollapsed ? item.label : ''"
+            @click="activeTab = item.key"
         >
           <div class="icon-wrapper">
             <div :class="[item.icon, 'text-20']"></div>
           </div>
           <span
-            v-show="!isSidebarCollapsed"
-            class="label"
+              v-show="!isSidebarCollapsed"
+              class="label"
           >{{ item.label }}</span>
         </div>
       </div>
 
       <div class="sidebar-footer">
         <div
-          class="menu-item"
-          :class="{ collapsed: isSidebarCollapsed }"
-          :title="isSidebarCollapsed ? '返回' : ''"
-          @click="handleBack"
+            class="menu-item"
+            :class="{ collapsed: isSidebarCollapsed }"
+            :title="isSidebarCollapsed ? '返回' : ''"
+            @click="handleBack"
         >
           <div class="icon-wrapper">
             <div class="i-hugeicons:arrow-left-01 text-20"></div>
           </div>
           <span
-            v-show="!isSidebarCollapsed"
-            class="label"
+              v-show="!isSidebarCollapsed"
+              class="label"
           >返回</span>
         </div>
       </div>
@@ -99,54 +99,54 @@ const handleBack = () => {
     <!-- Right Content -->
     <div class="page-content">
       <div
-        v-if="activeTab === 'datasource'"
-        class="h-full relative"
+          v-if="activeTab === 'datasource'"
+          class="h-full relative"
       >
         <!-- Masking the header of DatasourceManager via CSS is hacky, but since we are reusing the component -->
         <!-- Ideally DatasourceManager should accept a prop to hide header/back button, but for now we wrap it -->
-        <DatasourceManager />
+        <DatasourceManager/>
       </div>
 
       <div
-        v-else-if="activeTab === 'llm'"
-        class="h-full"
+          v-else-if="activeTab === 'llm'"
+          class="h-full"
       >
-        <LLMConfig />
+        <LLMConfig/>
       </div>
 
       <div
-        v-else-if="activeTab === 'user'"
-        class="h-full"
+          v-else-if="activeTab === 'user'"
+          class="h-full"
       >
-        <UserManager />
+        <UserManager/>
       </div>
 
       <div
-        v-else-if="activeTab === 'permission'"
-        class="h-full"
+          v-else-if="activeTab === 'permission'"
+          class="h-full"
       >
-        <PermissionConfig />
+        <PermissionConfig/>
       </div>
 
       <div
-        v-else-if="activeTab === 'terminology'"
-        class="h-full"
+          v-else-if="activeTab === 'terminology'"
+          class="h-full"
       >
-        <TerminologyConfig />
+        <TerminologyConfig/>
       </div>
 
       <div
-        v-else-if="activeTab === 'sql'"
-        class="h-full"
+          v-else-if="activeTab === 'sql'"
+          class="h-full"
       >
-        <SqlExampleLibrary />
+        <SqlExampleLibrary/>
       </div>
 
       <div
-        v-else-if="activeTab === 'embedding'"
-        class="h-full"
+          v-else-if="activeTab === 'embedding'"
+          class="h-full"
       >
-        <EmbeddingMigration />
+        <EmbeddingMigration/>
       </div>
     </div>
   </div>
@@ -279,7 +279,10 @@ const handleBack = () => {
       &.collapsed {
         padding: 12px 0;
         justify-content: center;
-        .icon-wrapper { margin-right: 0; }
+
+        .icon-wrapper {
+          margin-right: 0;
+        }
       }
 
       .icon-wrapper {

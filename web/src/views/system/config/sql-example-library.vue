@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import { onMounted, ref, reactive, h, resolveComponent } from 'vue'
-import { trainingApi } from '@/api/training'
-import { useMessage, useDialog, NButton, NSwitch, NSpace, FormInst, NTooltip } from 'naive-ui'
-import { fetch_datasource_list } from '@/api/datasource'
-import { formatSQL } from '@/utils/sqlFormatter'
+import {onMounted, ref, reactive, h, resolveComponent} from 'vue'
+import {trainingApi} from '@/api/training'
+import {useMessage, useDialog, NButton, NSwitch, NSpace, FormInst, NTooltip} from 'naive-ui'
+import {fetch_datasource_list} from '@/api/datasource'
+import {formatSQL} from '@/utils/sqlFormatter'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -12,11 +12,11 @@ interface DataTrainingItem {
   id: number
   question: string
   description: string
-  datasource: number
+  ds_id: number
   datasource_name: string
   advanced_application: number
   advanced_application_name: string
-  enabled: boolean
+  enabled_flag: number
   create_time: string
 }
 
@@ -75,7 +75,7 @@ const columns = [
     key: 'datasource_name',
     width: 150,
     render(row: DataTrainingItem) {
-        return row.datasource_name || '全部数据源'
+      return row.datasource_name || '全部数据源'
     }
   },
   {
@@ -89,11 +89,11 @@ const columns = [
     width: 100,
     render(row: DataTrainingItem) {
       return h(
-        NSwitch,
-        {
-          value: row.enabled,
-          onUpdateValue: (value: boolean) => handleStatusChange(row, value)
-        }
+          NSwitch,
+          {
+            value: row.enabled_flag == 1,
+            onUpdateValue: (value: boolean) => handleStatusChange(row, value)
+          }
       )
     }
   },
@@ -108,32 +108,32 @@ const columns = [
     width: 150,
     render(row: DataTrainingItem) {
       return h(
-        NSpace,
-        {},
-        {
+          NSpace,
+          {},
+          {
             default: () => [
-                h(
-                    NButton,
-                    {
+              h(
+                  NButton,
+                  {
                     size: 'small',
                     type: 'primary',
                     secondary: true,
                     onClick: () => handleEdit(row)
-                    },
-                    { default: () => '编辑' }
-                ),
-                h(
-                    NButton,
-                    {
+                  },
+                  {default: () => '编辑'}
+              ),
+              h(
+                  NButton,
+                  {
                     size: 'small',
                     type: 'error',
                     secondary: true,
                     onClick: () => handleDelete(row)
-                    },
-                    { default: () => '删除' }
-                )
+                  },
+                  {default: () => '删除'}
+              )
             ]
-        }
+          }
       )
     }
   }
@@ -162,18 +162,18 @@ const fetchData = async () => {
 }
 
 const fetchDatasources = async () => {
-    try {
-        const res = await fetch_datasource_list()
-        const result = await res.json()
-        if (result.code === 200) {
-            datasourceList.value = result.data.map((ds: any) => ({
-                label: ds.name,
-                value: ds.id
-            }))
-        }
-    } catch (e) {
-        console.error(e)
+  try {
+    const res = await fetch_datasource_list()
+    const result = await res.json()
+    if (result.code === 200) {
+      datasourceList.value = result.data.map((ds: any) => ({
+        label: ds.name,
+        value: ds.id
+      }))
     }
+  } catch (e) {
+    console.error(e)
+  }
 }
 
 const handlePageChange = (p: number) => {
@@ -192,10 +192,10 @@ const handleStatusChange = async (row: DataTrainingItem, value: boolean) => {
     const res = await trainingApi.enable(row.id, value)
     const result = await res.json()
     if (result.code === 200) {
-        row.enabled = value
-        message.success('状态更新成功')
+      row.enabled_flag = value ? 1 : 0
+      message.success('状态更新成功')
     } else {
-        message.error(result.msg || '状态更新失败')
+      message.error(result.msg || '状态更新失败')
     }
   } catch (error) {
     message.error('状态更新失败')
@@ -221,7 +221,7 @@ const handleEdit = (row: DataTrainingItem) => {
   formModel.description = row.description
   formModel.datasource = row.datasource
   formModel.advanced_application = row.advanced_application
-  formModel.enabled = row.enabled
+  formModel.enabled = row.enabled_flag === 1
   showModal.value = true
 }
 
@@ -233,11 +233,11 @@ const handleSave = async () => {
         const res = await trainingApi.updateEmbedded(formModel)
         const result = await res.json()
         if (result.code === 200) {
-             message.success('保存成功')
-             showModal.value = false
-             fetchData()
+          message.success('保存成功')
+          showModal.value = false
+          fetchData()
         } else {
-             message.error(result.msg || '保存失败')
+          message.error(result.msg || '保存失败')
         }
       } catch (error) {
         message.error('保存失败')
@@ -264,13 +264,13 @@ const handleDelete = (row: DataTrainingItem) => {
     negativeText: '取消',
     onPositiveClick: async () => {
       try {
-        const res = await trainingApi.deleteEmbedded({ ids: [row.id] })
+        const res = await trainingApi.deleteEmbedded({ids: [row.id]})
         const result = await res.json()
         if (result.code === 200) {
-            message.success('删除成功')
-            fetchData()
+          message.success('删除成功')
+          fetchData()
         } else {
-            message.error(result.msg || '删除失败')
+          message.error(result.msg || '删除失败')
         }
       } catch (error) {
         message.error('删除失败')
@@ -294,11 +294,11 @@ onMounted(() => {
       </div>
       <div class="actions">
         <n-input
-          v-model:value="searchQuestion"
-          placeholder="搜索问题描述..."
-          clearable
-          class="search-input"
-          @keyup.enter="handleSearch"
+            v-model:value="searchQuestion"
+            placeholder="搜索问题描述..."
+            clearable
+            class="search-input"
+            @keyup.enter="handleSearch"
         >
           <template #prefix>
             <div class="i-carbon-search text-gray-400"></div>
@@ -321,51 +321,51 @@ onMounted(() => {
 
     <div class="content">
       <n-data-table
-        :columns="columns"
-        :data="list"
-        :loading="loading"
-        :pagination="false"
-        class="data-table"
-        flex-height
+          :columns="columns"
+          :data="list"
+          :loading="loading"
+          :pagination="false"
+          class="data-table"
+          flex-height
       />
       <div v-if="total > 0" class="pagination-container">
         <n-pagination
-          v-model:page="page"
-          v-model:page-size="pageSize"
-          :item-count="total"
-          show-size-picker
-          :page-sizes="[10, 20, 50]"
-          @update:page="handlePageChange"
-          @update:page-size="(s) => { pageSize = s; page = 1; fetchData() }"
+            v-model:page="page"
+            v-model:page-size="pageSize"
+            :item-count="total"
+            show-size-picker
+            :page-sizes="[10, 20, 50]"
+            @update:page="handlePageChange"
+            @update:page-size="(s) => { pageSize = s; page = 1; fetchData() }"
         />
       </div>
     </div>
 
     <n-modal
-      v-model:show="showModal"
-      preset="dialog"
-      :title="modalType === 'add' ? '新增 SQL 示例' : '编辑 SQL 示例'"
-      style="width: 600px"
+        v-model:show="showModal"
+        preset="dialog"
+        :title="modalType === 'add' ? '新增 SQL 示例' : '编辑 SQL 示例'"
+        style="width: 600px"
     >
       <n-form
-        ref="formRef"
-        :model="formModel"
-        :rules="rules"
-        label-placement="left"
-        label-width="100"
-        require-mark-placement="right-hanging"
-        class="mt-4"
+          ref="formRef"
+          :model="formModel"
+          :rules="rules"
+          label-placement="left"
+          label-width="100"
+          require-mark-placement="right-hanging"
+          class="mt-4"
       >
         <n-form-item label="问题描述" path="question">
-          <n-input v-model:value="formModel.question" placeholder="请输入问题描述" />
+          <n-input v-model:value="formModel.question" placeholder="请输入问题描述"/>
         </n-form-item>
         <n-form-item label="示例SQL" path="description">
           <div class="relative w-full">
             <n-input
-              v-model:value="formModel.description"
-              type="textarea"
-              placeholder="请输入示例SQL"
-              :autosize="{ minRows: 5, maxRows: 10 }"
+                v-model:value="formModel.description"
+                type="textarea"
+                placeholder="请输入示例SQL"
+                :autosize="{ minRows: 5, maxRows: 10 }"
             />
             <div class="absolute top-2 right-2 z-10">
               <n-tooltip trigger="hover">
@@ -382,13 +382,13 @@ onMounted(() => {
           </div>
         </n-form-item>
         <n-form-item label="数据源" path="datasource">
-           <n-select
-                v-model:value="formModel.datasource"
-                filterable
-                clearable
-                placeholder="请选择数据源（留空则为通用）"
-                :options="datasourceList"
-            />
+          <n-select
+              v-model:value="formModel.datasource"
+              filterable
+              clearable
+              placeholder="请选择数据源（留空则为通用）"
+              :options="datasourceList"
+          />
         </n-form-item>
         <!-- 高级应用暂未实现获取列表，保留输入框或暂时隐藏，这里先隐藏或者使用InputNumber -->
         <!--
@@ -397,7 +397,7 @@ onMounted(() => {
         </n-form-item>
         -->
         <n-form-item label="是否启用" path="enabled">
-          <n-switch v-model:value="formModel.enabled" />
+          <n-switch v-model:value="formModel.enabled"/>
         </n-form-item>
       </n-form>
       <template #action>

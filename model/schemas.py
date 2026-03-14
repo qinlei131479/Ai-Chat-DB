@@ -679,11 +679,11 @@ class DataTrainingItem(BaseModel):
     id: Optional[int] = Field(None, description="ID")
     question: str = Field(description="问题描述")
     description: str = Field(description="示例SQL")
-    datasource: Optional[int] = Field(None, description="数据源ID")
+    ds_id: Optional[int] = Field(None, description="数据源ID")
     datasource_name: Optional[str] = Field(None, description="数据源名称")
-    advanced_application: Optional[int] = Field(None, description="高级应用ID")
-    advanced_application_name: Optional[str] = Field(None, description="高级应用名称")
-    enabled: bool = Field(True, description="是否启用")
+    # advanced_application: Optional[int] = Field(None, description="高级应用ID")
+    # advanced_application_name: Optional[str] = Field(None, description="高级应用名称")
+    enabled_flag: Optional[int] = Field(None, description="是否启用")
     create_time: Optional[str] = Field(None, description="创建时间")
 
 
@@ -695,7 +695,7 @@ class SaveDataTrainingRequest(BaseModel):
     id: Optional[int] = Field(None, description="ID")
     question: str = Field(description="问题描述")
     description: str = Field(description="示例SQL")
-    datasource: Optional[int] = Field(None, description="数据源ID")
+    ds_id: Optional[int] = Field(None, description="数据源ID")
     advanced_application: Optional[int] = Field(None, description="高级应用ID")
     enabled: bool = Field(True, description="是否启用")
 

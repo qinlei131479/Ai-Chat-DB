@@ -172,9 +172,9 @@ async def _select_training_by_question(
     stmt = session.query(TDataTraining.id).filter(
         and_(
             TDataTraining.question.ilike(question_pattern),
-            TDataTraining.oid == oid,
-            TDataTraining.datasource == datasource_id,
-            TDataTraining.enabled == True,
+            # TDataTraining.oid == oid,
+            TDataTraining.ds_id == datasource_id,
+            TDataTraining.enabled_flag == 1,
         )
     )
     
@@ -212,8 +212,8 @@ async def _select_training_by_question(
                     embedding_sql,
                     {
                         "embedding_array": embedding_str,
-                        "oid": oid,
-                        "datasource": datasource_id,
+                        # "oid": oid,
+                        "ds_id": datasource_id,
                         "top_k": top_k,
                     }
                 ).fetchall()

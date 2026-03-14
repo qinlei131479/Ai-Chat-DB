@@ -23,12 +23,12 @@ async def page_data_training(page: int, size: int, question: Optional[str] = Non
         query = (
             session.query(
                 TDataTraining,
-                Datasource.name.label("datasource_name"),
-                TAiModel.name.label("advanced_application_name"),
+                Datasource.name.label("datasource_name")
+                # TAiModel.name.label("advanced_application_name"),
             )
-            .outerjoin(Datasource, TDataTraining.datasource == Datasource.id)
-            .outerjoin(TAiModel, TDataTraining.advanced_application == TAiModel.id)
-            .filter(TDataTraining.oid == oid)
+            .outerjoin(Datasource, TDataTraining.ds_id == Datasource.id)
+            # .outerjoin(TAiModel, TDataTraining.advanced_application == TAiModel.id)
+            # .filter(TDataTraining.oid == oid)
         )
 
         if question:
@@ -45,17 +45,17 @@ async def page_data_training(page: int, size: int, question: Optional[str] = Non
         # Serialize
         items = []
         for row in results:
-            training, ds_name, app_name = row
+            training, ds_name = row
             items.append(
                 DataTrainingItem(
                     id=training.id,
                     question=training.question,
                     description=training.description,
-                    datasource=training.datasource,
+                    ds_id=training.ds_id,
                     datasource_name=ds_name,
-                    advanced_application=training.advanced_application,
-                    advanced_application_name=app_name,
-                    enabled=training.enabled,
+                    # advanced_application=training.advanced_application,
+                    # advanced_application_name=app_name,
+                    enabled_flag=training.enabled_flag,
                     create_time=str(training.create_time) if training.create_time else None,
                 )
             )
@@ -77,28 +77,24 @@ async def create_training(data: Dict[str, Any], oid: int = 1) -> bool:
 
     with pool.get_session() as session:
         # Check duplicates
-        query = session.query(TDataTraining).filter(TDataTraining.question == question, TDataTraining.oid == oid)
+        query = session.query(TDataTraining).filter(TDataTraining.question == question)
 
         if datasource and advanced_application:
-            query = query.filter(
-                or_(TDataTraining.datasource == datasource, TDataTraining.advanced_application == advanced_application)
-            )
+            query = query.filter(TDataTraining.ds_id == datasource)
         elif datasource:
-            query = query.filter(TDataTraining.datasource == datasource)
-        elif advanced_application:
-            query = query.filter(TDataTraining.advanced_application == advanced_application)
+            query = query.filter(TDataTraining.ds_id == datasource)
+        # elif advanced_application:
+        #     query = query.filter(TDataTraining.advanced_application == advanced_application)
 
         if query.count() > 0:
             raise MyException(SysCodeEnum.PARAM_ERROR, "Training data already exists")
 
         new_training = TDataTraining(
-            oid=oid,
+            ds_id=datasource,
             question=question,
             description=description,
-            datasource=datasource,
-            advanced_application=advanced_application,
             embedding=embedding,
-            enabled=data.get("enabled", True),
+            enabled=data.get("enabled_flag", 1),
             create_time=datetime.now(),
         )
         session.add(new_training)
@@ -151,9 +147,9 @@ async def update_training(data: Dict[str, Any], oid: int = 1) -> bool:
                 training.embedding = embedding
 
             training.description = data.get("description", training.description)
-            training.datasource = data.get("datasource", training.datasource)
-            training.advanced_application = data.get("advanced_application", training.advanced_application)
-            training.enabled = data.get("enabled", training.enabled)
+            training.ds_id = data.get("ds_id", training.ds_id)
+            # training.advanced_application = data.get("advanced_application", training.advanced_application)
+            training.enabled_flag = 1 if data.get("enabled", True) else 0
 
             session.commit()
             return True
