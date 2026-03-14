@@ -44,17 +44,17 @@ if [ ! -s "$PGDATA/PG_VERSION" ]; then
         sleep 1
     done
 
-    # 创建用户和数据库（将 aix_db 设为超级用户以便创建扩展）
+    # 创建用户和数据库（将 postgres 设为超级用户以便创建扩展）
     echo "Creating user and database..."
-    gosu postgres psql -c "CREATE USER ${POSTGRES_USER:-aix_db} WITH PASSWORD '${POSTGRES_PASSWORD:-1}' SUPERUSER;" 2>/dev/null || echo "User already exists"
-    gosu postgres psql -c "ALTER USER ${POSTGRES_USER:-aix_db} WITH SUPERUSER;" 2>/dev/null || true
-    gosu postgres psql -c "CREATE DATABASE ${POSTGRES_DB:-aix_db} OWNER ${POSTGRES_USER:-aix_db};" 2>/dev/null || echo "Database already exists"
-    gosu postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${POSTGRES_DB:-aix_db} TO ${POSTGRES_USER:-aix_db};"
+    gosu postgres psql -c "CREATE USER ${POSTGRES_USER:-postgres} WITH PASSWORD '${POSTGRES_PASSWORD:-postgres}' SUPERUSER;" 2>/dev/null || echo "User already exists"
+    gosu postgres psql -c "ALTER USER ${POSTGRES_USER:-postgres} WITH SUPERUSER;" 2>/dev/null || true
+    gosu postgres psql -c "CREATE DATABASE ${POSTGRES_DB:-bubble_ai} OWNER ${POSTGRES_USER:-postgres};" 2>/dev/null || echo "Database already exists"
+    gosu postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${POSTGRES_DB:-bubble_ai} TO ${POSTGRES_USER:-postgres};"
 
     # 执行初始化 SQL（使用 postgres 超级用户执行以确保有权限创建扩展）
     if [ -f /docker-entrypoint-initdb.d/init.sql ]; then
         echo "Running init.sql..."
-        gosu postgres psql -d "${POSTGRES_DB:-aix_db}" -f /docker-entrypoint-initdb.d/init.sql
+        gosu postgres psql -d "${POSTGRES_DB:-bubble_ai}" -f /docker-entrypoint-initdb.d/init.sql
     fi
 
     # 停止 PostgreSQL（supervisor 会重新启动）

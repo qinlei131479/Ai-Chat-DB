@@ -74,7 +74,7 @@ services:
       - "host.docker.internal:host-gateway"
 
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost/ && pg_isready -U aix_db -h localhost" ]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost/ && pg_isready -U postgre -h localhost" ]
       interval: 30s
       timeout: 10s
       retries: 3

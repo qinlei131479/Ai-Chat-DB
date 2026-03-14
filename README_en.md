@@ -114,8 +114,8 @@ docker-compose up -d
 - Password: `123456`
 
 **PostgreSQL Database**
-- Connection: `localhost:15432`
-- Database: `aix_db`
+- Connection: `localhost:5432`
+- Database: `bubble_ai`
 - Username: `postgres`
 - Password: `postgres`
 
@@ -137,13 +137,13 @@ docker-compose up -d
 
 Edit `.env.dev` in the project root to set database connection, MinIO address, etc. (default config works out of the box)
 
-**④ Install Python Dependencies** (requires Python 3.11)
+**④ Install Python Dependencies** (requires Python 3.12)
 ```bash
 # Option 1: pip
 pip install -r requirements.txt
 
 # Option 2: uv (recommended, faster)
-uv venv --python 3.11
+uv venv --python 3.12
 source .venv/bin/activate
 uv sync
 ```

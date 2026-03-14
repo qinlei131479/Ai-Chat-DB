@@ -235,9 +235,9 @@ ENV PATH="/ai-chat-db/.venv/bin:${PATH}" \
     DOCKER_ENV=true \
     OTEL_PYTHON_CONTEXT=contextvars_context \
     # PostgreSQL 配置
-    POSTGRES_USER=aix_db \
-    POSTGRES_DB=aix_db \
-    SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://aix_db:1@127.0.0.1:5432/aix_db \
+    POSTGRES_USER=postgre \
+    POSTGRES_DB=bubble_ai \
+    SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://postgre:postgre@127.0.0.1:5432/bubble_ai \
     # MinIO 配置
     MINIO_ENDPOINT=127.0.0.1:9000 \
     MINIO_ACCESS_KEY=admin \

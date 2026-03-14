@@ -59,7 +59,7 @@ RUN find . -path "./.venv" -prune -o -type d -name __pycache__ -exec rm -rf {} +
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost/ && \
-    pg_isready -U aix_db -h localhost || exit 1
+    pg_isready -U postgre -h localhost || exit 1
 
 # 使用启动脚本启动服务
 CMD ["/entrypoint.sh"]
