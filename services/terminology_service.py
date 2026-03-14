@@ -33,7 +33,7 @@ async def query_terminology_list(page: int, size: int, word: Optional[str] = Non
         query = session.query(TTerminology)
         
         # 筛选条件
-        filters = [TTerminology.pid.is_(None)] # 只查询父节点
+        filters = [TTerminology.parent_id==0] # 只查询父节点
         
         if word:
             # 搜索：匹配父节点名称或子节点(同义词)名称
@@ -43,7 +43,7 @@ async def query_terminology_list(page: int, size: int, word: Optional[str] = Non
             
             if matched_ids:
                 # 查找这些ID及其父ID
-                parent_ids_query = session.query(TTerminology.pid).filter(TTerminology.id.in_(matched_ids), TTerminology.pid.isnot(None))
+                parent_ids_query = session.query(TTerminology.parent_id).filter(TTerminology.id.in_(matched_ids), TTerminology.parent_id.isnot(None))
                 parent_ids = [row[0] for row in parent_ids_query.all()]
                 
                 # 合并ID：直接匹配的ID（如果是父节点） + 子节点对应的父ID
@@ -84,7 +84,7 @@ async def query_terminology_list(page: int, size: int, word: Optional[str] = Non
                 del item['embedding']
             
             # 查询子节点（同义词）
-            children = session.query(TTerminology).filter(TTerminology.pid == record.id).all()
+            children = session.query(TTerminology).filter(TTerminology.parent_id == record.id).all()
             item['other_words'] = [c.word for c in children]
             
             # 解析 datasource_ids 获取名称
@@ -124,8 +124,8 @@ async def create_terminology(word: str, description: str, other_words: List[str]
             description=description,
             specific_ds=specific_ds,
             datasource_ids=json.dumps(datasource_ids) if datasource_ids else '[]',
-            oid=oid,
-            enabled=True,
+            # oid=oid,
+            enabled_flag=1,
             create_time=datetime.now()
         )
         session.add(parent)
@@ -136,12 +136,12 @@ async def create_terminology(word: str, description: str, other_words: List[str]
             if not ow.strip():
                 continue
             child = TTerminology(
-                pid=parent.id,
+                parent_id=parent.id,
                 word=ow,
                 specific_ds=specific_ds,
                 datasource_ids=json.dumps(datasource_ids) if datasource_ids else '[]',
-                oid=oid,
-                enabled=True,
+                # oid=oid,
+                enabled_flag=parent.enabled_flag,
                 create_time=datetime.now()
             )
             session.add(child)
@@ -169,7 +169,7 @@ async def update_terminology(id: int, word: str, description: str, other_words: 
         existing = session.query(TTerminology).filter(
             TTerminology.word.in_(all_words),
             TTerminology.id != id,
-            or_(TTerminology.pid != id, TTerminology.pid.is_(None)) 
+            or_(TTerminology.parent_id != id, TTerminology.parent_id.is_(None))
         ).first()
         
         if existing:
@@ -189,12 +189,11 @@ async def update_terminology(id: int, word: str, description: str, other_words: 
             if not ow.strip():
                 continue
             child = TTerminology(
-                pid=parent.id,
+                parent_id=parent.id,
                 word=ow,
                 specific_ds=specific_ds,
                 datasource_ids=json.dumps(datasource_ids) if datasource_ids else '[]',
-                oid=oid,
-                enabled=parent.enabled,
+                enabled_flag=parent.enabled_flag,
                 create_time=datetime.now()
             )
             session.add(child)
@@ -214,14 +213,15 @@ async def update_terminology(id: int, word: str, description: str, other_words: 
 async def delete_terminology(ids: List[int]):
     with pool.get_session() as session:
         # 删除父节点和子节点
-        session.query(TTerminology).filter(or_(TTerminology.id.in_(ids), TTerminology.pid.in_(ids))).delete(synchronize_session=False)
+        session.query(TTerminology).filter(or_(TTerminology.id.in_(ids), TTerminology.parent_id.in_(ids))).delete(synchronize_session=False)
         session.commit()
         return True
 
 async def enable_terminology(id: int, enabled: bool):
     with pool.get_session() as session:
         # 更新父节点和子节点
-        session.query(TTerminology).filter(or_(TTerminology.id == id, TTerminology.pid == id)).update({TTerminology.enabled: enabled}, synchronize_session=False)
+        enabled_flag =1 if enabled else 0
+        session.query(TTerminology).filter(or_(TTerminology.id == id, TTerminology.parent_id == id)).update({TTerminology.enabled_flag: enabled_flag}, synchronize_session=False)
         session.commit()
         return True
 
@@ -238,7 +238,7 @@ async def get_terminology_detail(id: int):
             del item['embedding']
         
         # 查询子节点
-        children = session.query(TTerminology).filter(TTerminology.pid == record.id).all()
+        children = session.query(TTerminology).filter(TTerminology.parent_id == record.id).all()
         item['other_words'] = [c.word for c in children]
         
         # 解析 datasource_ids
@@ -315,7 +315,7 @@ def _save_terminology_embeddings_sync(ids: List[int]):
             # 查询术语及其子节点（所有需要计算 embedding 的术语）
             # 使用 or_(id.in_(ids), pid.in_(ids)) 查询父节点和所有子节点
             terminology_list = session.query(TTerminology).filter(
-                or_(TTerminology.id.in_(ids), TTerminology.pid.in_(ids))
+                or_(TTerminology.id.in_(ids), TTerminology.parent_id.in_(ids))
             ).all()
             
             if not terminology_list:

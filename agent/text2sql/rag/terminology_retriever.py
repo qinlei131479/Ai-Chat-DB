@@ -176,8 +176,7 @@ async def _select_terminology_by_word(
     stmt = session.query(TTerminology).filter(
         and_(
             text(":sentence ILIKE '%' || word || '%'"),
-            TTerminology.oid == oid,
-            TTerminology.enabled == True,
+            TTerminology.enabled_flag == 1,
         )
     )
     

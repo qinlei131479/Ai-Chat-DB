@@ -116,27 +116,29 @@ class TDsPermission(Base):
 
 
 class TTerminology(Base):
-    __tablename__ = "t_terminology"
+    __tablename__ = "terminology"
     __table_args__ = {"comment": "术语配置表"}
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    oid: Mapped[Optional[int]] = mapped_column(BigInteger, default=1, comment="组织ID")
-    pid: Mapped[Optional[int]] = mapped_column(BigInteger, comment="父ID")
+    # oid: Mapped[Optional[int]] = mapped_column(BigInteger, default=1, comment="组织ID")
+    parent_id: Mapped[Optional[int]] = mapped_column(BigInteger, comment="父ID")
     word: Mapped[Optional[str]] = mapped_column(String(255), comment="术语名称")
     description: Mapped[Optional[str]] = mapped_column(Text, comment="描述")
     specific_ds: Mapped[Optional[bool]] = mapped_column(Boolean, default=False, comment="是否指定数据源")
     datasource_ids: Mapped[Optional[str]] = mapped_column(Text, comment="数据源ID列表(JSON)")
-    enabled: Mapped[Optional[bool]] = mapped_column(Boolean, default=True, comment="是否启用")
-    create_time: Mapped[Optional[datetime.datetime]] = mapped_column(
-        TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"), comment="创建时间"
-    )
+    enabled_flag: Mapped[Optional[int]] = mapped_column(Integer, default=1, comment="是否启用")
     # VECTOR 类型：用于在数据库中进行向量相似度搜索（使用 <=> 操作符）
     # 不指定维度，支持动态维度（768/1024等），pgvector 会自动处理
     # Python 类型：List[float] 或 numpy.ndarray，SQLAlchemy 会自动转换
     embedding: Mapped[Optional[Union[List[float], str]]] = mapped_column(
         VECTOR, nullable=True, comment="术语向量数据（pgvector VECTOR 类型，支持动态维度）"
     )
-
+    create_time: Mapped[Optional[datetime.datetime]] = mapped_column(
+        TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"), comment="创建时间"
+    )
+    update_time: Mapped[Optional[datetime.datetime]] = mapped_column(
+        TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"), comment="更新时间"
+    )
 
 class TDataTraining(Base):
     __tablename__ = "sql_train"
@@ -153,7 +155,7 @@ class TDataTraining(Base):
     embedding: Mapped[Optional[Union[List[float], str]]] = mapped_column(
         VECTOR, nullable=True, comment="向量数据（pgvector VECTOR 类型，支持动态维度）"
     )
-    enabled_flag: Mapped[Optional[int]] = mapped_column(BigInteger, default=1, comment="是否启用")
+    enabled_flag: Mapped[Optional[int]] = mapped_column(Integer, default=1, comment="是否启用")
     # advanced_application: Mapped[Optional[int]] = mapped_column(BigInteger, comment="高级应用ID")
     create_time: Mapped[Optional[datetime.datetime]] = mapped_column(
         TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"), comment="创建时间"

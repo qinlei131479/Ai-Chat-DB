@@ -83,7 +83,7 @@ async def recalculate_terminology_embeddings(progress_callback: Optional[Callabl
         with pool.get_session() as session:
             # 查询所有术语（只查询父节点）
             terminology_list = session.query(TTerminology).filter(
-                TTerminology.pid.is_(None)
+                TTerminology.parent_id.is_(None)
             ).all()
             
             total = len(terminology_list)
@@ -130,7 +130,7 @@ async def recalculate_terminology_embeddings(progress_callback: Optional[Callabl
                             
                             # 更新子节点（同义词）的 embedding
                             children = session.query(TTerminology).filter(
-                                TTerminology.pid == term.id
+                                TTerminology.parent_id == term.id
                             ).all()
                             
                             for child in children:

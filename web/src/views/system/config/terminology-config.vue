@@ -71,7 +71,7 @@ const columns = [
     width: 100,
     render(row: any) {
       return h(NSwitch, {
-        value: row.enabled,
+        value: row.enabled_flag==1,
         onUpdateValue: (value) => handleEnable(row, value)
       })
     }
@@ -167,7 +167,7 @@ const handleEdit = (row: any) => {
   formModel.other_words = row.other_words || []
   formModel.specific_ds = row.specific_ds
   formModel.datasource_ids = row.datasource_ids || [] // Note: ensure backend returns ids list
-  formModel.enabled = row.enabled
+  formModel.enabled = row.enabled_flag ==1
   showModal.value = true
 }
 
