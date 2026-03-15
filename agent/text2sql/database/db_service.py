@@ -23,16 +23,14 @@ import pandas as pd
 import requests
 
 # Langfuse OpenAI 延迟导入，避免在模块加载时触发 Langfuse 客户端初始化
-# from langfuse.openai import OpenAI
 from rank_bm25 import BM25Okapi
 from sqlalchemy.inspection import inspect
 from sqlalchemy.sql.expression import text
 
 from agent.text2sql.state.agent_state import AgentState, ExecutionResult
 from model.db_connection_pool import get_db_pool
-from model.db_models import TAiModel, TDsPermission, TDsRules
+from model.db_models import TAiModel
 from model.datasource_models import DatasourceTable, DatasourceField
-from agent.text2sql.permission.permission_retriever import get_user_permission_filters
 from sqlalchemy import select
 
 # 日志配置
@@ -384,7 +382,6 @@ class DatabaseService:
         table_names = inspector.get_table_names()
         logger.info(f"🔍 开始加载 {len(table_names)} 张表的 schema 信息...")
 
-        # 获取列权限配置（集成完整的权限系统）
         column_permissions = {}
         if user_id and not is_admin(user_id) and self._datasource_id:
             try:
@@ -396,62 +393,8 @@ class DatabaseService:
                     ).all()
 
                     # 获取所有规则
-                    rules_stmt = select(TDsRules).where(TDsRules.enable == True)
-                    rules = session.execute(rules_stmt).scalars().all()
-
                     for table in tables:
                         allowed_fields = set()
-
-                        # 如果有规则，查询列权限配置
-                        if rules:
-                            permissions_stmt = select(TDsPermission).where(
-                                TDsPermission.table_id == table.id,
-                                TDsPermission.type == 'column',
-                                TDsPermission.enable == True
-                            )
-                            column_perms = session.execute(permissions_stmt).scalars().all()
-
-                            if column_perms:
-                                # 检查权限是否与用户匹配
-                                matching_permissions = []
-                                for permission in column_perms:
-                                    for rule in rules:
-                                        perm_ids = []
-                                        if rule.permission_list:
-                                            try:
-                                                perm_ids = json.loads(rule.permission_list)
-                                            except:
-                                                pass
-
-                                        user_ids = []
-                                        if rule.user_list:
-                                            try:
-                                                user_ids = json.loads(rule.user_list)
-                                            except:
-                                                pass
-
-                                        if perm_ids and user_ids:
-                                            if permission.id in perm_ids and (
-                                                user_id in user_ids or str(user_id) in user_ids
-                                            ):
-                                                matching_permissions.append(permission)
-                                                break
-
-                                # 解析列权限配置
-                                for perm in matching_permissions:
-                                    if perm.permissions:
-                                        try:
-                                            perm_config = json.loads(perm.permissions)
-                                            if isinstance(perm_config, list):
-                                                for field_perm in perm_config:
-                                                    if field_perm.get("enable", False):
-                                                        field_name = field_perm.get("field_name")
-                                                        if field_name:
-                                                            allowed_fields.add(field_name)
-                                        except Exception as e:
-                                            logger.debug(f"解析列权限配置失败: {e}, permission_id={perm.id}")
-
-                        # 如果没有匹配的权限配置，使用 checked 字段作为基础
                         if not allowed_fields:
                             fields = session.query(DatasourceField).filter(
                                 DatasourceField.ds_id == self._datasource_id,

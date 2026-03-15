@@ -151,19 +151,6 @@ const sidebarItems = ref<SidebarItemType[]>([
     props: {},
   },
   {
-    label: '权限配置',
-    key: 'PermissionConfig',
-    renderIcon() {
-      return (
-        <div class="i-material-symbols:lock-outline text-24"></div>
-      )
-    },
-    onClick() {
-      router.push({ name: 'PermissionConfig' })
-    },
-    props: {},
-  },
-  {
     label: '术语配置',
     key: 'TerminologyConfig',
     renderIcon() {

@@ -591,45 +591,6 @@ class AiModelDetailResponse(BaseResponse):
     data: AiModelEditor = Field(description="模型详情")
 
 
-# ==================== 权限管理相关模型 ====================
-class PermissionItem(BaseModel):
-    id: Optional[int] = Field(None, description="规则ID")
-    name: str = Field(description="规则名称")
-    description: Optional[str] = Field(None, description="描述")
-    permission_list: Optional[List[Dict[str, Any]]] = Field(
-        None, description="权限列表"
-    )
-    user_list: Optional[List[int]] = Field(None, description="用户ID列表")
-    white_list_user: Optional[List[int]] = Field(None, description="白名单用户")
-    enable: bool = Field(True, description="是否启用")
-    create_time: Optional[str] = Field(None, description="创建时间")
-    permissions: Optional[List[Dict[str, Any]]] = Field(
-        None, description="前端用权限列表"
-    )
-    users: Optional[List[int]] = Field(None, description="前端用用户列表")
-
-
-class PermissionListResponse(BaseResponse):
-    data: List[PermissionItem] = Field(description="权限规则列表")
-
-
-class SavePermissionRequest(BaseModel):
-    id: Optional[int] = Field(None, description="规则ID")
-    name: str = Field(description="规则名称")
-    permissions: List[Dict[str, Any]] = Field(
-        default_factory=list, description="权限配置"
-    )
-    users: List[int] = Field(default_factory=list, description="用户ID列表")
-
-
-class SavePermissionResponse(BaseResponse):
-    data: Dict[str, str] = Field(description="保存结果")
-
-
-class DeletePermissionResponse(BaseResponse):
-    data: Dict[str, str] = Field(description="删除结果")
-
-
 # ==================== 术语管理相关模型 ====================
 class TerminologyItem(BaseModel):
     id: Optional[int] = Field(None, description="ID")

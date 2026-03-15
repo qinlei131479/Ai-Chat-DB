@@ -21,7 +21,6 @@ const menuItems = [
   {key: 'terminology', label: '术语配置', icon: 'i-material-symbols:book-outline'},
   {key: 'sql', label: 'SQL示例', icon: 'i-material-symbols:code'},
   {key: 'user', label: '用户管理', icon: 'i-material-symbols:person-outline'},
-  {key: 'permission', label: '权限配置', icon: 'i-material-symbols:lock-outline'},
   {key: 'embedding', label: '数据迁移', icon: 'i-material-symbols:sync'},
 ]
 

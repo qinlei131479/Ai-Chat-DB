@@ -8,10 +8,8 @@ import logging
 from typing import List, Dict, Any, Optional
 
 from sqlalchemy import and_, select
-from sqlalchemy.orm import Session
 
 from model.db_connection_pool import get_db_pool
-from model.db_models import TDsRules, TDsPermission
 from model.datasource_models import DatasourceTable, Datasource
 from agent.text2sql.permission.row_permission import trans_filter_tree
 from common.permission_util import is_admin
@@ -63,17 +61,7 @@ def get_user_permission_filters(
                 return []
             
             db_type = datasource.type or "mysql"
-            
-            # 获取所有规则
-            rules_stmt = select(TDsRules).where(TDsRules.enable == True)
-            rules = session.execute(rules_stmt).scalars().all()
-            
-            if not rules:
-                logger.warning(f"没有启用的规则，无法匹配权限。datasource_id={datasource_id}, user_id={user_id}")
-                return []
-            
-            logger.info(f"找到 {len(rules)} 个启用的规则")
-            
+
             # 获取表信息
             if table_names:
                 tables_stmt = select(DatasourceTable).where(
@@ -98,62 +86,10 @@ def get_user_permission_filters(
             # 对每个表获取权限过滤条件
             for table in tables:
                 # 查询该表的行权限
-                permissions_stmt = select(TDsPermission).where(
-                    and_(
-                        TDsPermission.table_id == table.id,
-                        TDsPermission.type == 'row',
-                        TDsPermission.enable == True
-                    )
-                )
-                row_permissions = session.execute(permissions_stmt).scalars().all()
-                
-                if not row_permissions:
-                    logger.debug(f"表 {table.table_name} 没有行权限配置")
-                    continue
-                
-                logger.info(f"表 {table.table_name} 找到 {len(row_permissions)} 个行权限: {[p.id for p in row_permissions]}")
-                
+
                 # 检查权限是否与用户匹配（通过规则）
                 matching_permissions = []
-                for permission in row_permissions:
-                    # 检查权限是否在某个规则中，且该规则包含当前用户
-                    matched = False
-                    for rule in rules:
-                        perm_ids = []
-                        if rule.permission_list:
-                            try:
-                                perm_ids = json.loads(rule.permission_list)
-                            except:
-                                pass
-                        
-                        user_ids = []
-                        if rule.user_list:
-                            try:
-                                user_ids = json.loads(rule.user_list)
-                            except:
-                                pass
-                        
-                        # 检查权限ID和用户ID是否匹配
-                        if perm_ids and user_ids:
-                            # 用户ID可能是整数或字符串，需要统一处理
-                            # 将 user_ids 列表中的元素转换为整数进行比较
-                            user_ids_int = []
-                            for uid in user_ids:
-                                try:
-                                    user_ids_int.append(int(uid))
-                                except (ValueError, TypeError):
-                                    pass
-                            
-                            # 检查权限ID和用户ID是否匹配
-                            if permission.id in perm_ids and (user_id in user_ids_int or user_id in user_ids or str(user_id) in user_ids):
-                                matching_permissions.append(permission)
-                                matched = True
-                                logger.info(f"✅ 权限 {permission.id} ({permission.name}) 通过规则 {rule.id} 匹配用户 {user_id} (规则中的用户列表: {user_ids})")
-                                break
-                    
-                    if not matched:
-                        logger.debug(f"权限 {permission.id} ({permission.name}) 未匹配到任何规则（需要创建规则关联权限ID和用户ID）")
-                
+
                 # 如果有匹配的权限，构建过滤条件
                 if matching_permissions:
                     logger.info(f"表 {table.table_name} 有 {len(matching_permissions)} 个匹配的权限: {[p.id for p in matching_permissions]}")
@@ -204,8 +140,6 @@ def get_user_column_permissions(
 
     说明：
     - 若用户是管理员：返回空 dict（表示不做列过滤）。
-    - 若某张表存在匹配的列权限配置（TDsPermission.type='column'）：仅允许 permissions 中 enable=true 的字段。
-    - 若没有匹配列权限配置：不返回该表（表示不做列过滤，沿用原始 SQL）。
 
     Returns:
         { "table_name": {"col1", "col2", ...}, ... }
@@ -223,11 +157,6 @@ def get_user_column_permissions(
     try:
         with pool.get_session() as session:
             # 获取所有规则
-            rules_stmt = select(TDsRules).where(TDsRules.enable == True)
-            rules = session.execute(rules_stmt).scalars().all()
-            if not rules:
-                return {}
-
             # 获取表信息
             if table_names:
                 tables_stmt = select(DatasourceTable).where(
@@ -246,52 +175,9 @@ def get_user_column_permissions(
             table_allowed_fields: Dict[str, set] = {}
 
             for table in tables:
-                permissions_stmt = select(TDsPermission).where(
-                    and_(
-                        TDsPermission.table_id == table.id,
-                        TDsPermission.type == "column",
-                        TDsPermission.enable == True,
-                    )
-                )
-                column_permissions = session.execute(permissions_stmt).scalars().all()
-                if not column_permissions:
-                    continue
 
                 # 匹配规则（同 row 权限逻辑）
                 matching_permissions = []
-                for permission in column_permissions:
-                    matched = False
-                    for rule in rules:
-                        perm_ids = []
-                        if rule.permission_list:
-                            try:
-                                perm_ids = json.loads(rule.permission_list)
-                            except Exception:
-                                perm_ids = []
-
-                        user_ids = []
-                        if rule.user_list:
-                            try:
-                                user_ids = json.loads(rule.user_list)
-                            except Exception:
-                                user_ids = []
-
-                        if perm_ids and user_ids:
-                            user_ids_int = []
-                            for uid in user_ids:
-                                try:
-                                    user_ids_int.append(int(uid))
-                                except (ValueError, TypeError):
-                                    pass
-                            if permission.id in perm_ids and (
-                                user_id in user_ids_int or user_id in user_ids or str(user_id) in user_ids
-                            ):
-                                matching_permissions.append(permission)
-                                matched = True
-                                break
-                    if not matched:
-                        continue
-
                 if not matching_permissions:
                     continue
 
