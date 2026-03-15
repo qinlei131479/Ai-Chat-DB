@@ -8,7 +8,6 @@ from model.datasource_models import (  # noqa: F401
     Datasource,
     DatasourceTable,
     DatasourceField,
-    DatasourceAuth,
 )
 
 __all__ = [
@@ -18,7 +17,6 @@ __all__ = [
     "Datasource",
     "DatasourceTable",
     "DatasourceField",
-    "DatasourceAuth",
 ]
 
 

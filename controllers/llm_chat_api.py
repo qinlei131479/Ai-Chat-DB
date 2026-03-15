@@ -22,9 +22,9 @@ llm = LLMRequest()
 
 @router.post("/get_answer", summary="获取Dify答案（流式）")
 async def get_answer(
-    request: Request,
-    body: LLMGetAnswerRequest,
-    user: dict = Depends(get_current_user),
+        request: Request,
+        body: LLMGetAnswerRequest,
+        user: dict = Depends(get_current_user),
 ):
     """调用Dify画布获取数据，以 SSE 流式方式返回结果"""
     try:
@@ -34,41 +34,17 @@ async def get_answer(
 
         req_dict = body.model_dump()
 
-        if req_dict.get("qa_type") == "DATABASE_QA" and req_dict.get("datasource_id"):
-            from common.permission_util import is_admin
-            from model.db_connection_pool import get_db_pool
-            from model.datasource_models import DatasourceAuth
-            from sqlalchemy import and_
-
-            user_id = user.get("id", 1)
-            datasource_id = req_dict.get("datasource_id")
-
-            if not is_admin(user_id):
-                db_pool = get_db_pool()
-                with db_pool.get_session() as session:
-                    auth = session.query(DatasourceAuth).filter(
-                        and_(
-                            DatasourceAuth.datasource_id == datasource_id,
-                            DatasourceAuth.user_id == user_id,
-                            DatasourceAuth.enable == True,
-                        )
-                    ).first()
-
-                    if not auth:
-                        return JSONResponse(
-                            status_code=403,
-                            content={
-                                "code": 403,
-                                "msg": "您没有访问该数据源的权限，请联系管理员授权。",
-                                "data": None,
-                            },
-                        )
+        # if req_dict.get("qa_type") == "DATABASE_QA" and req_dict.get("datasource_id"):
+        # from common.permission_util import is_admin
+        # from model.db_connection_pool import get_db_pool
+        # from sqlalchemy import and_
 
         async def stream_generator():
             queue = asyncio.Queue()
 
             class ResponseAdapter:
                 """桥接 Fastapi response.write() 模式到 async generator yield 模式"""
+
                 async def write(self, data):
                     await queue.put(data)
 
@@ -108,7 +84,7 @@ async def get_answer(
 
 @router.post("/get_dify_suggested", summary="获取Dify问题建议")
 async def dify_suggested(
-    body: DifyGetSuggestedRequest, user: dict = Depends(get_current_user)
+        body: DifyGetSuggestedRequest, user: dict = Depends(get_current_user)
 ):
     """根据聊天ID获取Dify推荐的问题建议"""
     result = await query_dify_suggested(body.chat_id)
@@ -117,9 +93,9 @@ async def dify_suggested(
 
 @router.post("/stop_chat", summary="停止聊天")
 async def stop_chat(
-    request: Request,
-    body: StopChatRequest,
-    user: dict = Depends(get_current_user),
+        request: Request,
+        body: StopChatRequest,
+        user: dict = Depends(get_current_user),
 ):
     """停止正在进行的聊天任务"""
     result = await stop_dify_chat(request, body.task_id, body.qa_type)

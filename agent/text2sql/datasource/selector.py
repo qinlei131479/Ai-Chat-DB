@@ -37,32 +37,12 @@ async def datasource_selector(state: AgentState) -> AgentState:
         logger.info(f"数据源已指定: {datasource_id}，检查用户权限")
         
         # 检查用户是否有该数据源的权限
-        from model.datasource_models import DatasourceAuth
-        from common.permission_util import is_admin
-        from sqlalchemy import and_
-        
         try:
             db_pool = get_db_pool()
             with db_pool.get_session() as session:
                 # 管理员跳过权限检查
-                if not is_admin(user_id):
-                    # 检查用户是否有该数据源的权限
-                    auth = session.query(DatasourceAuth).filter(
-                        and_(
-                            DatasourceAuth.datasource_id == datasource_id,
-                            DatasourceAuth.user_id == user_id,
-                            DatasourceAuth.enable == True
-                        )
-                    ).first()
-                    
-                    if not auth:
-                        # 无权限，设置错误消息并清空 datasource_id，让流程进入 error_handler
-                        error_msg = "您没有访问该数据源的权限，请联系管理员授权。"
-                        logger.warning(f"用户 {user_id} 尝试访问未授权的数据源 {datasource_id}")
-                        state["error_message"] = error_msg
-                        state["datasource_id"] = None  # 清空 datasource_id，让流程进入 error_handler
-                        return state
-                
+                # if not is_admin(user_id):
+
                 # 有权限，继续执行
                 logger.info(f"用户 {user_id} 有数据源 {datasource_id} 的访问权限")
                 return state

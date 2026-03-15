@@ -13,8 +13,7 @@ from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from common.permission_util import is_admin
-from model.datasource_models import (Datasource, DatasourceAuth,
-                                     DatasourceField, DatasourceTable)
+from model.datasource_models import (Datasource, DatasourceField, DatasourceTable)
 from model.db_connection_pool import get_db_pool
 from model.db_models import TAiModel
 
@@ -38,28 +37,6 @@ class DatasourceService:
         # 如果是管理员，返回所有数据源
         if user_id and is_admin(user_id):
             return query.order_by(Datasource.create_time.desc()).all()
-
-        # 普通用户：只返回被授权的数据源
-        if user_id:
-            # 查询用户被授权的数据源ID列表
-            auth_ds_ids = (
-                session.query(DatasourceAuth.datasource_id)
-                .filter(
-                    and_(
-                        DatasourceAuth.user_id == user_id,
-                        DatasourceAuth.enable == True
-                    )
-                )
-                .distinct()
-                .all()
-            )
-            auth_ds_ids = [ds_id[0] for ds_id in auth_ds_ids]
-
-            if auth_ds_ids:
-                query = query.filter(Datasource.id.in_(auth_ds_ids))
-            else:
-                # 如果用户没有任何授权，返回空列表
-                return []
 
         return query.order_by(Datasource.create_time.desc()).all()
 
@@ -112,7 +89,8 @@ class DatasourceService:
         return datasource
 
     @staticmethod
-    def _save_tables_and_fields(session: Session, datasource: Datasource, tables: List[Dict[str, Any]], is_select_all: bool = False):
+    def _save_tables_and_fields(session: Session, datasource: Datasource, tables: List[Dict[str, Any]],
+                                is_select_all: bool = False):
         """保存/同步表和字段信息，自动更新计数
 
         Args:
@@ -457,7 +435,8 @@ class DatasourceService:
                     except Exception as e:
                         logger.error(f"生成表 {table.table_name} 的 embedding 失败: {e}")
 
-                logger.info(f"✅ 批量表 embedding 计算并保存成功（成功: {success_count}/{len(tables_for_embedding)}，维度: 768）")
+                logger.info(
+                    f"✅ 批量表 embedding 计算并保存成功（成功: {success_count}/{len(tables_for_embedding)}，维度: 768）")
         except Exception as e:
             logger.error(f"批量计算表 embedding 失败: {e}", exc_info=True)
 
@@ -523,9 +502,11 @@ class DatasourceService:
             selected_table_count = len(tables)
 
             if is_select_all:
-                logger.info(f"全选模式：处理用户选择的 {selected_table_count} 张表（数据库中共 {total_db_table_count} 张表）")
+                logger.info(
+                    f"全选模式：处理用户选择的 {selected_table_count} 张表（数据库中共 {total_db_table_count} 张表）")
             else:
-                logger.info(f"部分选择模式：仅处理用户选择的 {selected_table_count} 张表（数据库中共 {total_db_table_count} 张表）")
+                logger.info(
+                    f"部分选择模式：仅处理用户选择的 {selected_table_count} 张表（数据库中共 {total_db_table_count} 张表）")
         except Exception as e:
             logger.warning(f"无法获取数据库总表数: {e}")
             logger.info(f"同步表：{'全选模式' if is_select_all else '部分选择模式'}，处理 {len(tables)} 张表")
@@ -686,7 +667,7 @@ class DatasourceService:
 
     @staticmethod
     def preview_table_data(
-        session: Session, ds_id: int, table: Dict[str, Any], fields: List[Dict[str, Any]]
+            session: Session, ds_id: int, table: Dict[str, Any], fields: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """预览表数据"""
         from common.datasource_util import (DatasourceConfigUtil,
@@ -851,13 +832,7 @@ class DatasourceService:
         Returns:
             List[int]: 已授权的用户ID列表
         """
-        auths = session.query(DatasourceAuth).filter(
-            and_(
-                DatasourceAuth.datasource_id == datasource_id,
-                DatasourceAuth.enable == True
-            )
-        ).all()
-        return [auth.user_id for auth in auths]
+        return []
 
     @staticmethod
     def authorize_datasource(session: Session, datasource_id: int, user_ids: List[int]) -> bool:
@@ -873,21 +848,7 @@ class DatasourceService:
             bool: 授权成功返回True
         """
         # 先删除该数据源的旧授权（如果存在）
-        session.query(DatasourceAuth).filter(
-            DatasourceAuth.datasource_id == datasource_id
-        ).delete(synchronize_session=False)
-
         # 添加新授权
-        for user_id in user_ids:
-            auth = DatasourceAuth(
-                datasource_id=datasource_id,
-                user_id=user_id,
-                enable=True,
-                create_time=datetime.now()
-            )
-            session.add(auth)
-
-        session.commit()
         return True
 
 
@@ -915,9 +876,9 @@ def sync_table_relation_to_neo4j(relation_data: List[Dict[str, Any]]):
     for node in nodes:
         node_id = str(node.get("id"))
         label = (
-            node.get("attrs", {}).get("label", {}).get("text")
-            or node.get("label")
-            or node.get("attrs", {}).get("text", {}).get("text")
+                node.get("attrs", {}).get("label", {}).get("text")
+                or node.get("label")
+                or node.get("attrs", {}).get("text", {}).get("text")
         )
         if not label:
             continue

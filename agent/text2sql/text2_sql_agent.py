@@ -46,7 +46,7 @@ class Text2SqlAgent:
         self.running_tasks = {}
         # 是否启用链路追踪
         self.ENABLE_TRACING = (
-            os.getenv("LANGFUSE_TRACING_ENABLED", "false").lower() == "true"
+                os.getenv("LANGFUSE_TRACING_ENABLED", "false").lower() == "true"
         )
         # 存储步骤开始时间（用于计算耗时）
         self.step_start_times = {}
@@ -54,13 +54,13 @@ class Text2SqlAgent:
         self.step_progress_ids = {}
 
     async def run_agent(
-        self,
-        query: str,
-        response=None,
-        chat_id: str = None,
-        uuid_str: str = None,
-        user_token=None,
-        datasource_id: int = None,
+            self,
+            query: str,
+            response=None,
+            chat_id: str = None,
+            uuid_str: str = None,
+            user_token=None,
+            datasource_id: int = None,
     ) -> None:
         """
         运行智能体
@@ -93,40 +93,12 @@ class Text2SqlAgent:
 
             # 检查数据源权限（如果指定了 datasource_id）
             # 权限检查结果会通过 datasource_selector 节点处理，统一通过 error_handler 节点流式输出
-            if datasource_id:
-                from sqlalchemy import and_
+            # if datasource_id:
+            #     from sqlalchemy import and_
+            #
+            #     from common.permission_util import is_admin
+            #     from model.db_connection_pool import get_db_pool
 
-                from common.permission_util import is_admin
-                from model.datasource_models import DatasourceAuth
-                from model.db_connection_pool import get_db_pool
-
-                db_pool = get_db_pool()
-                with db_pool.get_session() as session:
-                    # 管理员跳过权限检查
-                    if not is_admin(user_id):
-                        # 检查用户是否有该数据源的权限
-                        auth = (
-                            session.query(DatasourceAuth)
-                            .filter(
-                                and_(
-                                    DatasourceAuth.datasource_id == datasource_id,
-                                    DatasourceAuth.user_id == user_id,
-                                    DatasourceAuth.enable == True,
-                                )
-                            )
-                            .first()
-                        )
-
-                        if not auth:
-                            # 无权限，设置错误消息，让 error_handler 节点统一处理
-                            error_msg = "您没有访问该数据源的权限，请联系管理员授权。"
-                            logger.warning(
-                                f"用户 {user_id} 尝试访问未授权的数据源 {datasource_id}"
-                            )
-                            initial_state["error_message"] = error_msg
-                            initial_state["datasource_id"] = (
-                                None  # 清空 datasource_id，让流程进入 error_handler
-                            )
             graph: CompiledStateGraph = create_graph(datasource_id)
 
             # 标识对话状态
@@ -162,9 +134,9 @@ class Text2SqlAgent:
 
                 langfuse = get_client()
                 with langfuse.start_as_current_observation(
-                    input=query,
-                    as_type="agent",
-                    name="数据问答",
+                        input=query,
+                        as_type="agent",
+                        name="数据问答",
                 ) as rootspan:
                     # 使用之前获取的 user_id，避免重复调用
                     rootspan.update_trace(session_id=chat_id, user_id=user_id)
@@ -238,13 +210,13 @@ class Text2SqlAgent:
             await self._send_response(response, error_msg, "error")
 
     async def _process_chunk(
-        self,
-        chunk_dict,
-        response,
-        task_id,
-        current_step,
-        t02_answer_data,
-        t04_answer_data,
+            self,
+            chunk_dict,
+            response,
+            task_id,
+            current_step,
+            t02_answer_data,
+            t04_answer_data,
     ):
         """
         处理单个流式块数据
@@ -293,11 +265,11 @@ class Text2SqlAgent:
         return current_step, t02_answer_data
 
     async def _handle_step_change(
-        self,
-        response,
-        current_step: Optional[str],
-        new_step: str,
-        t02_answer_data: list,
+            self,
+            response,
+            current_step: Optional[str],
+            new_step: str,
+            t02_answer_data: list,
     ) -> tuple:
         """
         处理步骤变更
@@ -322,12 +294,12 @@ class Text2SqlAgent:
         return new_step, t02_answer_data
 
     async def _process_step_content(
-        self,
-        response,
-        step_name: str,
-        step_value: Dict[str, Any],
-        t02_answer_data: list,
-        t04_answer_data: Dict[str, Any],
+            self,
+            response,
+            step_name: str,
+            step_value: Dict[str, Any],
+            t02_answer_data: list,
+            t04_answer_data: Dict[str, Any],
     ) -> None:
         """
         处理各个步骤的内容
@@ -354,7 +326,7 @@ class Text2SqlAgent:
             "sql_generator": lambda: step_value["generated_sql"],
             # 权限过滤节点：输出注入权限后的 SQL，如果没有则回退到原始 SQL
             "permission_filter": lambda: step_value.get("filtered_sql")
-            or step_value.get("generated_sql", "No SQL query generated"),
+                                         or step_value.get("generated_sql", "No SQL query generated"),
             # SQL 执行节点：成功/失败分别返回不同信息，失败时截取一段错误详情
             "sql_executor": lambda: self._format_sql_execution_message(
                 step_value.get("execution_result")
@@ -397,8 +369,8 @@ class Text2SqlAgent:
 
             # 这里设置渲染数据
             if (
-                step_name == "data_render"
-                and data_type == DataTypeEnum.BUS_DATA.value[0]
+                    step_name == "data_render"
+                    and data_type == DataTypeEnum.BUS_DATA.value[0]
             ):
                 render_data = step_value.get("render_data", {})
                 t04_answer_data.clear()
@@ -434,16 +406,16 @@ class Text2SqlAgent:
             )
 
             if (
-                recommended_questions
-                and isinstance(recommended_questions, list)
-                and len(recommended_questions) > 0
+                    recommended_questions
+                    and isinstance(recommended_questions, list)
+                    and len(recommended_questions) > 0
             ):
                 # 获取已有的图表数据，如果没有则创建新的数据结构
                 if (
-                    t04_answer_data
-                    and "data" in t04_answer_data
-                    and isinstance(t04_answer_data["data"], dict)
-                    and t04_answer_data["data"]
+                        t04_answer_data
+                        and "data" in t04_answer_data
+                        and isinstance(t04_answer_data["data"], dict)
+                        and t04_answer_data["data"]
                 ):
                     # 将推荐问题添加到已有的图表数据中
                     t04_answer_data["data"][
@@ -482,11 +454,11 @@ class Text2SqlAgent:
                 )
 
     async def _process_unified_collector(
-        self,
-        response,
-        step_value: Dict[str, Any],
-        t02_answer_data: list,
-        t04_answer_data: Dict[str, Any],
+            self,
+            response,
+            step_value: Dict[str, Any],
+            t02_answer_data: list,
+            t04_answer_data: Dict[str, Any],
     ) -> None:
         """
         处理统一收集节点：按顺序推送 summarize → 图表数据 → 推荐问题
@@ -530,17 +502,17 @@ class Text2SqlAgent:
         # 3. 推送推荐问题（recommended_questions）
         recommended_questions = step_value.get("recommended_questions", [])
         if (
-            recommended_questions
-            and isinstance(recommended_questions, list)
-            and len(recommended_questions) > 0
+                recommended_questions
+                and isinstance(recommended_questions, list)
+                and len(recommended_questions) > 0
         ):
             logger.info(f"📤 推送推荐问题，数量: {len(recommended_questions)}")
 
             # 将推荐问题添加到已有的图表数据中
             if (
-                t04_answer_data
-                and "data" in t04_answer_data
-                and isinstance(t04_answer_data["data"], dict)
+                    t04_answer_data
+                    and "data" in t04_answer_data
+                    and isinstance(t04_answer_data["data"], dict)
             ):
                 t04_answer_data["data"]["recommended_questions"] = recommended_questions
                 payload = t04_answer_data["data"]
@@ -670,9 +642,9 @@ class Text2SqlAgent:
         """
         chart_config = step_value.get("chart_config") or {}
         chart_type = (
-            (chart_config.get("type") if isinstance(chart_config, dict) else None)
-            or step_value.get("chart_type")
-            or "table"
+                (chart_config.get("type") if isinstance(chart_config, dict) else None)
+                or step_value.get("chart_type")
+                or "table"
         )
         # 简单直观的提示语
         return f"图表类型：{chart_type}"
@@ -725,11 +697,11 @@ class Text2SqlAgent:
 
     @staticmethod
     async def _send_step_progress(
-        response,
-        step: str,
-        step_name: str,
-        status: str,
-        progress_id: str,
+            response,
+            step: str,
+            step_name: str,
+            status: str,
+            progress_id: str,
     ) -> None:
         """
         发送步骤进度信息
@@ -757,10 +729,10 @@ class Text2SqlAgent:
 
     @staticmethod
     async def _send_response(
-        response,
-        content: Union[str, Dict[str, Any]],
-        message_type: str = "continue",
-        data_type: str = DataTypeEnum.ANSWER.value[0],
+            response,
+            content: Union[str, Dict[str, Any]],
+            message_type: str = "continue",
+            data_type: str = DataTypeEnum.ANSWER.value[0],
     ) -> None:
         """
         发送响应数据
@@ -788,9 +760,9 @@ class Text2SqlAgent:
 
     @staticmethod
     def _create_response(
-        content: str,
-        message_type: str = "continue",
-        data_type: str = DataTypeEnum.ANSWER.value[0],
+            content: str,
+            message_type: str = "continue",
+            data_type: str = DataTypeEnum.ANSWER.value[0],
     ) -> str:
         """
         封装响应结构（保持向后兼容）
