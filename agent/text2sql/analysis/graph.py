@@ -3,8 +3,6 @@ import logging
 from langgraph.graph import StateGraph, END
 from langgraph.graph.state import CompiledStateGraph
 
-from agent.text2sql.analysis.data_render_antv import data_render_ant
-from agent.text2sql.analysis.llm_summarizer import summarize
 from agent.text2sql.analysis.parallel_collector import (
     parallel_collect_after_sql_executor,
 )
@@ -12,8 +10,6 @@ from agent.text2sql.analysis.early_recommender_helper import start_early_recomme
 from agent.text2sql.analysis.unified_collector import unified_collect
 from agent.text2sql.database.db_service import DatabaseService
 from agent.text2sql.sql.generator import sql_generate
-from agent.text2sql.permission.filter_injector import permission_filter_injector
-from agent.text2sql.chart.generator import chart_generator
 from agent.text2sql.datasource.selector import datasource_selector
 from agent.text2sql.state.agent_state import AgentState
 
@@ -72,7 +68,7 @@ def create_graph(datasource_id: int = None):
     # 优化：早期启动推荐问题生成（在后台并行执行）
     graph.add_node("early_recommender", start_early_recommender)
     graph.add_node("sql_generator", sql_generate)
-    graph.add_node("permission_filter", permission_filter_injector)
+    # graph.add_node("permission_filter", permission_filter_injector)
     graph.add_node("sql_executor", db_service.execute_sql)
     # 优化：并行执行 chart_generator 和 summarize（如果推荐问题已提前启动，则不包含）
     graph.add_node("parallel_collector", parallel_collect_after_sql_executor)
@@ -99,7 +95,7 @@ def create_graph(datasource_id: int = None):
     graph.add_edge("schema_inspector", "early_recommender")
     graph.add_edge("early_recommender", "sql_generator")
     graph.add_edge("sql_generator", "permission_filter")
-    graph.add_edge("permission_filter", "sql_executor")
+    # graph.add_edge("permission_filter", "sql_executor")
     # 优化：并行执行 chart_generator 和 summarize（推荐问题已在后台执行）
     graph.add_edge("sql_executor", "parallel_collector")
     # 统一收集：按顺序收集 summarize → 图表数据 → 推荐问题

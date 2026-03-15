@@ -13,7 +13,6 @@ from sqlalchemy.orm import Session
 
 from model.db_connection_pool import get_db_pool
 from model.db_models import TTerminology
-from model.datasource_models import Datasource
 from services.embedding_service import generate_embedding
 
 logger = logging.getLogger(__name__)

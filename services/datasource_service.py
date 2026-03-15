@@ -138,7 +138,7 @@ class DatasourceService:
             if not table:
                 table = DatasourceTable(
                     ds_id=datasource.id,
-                    checked=True,
+                    checked_flag=1,
                     table_name=table_name,
                     table_comment=table_comment,
                     custom_comment=table_comment,

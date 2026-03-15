@@ -7,17 +7,14 @@ import json
 import logging
 import traceback
 from datetime import datetime
-from typing import Dict, Any, Optional
 
 from langchain_core.messages import SystemMessage, HumanMessage
-from langchain_core.prompts import ChatPromptTemplate
 
 from agent.text2sql.state.agent_state import AgentState
 from agent.text2sql.template.prompt_builder import PromptBuilder
 from agent.text2sql.template.schema_formatter import format_schema_to_m_schema, get_database_engine_info
 from common.llm_util import get_llm
 from model.db_connection_pool import get_db_pool
-from model.datasource_models import Datasource
 from services.datasource_service import DatasourceService
 
 logger = logging.getLogger(__name__)

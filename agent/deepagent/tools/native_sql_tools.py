@@ -96,7 +96,7 @@ def _get_table_info_from_metadata() -> dict:
             # 获取该数据源下所有已勾选的表
             tables = session.query(DatasourceTable).filter(
                 DatasourceTable.ds_id == datasource_id,
-                DatasourceTable.checked == True
+                DatasourceTable.checked_flag == 1
             ).all()
             
             # 获取所有表的字段
@@ -104,7 +104,6 @@ def _get_table_info_from_metadata() -> dict:
             fields = session.query(DatasourceField).filter(
                 DatasourceField.ds_id == datasource_id,
                 DatasourceField.table_id.in_(table_ids),
-                DatasourceField.checked == True
             ).all()
             
             # 按表ID分组字段
@@ -481,7 +480,8 @@ def _get_table_relationships_from_datasource(table_names: Optional[list] = None)
         with db_pool.get_session() as session:
             # 获取数据源的表关系配置
             datasource = session.query(Datasource).filter(
-                Datasource.id == datasource_id
+                Datasource.id == datasource_id,
+                Datasource.del_flag == "0"
             ).first()
             
             if not datasource or not datasource.table_relation:

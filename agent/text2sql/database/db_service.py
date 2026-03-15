@@ -120,7 +120,7 @@ class DatabaseService:
         if datasource_id:
             try:
                 with db_pool.get_session() as session:
-                    ds = session.query(Datasource).filter(Datasource.id == datasource_id).first()
+                    ds = session.query(Datasource).filter(Datasource.id == datasource_id,Datasource.del_flag == "0").first()
                     if ds:
                         # 在 session 内提取并存储需要的属性
                         self._datasource_type = ds.type
@@ -398,8 +398,7 @@ class DatabaseService:
                         if not allowed_fields:
                             fields = session.query(DatasourceField).filter(
                                 DatasourceField.ds_id == self._datasource_id,
-                                DatasourceField.table_id == table.id,
-                                DatasourceField.checked == True
+                                DatasourceField.table_id == table.id
                             ).all()
                             allowed_fields = {field.field_name for field in fields}
 
@@ -477,7 +476,7 @@ class DatabaseService:
                 # 获取该数据源下所有已勾选的表
                 tables = session.query(DatasourceTable).filter(
                     DatasourceTable.ds_id == self._datasource_id,
-                    DatasourceTable.checked == True
+                    DatasourceTable.checked_flag == 1
                 ).all()
 
                 logger.info(f"🔍 从元数据加载 {len(tables)} 张表的 schema 信息（原生驱动模式）...")
@@ -487,7 +486,6 @@ class DatabaseService:
                 fields = session.query(DatasourceField).filter(
                     DatasourceField.ds_id == self._datasource_id,
                     DatasourceField.table_id.in_(table_ids),
-                    DatasourceField.checked == True
                 ).all()
 
                 # 按表ID分组字段
