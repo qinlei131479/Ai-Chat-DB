@@ -71,7 +71,6 @@ from controllers.file_chat_api import router as file_chat_router
 from controllers.user_rest_api import router as user_router
 from controllers.datasource_api import router as datasource_router
 from controllers.aimodel_api import router as aimodel_router
-from controllers.permission_api import router as permission_router
 from controllers.terminology_api import router as terminology_router
 from controllers.skill_api import router as skill_router
 from controllers.data_training_api import router as data_training_router
@@ -83,7 +82,6 @@ app.include_router(file_chat_router)
 app.include_router(user_router)
 app.include_router(datasource_router)
 app.include_router(aimodel_router)
-app.include_router(permission_router)
 app.include_router(terminology_router)
 app.include_router(skill_router)
 app.include_router(data_training_router)
