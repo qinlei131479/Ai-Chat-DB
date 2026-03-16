@@ -40,7 +40,7 @@ export async function fetch_datasource_table_list(dsId: number | string) {
 /**
  * 获取表字段列表
  */
-export async function fetch_datasource_field_list(tableId: number | string) {
+export async function fetch_datasource_field_list(tableId:  string) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
   const url = new URL(`${location.origin}/sanic/datasource/fieldList/${tableId}`)

@@ -9,7 +9,7 @@ const router = useRouter()
 const route = useRoute()
 const message = useMessage()
 
-const dsId = ref<number>(Number.parseInt(route.params.dsId as string))
+const dsId = ref<string>(route.params.dsId as string)
 const dsName = ref<string>(decodeURIComponent(route.params.dsName as string))
 
 const loading = ref(false)

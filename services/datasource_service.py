@@ -670,8 +670,7 @@ class DatasourceService:
             session: Session, ds_id: int, table: Dict[str, Any], fields: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """预览表数据"""
-        from common.datasource_util import (DatasourceConfigUtil,
-                                            DatasourceConnectionUtil)
+        from common.datasource_util import (DatasourceConnectionUtil)
 
         # 获取数据源
         datasource = session.query(Datasource).filter(Datasource.id == ds_id).first()
@@ -679,7 +678,6 @@ class DatasourceService:
             return {"data": [], "fields": []}
 
         # 解密配置
-        config = DatasourceConfigUtil.decrypt_config(datasource.configuration)
 
         # 获取表名
         raw_table_name = table.get("table_name")
@@ -690,8 +688,8 @@ class DatasourceService:
             return {"data": [], "fields": []}
 
         # 构建带 schema 的表标识
-        db_schema = config.get("dbSchema") or config.get("database") or ""
-        if datasource.type in ["pg", "oracle", "sqlServer"] and db_schema:
+        db_schema = datasource.instance or datasource.ds_name or ""
+        if datasource.ds_type in ["pg", "oracle", "sqlServer"] and db_schema:
             table_identifier = f"{db_schema}.{table_name}"
         else:
             table_identifier = table_name
@@ -705,7 +703,7 @@ class DatasourceService:
         # 构建 SQL（按不同数据库类型使用兼容的限制语法）
         fields_str = ", ".join(selected_fields) if selected_fields != ["*"] else "*"
 
-        ds_type = datasource.type
+        ds_type = datasource.ds_type
         if ds_type in ["mysql", "pg", "ck", "doris", "starrocks", "redshift", "kingbase"]:
             # MySQL / PostgreSQL / ClickHouse / Doris / StarRocks / Redshift / Kingbase 等支持 LIMIT 语法
             sql = f"SELECT {fields_str} FROM {table_identifier} LIMIT 100"
@@ -721,7 +719,15 @@ class DatasourceService:
 
         try:
             # 执行查询
-            result = DatasourceConnectionUtil.execute_query(datasource.type, config, sql)
+            config = {
+                "url": datasource.url,
+                "username": datasource.username,
+                "password": datasource.password,
+                "host": datasource.host,
+                "port": datasource.port,
+                "database": datasource.ds_name,
+            }
+            result = DatasourceConnectionUtil.execute_query(datasource.ds_type, config, sql)
 
             if not result:
                 return {"data": [], "fields": []}
@@ -819,37 +825,6 @@ class DatasourceService:
         except Exception as e:
             logger.error(f"获取 Neo4j 关系失败: {e}", exc_info=True)
             return []
-
-    @staticmethod
-    def get_authorized_users(session: Session, datasource_id: int) -> List[int]:
-        """
-        获取数据源已授权的用户ID列表
-
-        Args:
-            session: 数据库会话
-            datasource_id: 数据源ID
-
-        Returns:
-            List[int]: 已授权的用户ID列表
-        """
-        return []
-
-    @staticmethod
-    def authorize_datasource(session: Session, datasource_id: int, user_ids: List[int]) -> bool:
-        """
-        授权用户使用数据源
-
-        Args:
-            session: 数据库会话
-            datasource_id: 数据源ID
-            user_ids: 用户ID列表
-
-        Returns:
-            bool: 授权成功返回True
-        """
-        # 先删除该数据源的旧授权（如果存在）
-        # 添加新授权
-        return True
 
 
 def sync_table_relation_to_neo4j(relation_data: List[Dict[str, Any]]):

@@ -15,7 +15,6 @@ from model.db_connection_pool import get_db_pool
 from model.schemas import (
     CheckDatasourceRequest,
     CreateDatasourceRequest,
-    DatasourceAuthRequest,
     GetFieldsByConfRequest,
     GetTablesByConfRequest,
     PreviewDataRequest,
@@ -45,37 +44,17 @@ async def get_datasource_list(request: Request, user: dict = Depends(get_current
 
             result = []
             for ds in datasources:
-                configuration = ds.configuration
-                config_dict = {}
-                if configuration:
-                    try:
-                        import json
-                        from common.datasource_util import DatasourceConfigUtil
-
-                        config_dict = DatasourceConfigUtil.decrypt_config(configuration)
-                        configuration = json.dumps(config_dict)
-                    except Exception as e:
-                        logger.error(f"解密配置失败: {e}")
-                        try:
-                            import json
-                            json.loads(configuration)
-                        except Exception:
-                            try:
-                                import ast
-                                config_dict = ast.literal_eval(configuration)
-                            except Exception:
-                                pass
                 result.append(
                     {
-                        "id": ds.id,
+                        "id": str(ds.id),
                         "name": ds.name,
                         "description": ds.description,
-                        "type": ds.type,
-                        "type_name": ds.type_name,
+                        "type": ds.ds_type,
+                        # "type_name": ds.type_name,
                         "status": ds.status,
-                        "num": ds.num,
-                        "host": config_dict.get("host", ""),
-                        "database": config_dict.get("database", ""),
+                        "num": 0,
+                        "host": ds.host,
+                        "database": ds.ds_name,
                         "create_time": (
                             ds.create_time.isoformat() if ds.create_time else None
                         ),
@@ -92,7 +71,7 @@ async def get_datasource_list(request: Request, user: dict = Depends(get_current
 
 @router.post("/add", summary="创建数据源")
 async def create_datasource(
-    body: CreateDatasourceRequest, user: dict = Depends(get_admin_user)
+        body: CreateDatasourceRequest, user: dict = Depends(get_admin_user)
 ):
     """创建数据源（仅管理员）"""
     try:
@@ -119,7 +98,7 @@ async def create_datasource(
 
 @router.post("/update", summary="更新数据源")
 async def update_datasource(
-    body: UpdateDatasourceRequest, user: dict = Depends(get_admin_user)
+        body: UpdateDatasourceRequest, user: dict = Depends(get_admin_user)
 ):
     """更新数据源（仅管理员）"""
     try:
@@ -146,7 +125,7 @@ async def update_datasource(
 
 @router.post("/syncTables/{ds_id}", summary="同步数据源表和字段")
 async def sync_tables(
-    ds_id: int, body: SyncTablesRequest, user: dict = Depends(get_admin_user)
+        ds_id: int, body: SyncTablesRequest, user: dict = Depends(get_admin_user)
 ):
     """将前端选择的表列表写入并同步字段（仅管理员）"""
     try:
@@ -201,39 +180,16 @@ async def get_datasource(ds_id: int):
             if not datasource:
                 raise MyException(SysCodeEnum.DATA_NOT_FOUND, "数据源不存在")
 
-            configuration = datasource.configuration
-            if configuration:
-                try:
-                    import json
-                    from common.datasource_util import DatasourceConfigUtil
-
-                    config_dict = DatasourceConfigUtil.decrypt_config(configuration)
-                    configuration = json.dumps(config_dict)
-                except Exception as e:
-                    logger.error(f"解密配置失败: {e}")
-                    try:
-                        import json
-                        json.loads(configuration)
-                    except Exception:
-                        try:
-                            import ast
-                            config_dict = ast.literal_eval(configuration)
-                            if isinstance(config_dict, dict):
-                                configuration = json.dumps(config_dict)
-                        except Exception:
-                            pass
-
             return success_response(
                 {
-                    "id": datasource.id,
+                    "id": str(datasource.id),
                     "name": datasource.name,
                     "description": datasource.description,
-                    "type": datasource.type,
-                    "type_name": datasource.type_name,
-                    "configuration": configuration,
+                    "type": datasource.ds_type,
+                    "type_name": '',
                     "status": datasource.status,
-                    "num": datasource.num,
-                    "table_relation": datasource.table_relation,
+                    "num": 0,
+                    "table_relation": '',
                     "create_time": (
                         datasource.create_time.isoformat()
                         if datasource.create_time
@@ -324,12 +280,12 @@ async def get_table_list(ds_id: int):
             for table in tables:
                 result.append(
                     {
-                        "id": table.id,
-                        "ds_id": table.ds_id,
+                        "id": str(table.id),
+                        "ds_id": str(table.ds_id),
                         "table_name": table.table_name,
                         "table_comment": table.table_comment,
                         "custom_comment": table.custom_comment,
-                        "checked": table.checked,
+                        "checked": table.checked_flag == 1,
                     }
                 )
 
@@ -351,15 +307,15 @@ async def get_field_list(table_id: int):
             for field in fields:
                 result.append(
                     {
-                        "id": field.id,
-                        "ds_id": field.ds_id,
-                        "table_id": field.table_id,
+                        "id": str(field.id),
+                        "ds_id": str(field.ds_id),
+                        "table_id": str(field.table_id),
                         "field_name": field.field_name,
                         "field_type": field.field_type,
                         "field_comment": field.field_comment,
                         "custom_comment": field.custom_comment,
-                        "field_index": field.field_index,
-                        "checked": field.checked,
+                        "weight": field.weight,
+                        "checked": True,
                     }
                 )
 
@@ -482,58 +438,3 @@ async def get_neo4j_relation(ds_id: int):
     except Exception as e:
         logger.error(f"获取 Neo4j 关系失败: {e}", exc_info=True)
         raise MyException(SysCodeEnum.SYSTEM_ERROR, f"获取 Neo4j 关系失败: {str(e)}")
-
-
-@router.post("/getAuthorizedUsers/{datasource_id}", summary="获取已授权用户")
-async def get_authorized_users(
-    datasource_id: int, user: dict = Depends(get_admin_user)
-):
-    """获取数据源已授权的用户ID列表（仅管理员）"""
-    try:
-        db_pool = get_db_pool()
-        with db_pool.get_session() as session:
-            datasource = DatasourceService.get_datasource_by_id(session, datasource_id)
-            if not datasource:
-                raise MyException(SysCodeEnum.DATA_NOT_FOUND, "数据源不存在")
-
-            user_ids = DatasourceService.get_authorized_users(session, datasource_id)
-            return success_response(user_ids)
-    except MyException:
-        raise
-    except Exception as e:
-        logger.error(f"获取已授权用户失败: {e}", exc_info=True)
-        raise MyException(SysCodeEnum.SYSTEM_ERROR, f"获取已授权用户失败: {str(e)}")
-
-
-@router.post("/authorize", summary="数据源授权")
-async def authorize_datasource(
-    body: DatasourceAuthRequest, user: dict = Depends(get_admin_user)
-):
-    """授权用户使用数据源（仅管理员）"""
-    try:
-        datasource_id = body.datasource_id
-        user_ids = body.user_ids
-
-        if not datasource_id:
-            raise MyException(SysCodeEnum.PARAM_ERROR, "缺少数据源ID")
-        if user_ids is None:
-            raise MyException(SysCodeEnum.PARAM_ERROR, "缺少用户ID列表")
-
-        db_pool = get_db_pool()
-        with db_pool.get_session() as session:
-            datasource = DatasourceService.get_datasource_by_id(session, datasource_id)
-            if not datasource:
-                raise MyException(SysCodeEnum.DATA_NOT_FOUND, "数据源不存在")
-
-            success = DatasourceService.authorize_datasource(
-                session, datasource_id, user_ids
-            )
-            if not success:
-                raise MyException(SysCodeEnum.SYSTEM_ERROR, "授权失败")
-
-            return success_response({"message": "授权成功"})
-    except MyException:
-        raise
-    except Exception as e:
-        logger.error(f"数据源授权失败: {e}", exc_info=True)
-        raise MyException(SysCodeEnum.SYSTEM_ERROR, f"数据源授权失败: {str(e)}")

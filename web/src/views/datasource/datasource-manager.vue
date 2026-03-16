@@ -5,7 +5,6 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/business/userStore'
 import { delete_datasource, fetch_datasource_detail, fetch_datasource_list } from '@/api/datasource'
 import DatasourceForm from '@/components/datasource/datasource-form.vue'
-import DatasourceAuthModal from '@/components/datasource/datasource-auth-modal.vue'
 
 const dialog = useDialog()
 const router = useRouter()
@@ -15,9 +14,7 @@ const loading = ref(false)
 const datasourceList = ref<any[]>([])
 const keywords = ref('')
 const showForm = ref(false)
-const showAuthModal = ref(false)
 const currentDatasource = ref<any>(null)
-const currentAuthDatasource = ref<{ id: number; name: string } | null>(null)
 
 // 计算属性：是否为管理员
 const isAdmin = computed(() => userStore.isAdmin)
@@ -120,19 +117,6 @@ const handleFormSuccess = () => {
   fetchDatasourceList()
 }
 
-// 授权数据源
-const handleAuth = (item: any) => {
-  currentAuthDatasource.value = {
-    id: item.id,
-    name: item.name,
-  }
-  showAuthModal.value = true
-}
-
-// 授权成功回调
-const handleAuthSuccess = () => {
-  fetchDatasourceList()
-}
 
 // 跳转到数据表页面
 const handleViewTables = (item: any) => {
@@ -311,18 +295,6 @@ onMounted(() => {
                   <n-button
                     v-if="isAdmin"
                     text
-                    size="small"
-                    @click.stop="handleAuth(item)"
-                  >
-                    授权
-                  </n-button>
-                  <n-divider
-                    v-if="isAdmin"
-                    vertical
-                  />
-                  <n-button
-                    v-if="isAdmin"
-                    text
                     type="error"
                     size="small"
                     @click.stop="handleDelete(item)"
@@ -363,13 +335,6 @@ onMounted(() => {
       @success="handleFormSuccess"
     />
 
-    <!-- 数据源授权对话框 -->
-    <DatasourceAuthModal
-      v-model:show="showAuthModal"
-      :datasource-id="currentAuthDatasource?.id || null"
-      :datasource-name="currentAuthDatasource?.name"
-      @success="handleAuthSuccess"
-    />
   </div>
 </template>
 
