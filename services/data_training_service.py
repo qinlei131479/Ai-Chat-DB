@@ -8,7 +8,7 @@ from sqlalchemy import select, func, desc, or_, and_
 from common.exception import MyException
 from constants.code_enum import SysCodeEnum
 from model.db_connection_pool import get_db_pool
-from model.db_models import TDataTraining, TAiModel
+from model.db_models import SqlTrain, TAiModel
 from model.datasource_models import Datasource
 from model.schemas import DataTrainingItem, PaginatedResponse
 from services.embedding_service import generate_embedding
@@ -22,14 +22,14 @@ async def page_data_training(page: int, size: int, question: Optional[str] = Non
         # Build query
         query = (
             session.query(
-                TDataTraining,
+                SqlTrain,
                 Datasource.name.label("datasource_name")
             )
-            .outerjoin(Datasource, TDataTraining.ds_id == Datasource.id)
+            .outerjoin(Datasource, SqlTrain.ds_id == Datasource.id)
         )
 
         if question:
-            query = query.filter(TDataTraining.question.ilike(f"%{question}%"))
+            query = query.filter(SqlTrain.question.ilike(f"%{question}%"))
 
         # Count total
         total_count = query.count()
@@ -37,7 +37,7 @@ async def page_data_training(page: int, size: int, question: Optional[str] = Non
 
         # Pagination
         offset = (page - 1) * size
-        results = query.order_by(desc(TDataTraining.create_time)).offset(offset).limit(size).all()
+        results = query.order_by(desc(SqlTrain.create_time)).offset(offset).limit(size).all()
 
         # Serialize
         items = []
@@ -72,17 +72,17 @@ async def create_training(data: Dict[str, Any]) -> bool:
 
     with pool.get_session() as session:
         # Check duplicates
-        query = session.query(TDataTraining).filter(TDataTraining.question == question)
+        query = session.query(SqlTrain).filter(SqlTrain.question == question)
 
         if datasource and advanced_application:
-            query = query.filter(TDataTraining.ds_id == datasource)
+            query = query.filter(SqlTrain.ds_id == datasource)
         elif datasource:
-            query = query.filter(TDataTraining.ds_id == datasource)
+            query = query.filter(SqlTrain.ds_id == datasource)
 
         if query.count() > 0:
             raise MyException(SysCodeEnum.PARAM_ERROR, "Training data already exists")
 
-        new_training = TDataTraining(
+        new_training = SqlTrain(
             ds_id=datasource,
             question=question,
             description=description,
@@ -101,7 +101,7 @@ async def update_training(data: Dict[str, Any]) -> bool:
 
     with pool.get_session() as session:
         training_id = data.get("id")
-        training = session.query(TDataTraining).filter(TDataTraining.id == training_id).first()
+        training = session.query(SqlTrain).filter(SqlTrain.id == training_id).first()
         if not training:
             raise MyException(SysCodeEnum.PARAM_ERROR, "Training data not found")
 
@@ -115,7 +115,7 @@ async def update_training(data: Dict[str, Any]) -> bool:
     current_question = None
 
     with pool.get_session() as session:
-        training = session.query(TDataTraining).filter(TDataTraining.id == training_id).first()
+        training = session.query(SqlTrain).filter(SqlTrain.id == training_id).first()
         if not training:
             raise MyException(SysCodeEnum.PARAM_ERROR, "Training data not found")
         current_question = training.question
@@ -126,7 +126,7 @@ async def update_training(data: Dict[str, Any]) -> bool:
         embedding = await generate_embedding(question)
 
     with pool.get_session() as session:
-        training = session.query(TDataTraining).filter(TDataTraining.id == training_id).first()
+        training = session.query(SqlTrain).filter(SqlTrain.id == training_id).first()
         if training:
             if question:
                 training.question = question
@@ -145,14 +145,14 @@ async def update_training(data: Dict[str, Any]) -> bool:
 
 async def delete_training(ids: List[int]) -> bool:
     with pool.get_session() as session:
-        session.query(TDataTraining).filter(TDataTraining.id.in_(ids)).delete(synchronize_session=False)
+        session.query(SqlTrain).filter(SqlTrain.id.in_(ids)).delete(synchronize_session=False)
         session.commit()
         return True
 
 
 async def enable_training(training_id: int, enabled: bool) -> bool:
     with pool.get_session() as session:
-        training = session.query(TDataTraining).filter(TDataTraining.id == training_id).first()
+        training = session.query(SqlTrain).filter(SqlTrain.id == training_id).first()
         if not training:
             raise MyException(SysCodeEnum.PARAM_ERROR, "Training data not found")
 

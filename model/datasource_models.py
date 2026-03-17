@@ -50,7 +50,7 @@ class DatasourceTable(Base):
     update_time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, nullable=True, comment="更新时间")
 
 
-class DatasourceField(Base):
+class DatasourceTableField(Base):
     """数据源字段信息"""
     __tablename__ = "datasource_table_field"
     __table_args__ = {"comment": "数据源字段信息"}

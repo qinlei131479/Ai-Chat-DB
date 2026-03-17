@@ -12,7 +12,7 @@ from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from common.permission_util import is_admin
-from model.datasource_models import (Datasource, DatasourceField, DatasourceTable)
+from model.datasource_models import (Datasource, DatasourceTableField, DatasourceTable)
 from model.db_connection_pool import get_db_pool
 from model.db_models import TAiModel
 
@@ -182,8 +182,8 @@ class DatasourceService:
                 weight = field.get("fieldIndex") or 0
 
                 record = (
-                    session.query(DatasourceField)
-                    .filter(and_(DatasourceField.table_id == table.id, DatasourceField.field_name == field_name))
+                    session.query(DatasourceTableField)
+                    .filter(and_(DatasourceTableField.table_id == table.id, DatasourceTableField.field_name == field_name))
                     .first()
                 )
 
@@ -194,7 +194,7 @@ class DatasourceService:
                     if record.custom_comment is None:
                         record.custom_comment = field_comment
                 else:
-                    record = DatasourceField(
+                    record = DatasourceTableField(
                         ds_id=datasource.id,
                         table_id=table.id,
                         field_name=field_name,
@@ -213,8 +213,8 @@ class DatasourceService:
 
             # 删除未包含的字段
             if keep_field_ids:
-                session.query(DatasourceField).filter(
-                    and_(DatasourceField.table_id == table.id, DatasourceField.id.not_in(keep_field_ids))
+                session.query(DatasourceTableField).filter(
+                    and_(DatasourceTableField.table_id == table.id, DatasourceTableField.id.not_in(keep_field_ids))
                 ).delete(synchronize_session=False)
 
             # 收集用于 embedding 的字段精简信息，避免在批量计算时再次查询
@@ -233,8 +233,8 @@ class DatasourceService:
             session.query(DatasourceTable).filter(
                 and_(DatasourceTable.ds_id == datasource.id, DatasourceTable.id.not_in(keep_table_ids))
             ).delete(synchronize_session=False)
-            session.query(DatasourceField).filter(
-                and_(DatasourceField.ds_id == datasource.id, DatasourceField.table_id.not_in(keep_table_ids))
+            session.query(DatasourceTableField).filter(
+                and_(DatasourceTableField.ds_id == datasource.id, DatasourceTableField.table_id.not_in(keep_table_ids))
             ).delete(synchronize_session=False)
 
         session.add(datasource)
@@ -550,7 +550,7 @@ class DatasourceService:
             return False
 
         # 删除关联的表和字段
-        session.query(DatasourceField).filter(DatasourceField.ds_id == ds_id).delete()
+        session.query(DatasourceTableField).filter(DatasourceTableField.ds_id == ds_id).delete()
         session.query(DatasourceTable).filter(DatasourceTable.ds_id == ds_id).delete()
         session.delete(datasource)
         session.commit()
@@ -603,9 +603,9 @@ class DatasourceService:
         return session.query(DatasourceTable).filter(DatasourceTable.ds_id == ds_id).all()
 
     @staticmethod
-    def get_fields_by_table_id(session: Session, table_id: int) -> List[DatasourceField]:
+    def get_fields_by_table_id(session: Session, table_id: int) -> List[DatasourceTableField]:
         """获取表的所有字段"""
-        return session.query(DatasourceField).filter(DatasourceField.table_id == table_id).all()
+        return session.query(DatasourceTableField).filter(DatasourceTableField.table_id == table_id).all()
 
     @staticmethod
     def save_table(session: Session, data: Dict[str, Any]) -> bool:
@@ -625,7 +625,7 @@ class DatasourceService:
 
         # 如果表注释或字段信息发生变化，重新计算 embedding
         # 获取该表的所有字段
-        fields = session.query(DatasourceField).filter(DatasourceField.table_id == table_id).all()
+        fields = session.query(DatasourceTableField).filter(DatasourceTableField.table_id == table_id).all()
         fields_data = [
             {
                 "fieldName": field.field_name,
@@ -650,7 +650,7 @@ class DatasourceService:
         if not field_id:
             return False
 
-        field = session.query(DatasourceField).filter(DatasourceField.id == field_id).first()
+        field = session.query(DatasourceTableField).filter(DatasourceTableField.id == field_id).first()
         if not field:
             return False
 
@@ -661,7 +661,7 @@ class DatasourceService:
         table = session.query(DatasourceTable).filter(DatasourceTable.id == field.table_id).first()
         if table:
             # 获取该表的所有字段
-            fields = session.query(DatasourceField).filter(DatasourceField.table_id == field.table_id).all()
+            fields = session.query(DatasourceTableField).filter(DatasourceTableField.table_id == field.table_id).all()
             fields_data = [
                 {
                     "fieldName": f.field_name,

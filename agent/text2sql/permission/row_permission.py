@@ -7,7 +7,7 @@
 # from typing import Dict, List, Optional, Any
 # from sqlalchemy.orm import Session
 #
-# from model.datasource_models import DatasourceField, Datasource
+# from model.datasource_models import DatasourceTableField, Datasource
 #
 # logger = logging.getLogger(__name__)
 #
@@ -91,7 +91,7 @@
 #
 #     # 获取字段信息
 #     field_id = int(item["field_id"])
-#     field = session.query(DatasourceField).filter(DatasourceField.id == field_id).first()
+#     field = session.query(DatasourceTableField).filter(DatasourceTableField.id == field_id).first()
 #
 #     if not field:
 #         logger.warning(f"字段不存在: field_id={field_id}")
@@ -259,7 +259,7 @@
 #
 #         # 获取字段信息
 #         try:
-#             field = session.query(DatasourceField).filter(DatasourceField.id == int(field_id)).first()
+#             field = session.query(DatasourceTableField).filter(DatasourceTableField.id == int(field_id)).first()
 #             if not field:
 #                 continue
 #

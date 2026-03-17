@@ -13,7 +13,7 @@ from constants.code_enum import SysCodeEnum
 from common.llm_util import get_llm
 from model import Datasource
 from model.db_connection_pool import get_db_pool
-from model.db_models import TTerminology, TAiModel
+from model.db_models import Terminology, TAiModel
 from model.serializers import model_to_dict
 from model.schemas import PaginatedResponse
 from services.embedding_service import get_default_embedding_model
@@ -30,32 +30,32 @@ async def query_terminology_list(page: int, size: int, word: Optional[str] = Non
     分页查询术语
     """
     with pool.get_session() as session:
-        query = session.query(TTerminology)
+        query = session.query(Terminology)
 
         # 筛选条件
-        filters = [TTerminology.parent_id == 0]  # 只查询父节点
+        filters = [Terminology.parent_id == 0]  # 只查询父节点
 
         if word:
             # 搜索：匹配父节点名称或子节点(同义词)名称
             # 先找到匹配的ID
-            matched_ids_query = session.query(TTerminology.id).filter(TTerminology.word.ilike(f"%{word}%"))
+            matched_ids_query = session.query(Terminology.id).filter(Terminology.word.ilike(f"%{word}%"))
             matched_ids = [row[0] for row in matched_ids_query.all()]
 
             if matched_ids:
                 # 查找这些ID及其父ID
-                parent_ids_query = session.query(TTerminology.parent_id).filter(TTerminology.id.in_(matched_ids),
-                                                                                TTerminology.parent_id.isnot(None))
+                parent_ids_query = session.query(Terminology.parent_id).filter(Terminology.id.in_(matched_ids),
+                                                                                Terminology.parent_id.isnot(None))
                 parent_ids = [row[0] for row in parent_ids_query.all()]
 
                 # 合并ID：直接匹配的ID（如果是父节点） + 子节点对应的父ID
                 all_candidate_ids = set(matched_ids) | set(parent_ids)
-                filters.append(TTerminology.id.in_(all_candidate_ids))
+                filters.append(Terminology.id.in_(all_candidate_ids))
             else:
                 return PaginatedResponse(records=[], current_page=page, total_count=0, total_pages=0)
 
         if dslist:
             # 数据源筛选
-            ds_conditions = [TTerminology.specific_ds == False]
+            ds_conditions = [Terminology.specific_ds == False]
 
             ds_str_list = [str(d) for d in dslist]
             ds_vals = ", ".join([f"'{d}'" for d in ds_str_list])
@@ -74,7 +74,7 @@ async def query_terminology_list(page: int, size: int, word: Optional[str] = Non
         total_count = query.count()
         total_pages = (total_count + size - 1) // size
 
-        records = query.order_by(desc(TTerminology.create_time)).offset((page - 1) * size).limit(size).all()
+        records = query.order_by(desc(Terminology.create_time)).offset((page - 1) * size).limit(size).all()
 
         result_list = []
         for record in records:
@@ -85,7 +85,7 @@ async def query_terminology_list(page: int, size: int, word: Optional[str] = Non
                 del item['embedding']
 
             # 查询子节点（同义词）
-            children = session.query(TTerminology).filter(TTerminology.parent_id == record.id).all()
+            children = session.query(Terminology).filter(Terminology.parent_id == record.id).all()
             item['other_words'] = [c.word for c in children]
 
             # 解析 datasource_ids 获取名称
@@ -117,12 +117,12 @@ async def create_terminology(word: str, description: str, other_words: List[str]
         # 检查重复
         all_words = [word] + other_words
         # 检查数据库中是否已存在这些词（作为父节点或子节点）
-        existing = session.query(TTerminology).filter(TTerminology.word.in_(all_words)).first()
+        existing = session.query(Terminology).filter(Terminology.word.in_(all_words)).first()
         if existing:
             raise MyException(SysCodeEnum.PARAM_ERROR, f"术语或同义词 '{existing.word}' 已存在")
 
         # 创建父节点
-        parent = TTerminology(
+        parent = Terminology(
             parent_id=0,
             word=word,
             description=description,
@@ -139,7 +139,7 @@ async def create_terminology(word: str, description: str, other_words: List[str]
         for ow in other_words:
             if not ow.strip():
                 continue
-            child = TTerminology(
+            child = Terminology(
                 parent_id=parent.id,
                 word=ow,
                 specific_ds=specific_ds,
@@ -166,16 +166,16 @@ async def create_terminology(word: str, description: str, other_words: List[str]
 async def update_terminology(id: int, word: str, description: str, other_words: List[str], specific_ds: int,
                              datasource_ids: List[str]):
     with pool.get_session() as session:
-        parent = session.query(TTerminology).filter(TTerminology.id == id).first()
+        parent = session.query(Terminology).filter(Terminology.id == id).first()
         if not parent:
             raise MyException(SysCodeEnum.PARAM_ERROR, "术语不存在")
 
         # 检查重复 (排除自己和自己的子节点)
         all_words = [word] + other_words
-        existing = session.query(TTerminology).filter(
-            TTerminology.word.in_(all_words),
-            TTerminology.id != id,
-            or_(TTerminology.parent_id != id, TTerminology.parent_id.is_(None))
+        existing = session.query(Terminology).filter(
+            Terminology.word.in_(all_words),
+            Terminology.id != id,
+            or_(Terminology.parent_id != id, Terminology.parent_id.is_(None))
         ).first()
 
         if existing:
@@ -189,13 +189,13 @@ async def update_terminology(id: int, word: str, description: str, other_words: 
         parent.update_time = datetime.now()
 
         # 删除旧子节点
-        session.query(TTerminology).filter(TTerminology.parent_id == id).delete()
+        session.query(Terminology).filter(Terminology.parent_id == id).delete()
 
         # 添加新子节点
         for ow in other_words:
             if not ow.strip():
                 continue
-            child = TTerminology(
+            child = Terminology(
                 parent_id=parent.id,
                 word=ow,
                 specific_ds=specific_ds,
@@ -222,7 +222,7 @@ async def update_terminology(id: int, word: str, description: str, other_words: 
 async def delete_terminology(ids: List[int]):
     with pool.get_session() as session:
         # 删除父节点和子节点
-        session.query(TTerminology).filter(or_(TTerminology.id.in_(ids), TTerminology.parent_id.in_(ids))).delete(
+        session.query(Terminology).filter(or_(Terminology.id.in_(ids), Terminology.parent_id.in_(ids))).delete(
             synchronize_session=False)
         session.commit()
         return True
@@ -232,15 +232,15 @@ async def enable_terminology(id: int, enabled: bool):
     with pool.get_session() as session:
         # 更新父节点和子节点
         enabled_flag = 1 if enabled else 0
-        session.query(TTerminology).filter(or_(TTerminology.id == id, TTerminology.parent_id == id)).update(
-            {TTerminology.enabled_flag: enabled_flag}, synchronize_session=False)
+        session.query(Terminology).filter(or_(Terminology.id == id, Terminology.parent_id == id)).update(
+            {Terminology.enabled_flag: enabled_flag}, synchronize_session=False)
         session.commit()
         return True
 
 
 async def get_terminology_detail(id: int):
     with pool.get_session() as session:
-        record = session.query(TTerminology).filter(TTerminology.id == id).first()
+        record = session.query(Terminology).filter(Terminology.id == id).first()
         if not record:
             return None
 
@@ -251,7 +251,7 @@ async def get_terminology_detail(id: int):
             del item['embedding']
 
         # 查询子节点
-        children = session.query(TTerminology).filter(TTerminology.parent_id == record.id).all()
+        children = session.query(Terminology).filter(Terminology.parent_id == record.id).all()
         item['other_words'] = [c.word for c in children]
 
         # 解析 datasource_ids
@@ -328,8 +328,8 @@ def _save_terminology_embeddings_sync(ids: List[int]):
         with pool.get_session() as session:
             # 查询术语及其子节点（所有需要计算 embedding 的术语）
             # 使用 or_(id.in_(ids), pid.in_(ids)) 查询父节点和所有子节点
-            terminology_list = session.query(TTerminology).filter(
-                or_(TTerminology.id.in_(ids), TTerminology.parent_id.in_(ids))
+            terminology_list = session.query(Terminology).filter(
+                or_(Terminology.id.in_(ids), Terminology.parent_id.in_(ids))
             ).all()
 
             if not terminology_list:
@@ -416,8 +416,8 @@ def _save_terminology_embeddings_sync(ids: List[int]):
                 if index < len(embeddings) and embeddings[index] is not None:
                     term = terminology_list[index]
                     try:
-                        stmt = update(TTerminology).where(
-                            TTerminology.id == term.id
+                        stmt = update(Terminology).where(
+                            Terminology.id == term.id
                         ).values(embedding=embeddings[index])
                         session.execute(stmt)
                         session.commit()  # 每个更新单独 commit

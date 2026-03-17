@@ -21,7 +21,7 @@ sqlacodegen postgresql+psycopg2://postgres:postgres@127.0.0.1:5432/chat_db --out
 """
 
 
-class TUser(Base):
+class User(Base):
     __tablename__ = "user"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -33,7 +33,7 @@ class TUser(Base):
     updateTime: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP, comment="修改时间")
 
 
-class TUserQaRecord(Base):
+class UserQaRecord(Base):
     __tablename__ = "user_qa_record"
     __table_args__ = {"comment": "问答记录表"}
 
@@ -78,7 +78,7 @@ class TAiModel(Base):
     create_time: Mapped[int] = mapped_column(BigInteger, default=0, comment="创建时间")
 
 
-class TTerminology(Base):
+class Terminology(Base):
     __tablename__ = "terminology"
     __table_args__ = {"comment": "术语配置表"}
 
@@ -104,7 +104,7 @@ class TTerminology(Base):
     )
 
 
-class TDataTraining(Base):
+class SqlTrain(Base):
     __tablename__ = "sql_train"
     __table_args__ = {"comment": "SQL数据训练表"}
 

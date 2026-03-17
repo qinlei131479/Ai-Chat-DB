@@ -15,7 +15,7 @@ from common.exception import MyException
 from constants.code_enum import SysCodeEnum, IntentEnum, DataTypeEnum
 from constants.dify_rest_api import DiFyRestApi
 from model.db_connection_pool import get_db_pool
-from model.db_models import TUserQaRecord, TUser
+from model.db_models import UserQaRecord, User
 from model.serializers import model_to_dict
 from model.schemas import PaginatedResponse
 
@@ -87,7 +87,7 @@ async def authenticate_user(username, password):
     """验证用户凭据并返回用户信息或 None"""
     with pool.get_session() as session:
         session: Session = session
-        user = session.query(TUser).filter(TUser.userName == username).first()
+        user = session.query(User).filter(User.userName == username).first()
         if user and user.password:
             # 1. 优先尝试使用固定盐值验证
             try:
@@ -481,9 +481,9 @@ def query_user_qa_record(chat_id):
     with pool.get_session() as session:
         session: Session = session
         records = (
-            session.query(TUserQaRecord)
-            .filter(TUserQaRecord.chat_id == chat_id)
-            .order_by(TUserQaRecord.id.desc())
+            session.query(UserQaRecord)
+            .filter(UserQaRecord.chat_id == chat_id)
+            .order_by(UserQaRecord.id.desc())
             .all()
         )
         return model_to_dict(records)
@@ -502,10 +502,10 @@ async def get_record_sql(record_id: int, user_id: int) -> dict:
         with pool.get_session() as session:
             session: Session = session
             record = (
-                session.query(TUserQaRecord)
+                session.query(UserQaRecord)
                 .filter(
-                    TUserQaRecord.id == record_id,
-                    TUserQaRecord.user_id == user_id
+                    UserQaRecord.id == record_id,
+                    UserQaRecord.user_id == user_id
                 )
                 .first()
             )
@@ -552,14 +552,14 @@ async def query_user_list(page, size, name=None):
     :return:
     """
     with pool.get_session() as session:
-        query = session.query(TUser)
+        query = session.query(User)
         if name:
-            query = query.filter(TUser.userName.like(f"%{name}%"))
+            query = query.filter(User.userName.like(f"%{name}%"))
 
         total_count = query.count()
         total_pages = (total_count + size - 1) // size
 
-        users = query.order_by(TUser.createTime.desc()).offset((page - 1) * size).limit(size).all()
+        users = query.order_by(User.createTime.desc()).offset((page - 1) * size).limit(size).all()
 
         user_list = []
         for user in users:
@@ -588,13 +588,13 @@ async def add_user(username, password, mobile, role="user"):
     :return:
     """
     with pool.get_session() as session:
-        exist = session.query(TUser).filter(TUser.userName == username).first()
+        exist = session.query(User).filter(User.userName == username).first()
         if exist:
             raise MyException(SysCodeEnum.PARAM_ERROR, "用户名已存在")
 
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), PASSWORD_SALT).decode('utf-8')
 
-        new_user = TUser(
+        new_user = User(
             userName=username,
             password=hashed_password,
             mobile=mobile,
@@ -616,11 +616,11 @@ async def init_super_admin():
         with pool.get_session() as session:
             # 检查是否存在 admin 角色或名为 admin 的用户
             # 这里简单检查用户名
-            exist = session.query(TUser).filter(TUser.userName == admin_name).first()
+            exist = session.query(User).filter(User.userName == admin_name).first()
             if not exist:
                 print(f"Initializing super admin: {admin_name}")
                 hashed_password = bcrypt.hashpw(admin_pass.encode('utf-8'), PASSWORD_SALT).decode('utf-8')
-                admin_user = TUser(
+                admin_user = User(
                     userName=admin_name,
                     password=hashed_password,
                     mobile="",
@@ -654,12 +654,12 @@ async def update_user(user_id, username, mobile, password=None):
     :return:
     """
     with pool.get_session() as session:
-        user = session.query(TUser).filter(TUser.id == user_id).first()
+        user = session.query(User).filter(User.id == user_id).first()
         if not user:
             raise MyException(SysCodeEnum.PARAM_ERROR, "用户不存在")
 
         if user.userName != username:
-            exist = session.query(TUser).filter(TUser.userName == username).first()
+            exist = session.query(User).filter(User.userName == username).first()
             if exist:
                 raise MyException(SysCodeEnum.PARAM_ERROR, "用户名已存在")
 
@@ -679,7 +679,7 @@ async def delete_user(user_id):
     :return:
     """
     with pool.get_session() as session:
-        user = session.query(TUser).filter(TUser.id == user_id).first()
+        user = session.query(User).filter(User.id == user_id).first()
         if not user:
             raise MyException(SysCodeEnum.PARAM_ERROR, "用户不存在")
         session.delete(user)

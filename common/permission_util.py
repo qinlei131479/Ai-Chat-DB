@@ -8,7 +8,7 @@ from common.exception import MyException
 from common.token_decorator import get_current_user
 from constants.code_enum import SysCodeEnum
 from model.db_connection_pool import get_db_pool
-from model.db_models import TUser
+from model.db_models import User
 
 
 def is_admin(user_id: int) -> bool:
@@ -21,7 +21,7 @@ def is_admin(user_id: int) -> bool:
     try:
         db_pool = get_db_pool()
         with db_pool.get_session() as session:
-            user = session.query(TUser).filter(TUser.id == user_id).first()
+            user = session.query(User).filter(User.id == user_id).first()
             if user and user.role == "admin":
                 return True
             return False
