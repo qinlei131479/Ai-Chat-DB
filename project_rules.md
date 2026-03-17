@@ -460,15 +460,14 @@ npm run dev
 
 ### 7.1 核心表
 
-| 表名 | 说明 |
-|------|------|
-| `t_user` | 用户表 |
-| `t_user_qa_record` | 问答记录表 |
-| `t_ai_model` | AI 模型配置表 |
-| `t_datasource` | 数据源表 |
-| `t_ds_permission` | 数据权限表 |
-| `t_terminology` | 术语配置表（含向量） |
-| `t_data_training` | 数据训练表（含向量） |
+| 表名            | 说明 |
+|---------------|------|
+| `user`        | 用户表 |
+| `user_qa_record` | 问答记录表 |
+| `t_ai_model`  | AI 模型配置表 |
+| `datasource`  | 数据源表 |
+| `terminology` | 术语配置表（含向量） |
+| `sql_train`   | 数据训练表（含向量） |
 
 ---
 

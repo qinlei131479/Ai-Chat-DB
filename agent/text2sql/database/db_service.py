@@ -302,7 +302,7 @@ class DatabaseService:
 
     def _get_table_comment_from_metadata(self, table_name: str) -> str:
         """
-        从 t_datasource_table 元数据表获取表注释。
+        从 datasource_table 元数据表获取表注释。
         用于原生驱动的数据库（如 Doris、StarRocks 等），这些数据库无法通过 SQLAlchemy inspector 获取注释。
 
         Args:
@@ -375,7 +375,7 @@ class DatabaseService:
             use_native_driver = db_enum.connect_type == ConnectType.py_driver
 
         if use_native_driver and self._datasource_id:
-            # 对于原生驱动的数据库（如 Doris、StarRocks 等），从 t_datasource_table 获取表结构
+            # 对于原生驱动的数据库（如 Doris、StarRocks 等），从 datasource_table 获取表结构
             return self._fetch_table_info_from_metadata(user_id, use_cache, start_time)
 
         inspector = inspect(self._engine)
@@ -455,7 +455,7 @@ class DatabaseService:
 
     def _fetch_table_info_from_metadata(self, user_id: Optional[int], use_cache: bool, start_time: float) -> Dict[str, Dict]:
         """
-        从 t_datasource_table 和 t_datasource_field 获取表结构信息。
+        从 datasource_table 和 datasource_field 获取表结构信息。
         用于原生驱动的数据库（如 Doris、StarRocks 等），这些数据库不能通过 SQLAlchemy inspect 获取表结构。
 
         Args:
@@ -532,7 +532,7 @@ class DatabaseService:
     def _get_precomputed_embeddings(self, table_info: Dict[str, Dict]) -> Tuple[Optional[np.ndarray], List[str], List[str]]:
         """
         尝试从数据库获取预计算的 embedding。
-        仅从 t_datasource_table.embedding 字段读取，不做任何实时计算。
+        仅从 datasource_table.embedding 字段读取，不做任何实时计算。
 
         Returns:
             (预计算的 embedding 数组, 有预计算 embedding 的表名列表, 需要计算的表名列表)

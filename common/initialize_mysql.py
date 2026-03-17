@@ -70,7 +70,7 @@ def execute_user_qa_record_sql():
     """
 
     sql_insert_data = """
-    INSERT INTO chat_db.t_user_qa_record (user_id,uuid,conversation_id,message_id,task_id,chat_id,question,to2_answer,
+    INSERT INTO chat_db.user_qa_record (user_id,uuid,conversation_id,message_id,task_id,chat_id,question,to2_answer,
     to4_answer,qa_type,file_key,create_time) VALUES(%s, %s, %s,%s, %s, %s, %s, %s, %s, %s,%s,%s)
     """
     # 紧凑格式数据，去掉换行

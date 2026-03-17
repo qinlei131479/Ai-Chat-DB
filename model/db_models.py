@@ -103,12 +103,12 @@ class TTerminology(Base):
         TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"), comment="更新时间"
     )
 
+
 class TDataTraining(Base):
     __tablename__ = "sql_train"
     __table_args__ = {"comment": "SQL数据训练表"}
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    # oid: Mapped[Optional[int]] = mapped_column(BigInteger, default=1, comment="组织ID")
     ds_id: Mapped[Optional[int]] = mapped_column(BigInteger, comment="数据源ID")
     question: Mapped[Optional[str]] = mapped_column(String(255), comment="问题描述")
     description: Mapped[Optional[str]] = mapped_column(Text, comment="示例SQL")
@@ -119,7 +119,6 @@ class TDataTraining(Base):
         VECTOR, nullable=True, comment="向量数据（pgvector VECTOR 类型，支持动态维度）"
     )
     enabled_flag: Mapped[Optional[int]] = mapped_column(Integer, default=1, comment="是否启用")
-    # advanced_application: Mapped[Optional[int]] = mapped_column(BigInteger, comment="高级应用ID")
     create_time: Mapped[Optional[datetime.datetime]] = mapped_column(
         TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"), comment="创建时间"
     )

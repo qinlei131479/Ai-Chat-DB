@@ -4,7 +4,7 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 
 from common.exception import MyException
 from common.permission_util import get_admin_user
@@ -21,11 +21,9 @@ from model.schemas import (
     SaveFieldRequest,
     SaveTableRequest,
     SyncTablesRequest,
-    TableRelationRequest,
     UpdateDatasourceRequest,
 )
 from services.datasource_service import DatasourceService
-from services.user_service import get_user_info
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +31,7 @@ router = APIRouter(prefix="/datasource", tags=["数据服务"])
 
 
 @router.get("/list", summary="获取数据源列表")
-async def get_datasource_list(request: Request, user: dict = Depends(get_current_user)):
+async def get_datasource_list(user: dict = Depends(get_current_user)):
     """获取当前用户的数据源列表"""
     try:
         db_pool = get_db_pool()
@@ -85,7 +83,7 @@ async def create_datasource(
                 {
                     "id": datasource.id,
                     "name": datasource.name,
-                    "type": datasource.type,
+                    "type": datasource.ds_type,
                     "status": datasource.status,
                 }
             )
@@ -392,41 +390,6 @@ async def preview_data(body: PreviewDataRequest):
     except Exception as e:
         logger.error(f"预览数据失败: {e}", exc_info=True)
         raise MyException(SysCodeEnum.SYSTEM_ERROR, f"预览数据失败: {str(e)}")
-
-
-@router.post("/tableRelation", summary="保存表关系")
-async def save_table_relation(body: TableRelationRequest):
-    """保存数据源的表关系数据"""
-    try:
-        relation_data = body.relations if body.relations else []
-
-        db_pool = get_db_pool()
-        with db_pool.get_session() as session:
-            success = DatasourceService.save_table_relation(
-                session, body.ds_id, relation_data
-            )
-            if not success:
-                raise MyException(SysCodeEnum.DATA_NOT_FOUND, "数据源不存在")
-
-            return success_response({"message": "保存成功"})
-    except MyException:
-        raise
-    except Exception as e:
-        logger.error(f"保存表关系失败: {e}", exc_info=True)
-        raise MyException(SysCodeEnum.SYSTEM_ERROR, f"保存表关系失败: {str(e)}")
-
-
-@router.post("/getTableRelation/{ds_id}", summary="获取表关系")
-async def get_table_relation(ds_id: int):
-    """获取数据源的表关系数据"""
-    try:
-        db_pool = get_db_pool()
-        with db_pool.get_session() as session:
-            relation_data = DatasourceService.get_table_relation(session, ds_id)
-            return success_response(relation_data or [])
-    except Exception as e:
-        logger.error(f"获取表关系失败: {e}", exc_info=True)
-        raise MyException(SysCodeEnum.SYSTEM_ERROR, f"获取表关系失败: {str(e)}")
 
 
 @router.post("/getNeo4jRelation/{ds_id}", summary="获取 Neo4j 图数据库关系")

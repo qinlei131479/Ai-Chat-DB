@@ -17,7 +17,7 @@ async def query_qa_history(chat_id: str) -> List[Dict[str, Any]]:
     查询用户问答记录
     """
     try:
-        sql = f"select * from t_user_qa_record where chat_id='{chat_id}' order by id desc limit 1"
+        sql = f"select * from user_qa_record where chat_id='{chat_id}' order by id desc limit 1"
         conn = pymysql.connect(
             host="localhost",
             port=13006,

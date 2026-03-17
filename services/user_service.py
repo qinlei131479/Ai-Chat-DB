@@ -206,12 +206,12 @@ async def add_question_record(
             file_key = question.split("|")[0]
             question = question.split("|")[1]
 
-        sql = f"select * from t_user_qa_record where user_id={user_id} and chat_id='{chat_id}' and message_id='{message_id}'"
+        sql = f"select * from user_qa_record where user_id={user_id} and chat_id='{chat_id}' and message_id='{message_id}'"
         log_dict = execute_sql_dict(sql)
 
         # 根据 message_id 判断是否是同一个问题
         if len(log_dict) > 0:
-            sql = f"""update t_user_qa_record set to4_answer='{json.dumps(t04_answer, ensure_ascii=False)}' 
+            sql = f"""update user_qa_record set to4_answer='{json.dumps(t04_answer, ensure_ascii=False)}' 
                     where user_id={user_id} and chat_id='{chat_id}' and message_id='{message_id}'"""
             execute_sql_update(sql)
         else:
@@ -228,7 +228,7 @@ async def add_question_record(
                 file_key,
             )
             sql = (
-                f" insert into t_user_qa_record(uuid,user_id,conversation_id, message_id, task_id,chat_id,question,to2_answer,qa_type,file_key) "
+                f" insert into user_qa_record(uuid,user_id,conversation_id, message_id, task_id,chat_id,question,to2_answer,qa_type,file_key) "
                 f"values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
             )
             execute_sql_update(sql, insert_params)
@@ -271,7 +271,7 @@ async def add_user_record(
 
         # 3. 插入数据库并返回插入的记录ID
         insert_sql = """
-            INSERT INTO t_user_qa_record
+            INSERT INTO user_qa_record
             (uuid, user_id, chat_id, question, to2_answer,to4_answer, qa_type,file_key, datasource_id, sql_statement)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
@@ -315,7 +315,7 @@ async def delete_user_record(user_id, record_ids):
     # 创建 IN 子句和对应的参数列表
     in_clause = ", ".join(["%s"] * len(record_ids))
     sql = f"""
-        DELETE FROM t_user_qa_record
+        DELETE FROM user_qa_record
         WHERE user_id = %s AND chat_id IN ({in_clause})
     """
 
@@ -351,26 +351,15 @@ async def query_user_record(user_id, page, size, search_text, chat_id):
 
     # 如果chat_id不为空，则不需要去重，直接查询
     if chat_id:
-        count_sql = "SELECT COUNT(1) as count FROM t_user_qa_record"
+        count_sql = "SELECT COUNT(1) as count FROM user_qa_record"
         if conditions:
             count_sql += " WHERE " + " AND ".join(conditions)
         total_count_result = execute_sql_dict(count_sql)
         total_count = total_count_result[0]["count"] if total_count_result else 0
         total_pages = (total_count + size - 1) // size
 
-        records_sql = f"SELECT t.*, d.name as datasource_name FROM t_user_qa_record t LEFT JOIN t_datasource d ON t.datasource_id = d.id"
+        records_sql = f"SELECT t.*, d.name as datasource_name FROM user_qa_record t LEFT JOIN datasource d ON t.datasource_id = d.id"
         if conditions:
-            # Note: We need to adjust column references if they are ambiguous, but here conditions are simple
-            # However, since we aliased t_user_qa_record as t, we should probably update conditions or just use the table name in WHERE if not ambiguous
-            # Actually, the conditions constructed earlier use simple column names. 
-            # To be safe, let's prefix them with 't.' in the WHERE clause or just rely on them being unique enough (except id which is in both)
-            # The conditions construction was: conditions.append(f"chat_id = '{chat_id}'") etc.
-            # To avoid ambiguity with 'id' or 'name' (though name is in datasource), let's just append WHERE clause.
-            # But wait, conditions uses `question LIKE` and `user_id =`.
-            # `chat_id` is in t_user_qa_record. `datasource_id` is in t_user_qa_record.
-            # `id` is in both. `name` is in datasource.
-            # The conditions list is built before.
-            # Let's rebuild conditions with 't.' prefix or just use table alias in query.
             where_clause = " WHERE " + " AND ".join([f"t.{c}" if "id" in c or "question" in c or "chat_id" in c or "user_id" in c else c for c in conditions])
             records_sql += where_clause
         records_sql += f" ORDER BY t.id ASC LIMIT {size} OFFSET {offset}"
@@ -384,7 +373,7 @@ async def query_user_record(user_id, page, size, search_text, chat_id):
         count_sql = f"""
             SELECT COUNT(1) as count FROM (
                 SELECT chat_id, MIN(id) as min_id 
-                FROM t_user_qa_record 
+                FROM user_qa_record 
                 {base_condition}
                 GROUP BY chat_id
             ) as distinct_chats
@@ -395,14 +384,14 @@ async def query_user_record(user_id, page, size, search_text, chat_id):
 
         # 查询去重后的记录，根据chat_id分组并取id最小的记录
         records_sql = f"""
-            SELECT t.*, d.name as datasource_name FROM t_user_qa_record t
+            SELECT t.*, d.name as datasource_name FROM user_qa_record t
             INNER JOIN (
                 SELECT chat_id, MIN(id) as min_id 
-                FROM t_user_qa_record 
+                FROM user_qa_record 
                 {base_condition}
                 GROUP BY chat_id
             ) tm ON t.chat_id = tm.chat_id AND t.id = tm.min_id
-            LEFT JOIN t_datasource d ON t.datasource_id = d.id
+            LEFT JOIN datasource d ON t.datasource_id = d.id
             ORDER BY t.id DESC 
             LIMIT {size} OFFSET {offset}
         """
@@ -444,7 +433,7 @@ async def query_user_record_list(user_id, page, size, search_text):
     count_sql = f"""
         SELECT COUNT(1) as count FROM (
             SELECT chat_id, MIN(id) as min_id 
-            FROM t_user_qa_record 
+            FROM user_qa_record 
             {base_condition}
             GROUP BY chat_id
         ) as distinct_chats
@@ -462,14 +451,14 @@ async def query_user_record_list(user_id, page, size, search_text):
             t.qa_type,
             t.datasource_id,
             d.name as datasource_name
-        FROM t_user_qa_record t
+        FROM user_qa_record t
         INNER JOIN (
             SELECT chat_id, MIN(id) as min_id 
-            FROM t_user_qa_record 
+            FROM user_qa_record 
             {base_condition}
             GROUP BY chat_id
         ) tm ON t.chat_id = tm.chat_id AND t.id = tm.min_id
-        LEFT JOIN t_datasource d ON t.datasource_id = d.id
+        LEFT JOIN datasource d ON t.datasource_id = d.id
         ORDER BY t.id DESC 
         LIMIT {size} OFFSET {offset}
     """
@@ -498,7 +487,7 @@ def query_user_qa_record(chat_id):
             .all()
         )
         return model_to_dict(records)
-    # sql = f"select * from t_user_qa_record where chat_id='{chat_id}' order by id desc limit 1"
+    # sql = f"select * from user_qa_record where chat_id='{chat_id}' order by id desc limit 1"
     # return mysql_client.query_mysql_dict(sql)
 
 

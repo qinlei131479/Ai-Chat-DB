@@ -102,8 +102,8 @@ RELATIONSHIPS = [
     },
     {
         "from_table": "t_user",
-        "to_table": "t_user_qa_record",
-        "description": "t_user belongs to t_user_qa_record",
+        "to_table": "user_qa_record",
+        "description": "t_user belongs to user_qa_record",
         "field_relation": "id references user_id",
     },
 ]
