@@ -87,7 +87,7 @@ class TTerminology(Base):
     parent_id: Mapped[Optional[int]] = mapped_column(BigInteger, comment="父ID")
     word: Mapped[Optional[str]] = mapped_column(String(255), comment="术语名称")
     description: Mapped[Optional[str]] = mapped_column(Text, comment="描述")
-    specific_ds: Mapped[Optional[bool]] = mapped_column(Boolean, default=False, comment="是否指定数据源")
+    specific_ds: Mapped[Optional[int]] = mapped_column(Integer, default=0, comment="是否指定数据源")
     datasource_ids: Mapped[Optional[str]] = mapped_column(Text, comment="数据源ID列表(JSON)")
     enabled_flag: Mapped[Optional[int]] = mapped_column(Integer, default=1, comment="是否启用")
     # VECTOR 类型：用于在数据库中进行向量相似度搜索（使用 <=> 操作符）

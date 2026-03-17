@@ -31,21 +31,22 @@ async def query_terminology_list(page: int, size: int, word: Optional[str] = Non
     """
     with pool.get_session() as session:
         query = session.query(TTerminology)
-        
+
         # 筛选条件
-        filters = [TTerminology.parent_id==0] # 只查询父节点
-        
+        filters = [TTerminology.parent_id == 0]  # 只查询父节点
+
         if word:
             # 搜索：匹配父节点名称或子节点(同义词)名称
             # 先找到匹配的ID
             matched_ids_query = session.query(TTerminology.id).filter(TTerminology.word.ilike(f"%{word}%"))
             matched_ids = [row[0] for row in matched_ids_query.all()]
-            
+
             if matched_ids:
                 # 查找这些ID及其父ID
-                parent_ids_query = session.query(TTerminology.parent_id).filter(TTerminology.id.in_(matched_ids), TTerminology.parent_id.isnot(None))
+                parent_ids_query = session.query(TTerminology.parent_id).filter(TTerminology.id.in_(matched_ids),
+                                                                                TTerminology.parent_id.isnot(None))
                 parent_ids = [row[0] for row in parent_ids_query.all()]
-                
+
                 # 合并ID：直接匹配的ID（如果是父节点） + 子节点对应的父ID
                 all_candidate_ids = set(matched_ids) | set(parent_ids)
                 filters.append(TTerminology.id.in_(all_candidate_ids))
@@ -53,40 +54,40 @@ async def query_terminology_list(page: int, size: int, word: Optional[str] = Non
                 return PaginatedResponse(records=[], current_page=page, total_count=0, total_pages=0)
 
         if dslist:
-             # 数据源筛选
-             ds_conditions = [TTerminology.specific_ds == False]
-             
-             ds_str_list = [str(d) for d in dslist]
-             ds_vals = ", ".join([f"'{d}'" for d in ds_str_list])
-             if ds_vals:
-                 ds_check = text(f"""
+            # 数据源筛选
+            ds_conditions = [TTerminology.specific_ds == False]
+
+            ds_str_list = [str(d) for d in dslist]
+            ds_vals = ", ".join([f"'{d}'" for d in ds_str_list])
+            if ds_vals:
+                ds_check = text(f"""
                     specific_ds = true AND datasource_ids IS NOT NULL AND EXISTS (
                         SELECT 1 FROM json_array_elements_text(datasource_ids::json) WHERE value IN ({ds_vals})
                     )
                  """)
-                 ds_conditions.append(ds_check)
-             
-             filters.append(or_(*ds_conditions))
+                ds_conditions.append(ds_check)
+
+            filters.append(or_(*ds_conditions))
 
         query = query.filter(*filters)
-        
+
         total_count = query.count()
         total_pages = (total_count + size - 1) // size
-        
+
         records = query.order_by(desc(TTerminology.create_time)).offset((page - 1) * size).limit(size).all()
-        
+
         result_list = []
         for record in records:
             item = model_to_dict(record)
-            
+
             # 排除 embedding 字段（前端不需要，且可能包含 numpy 数组）
             if 'embedding' in item:
                 del item['embedding']
-            
+
             # 查询子节点（同义词）
             children = session.query(TTerminology).filter(TTerminology.parent_id == record.id).all()
             item['other_words'] = [c.word for c in children]
-            
+
             # 解析 datasource_ids 获取名称
             item['datasource_names'] = []
             item['datasource_ids'] = []
@@ -99,9 +100,9 @@ async def query_terminology_list(page: int, size: int, word: Optional[str] = Non
                         item['datasource_names'] = [r[0] for r in ds_names]
                 except:
                     pass
-            
+            item['id'] = str(item['id'])
             result_list.append(item)
-            
+
         return PaginatedResponse(
             records=result_list,
             current_page=page,
@@ -109,7 +110,9 @@ async def query_terminology_list(page: int, size: int, word: Optional[str] = Non
             total_pages=total_pages,
         )
 
-async def create_terminology(word: str, description: str, other_words: List[str], specific_ds: bool, datasource_ids: List[int], oid: int = 1):
+
+async def create_terminology(word: str, description: str, other_words: List[str], specific_ds: bool,
+                             datasource_ids: List[str]):
     with pool.get_session() as session:
         # 检查重复
         all_words = [word] + other_words
@@ -117,20 +120,21 @@ async def create_terminology(word: str, description: str, other_words: List[str]
         existing = session.query(TTerminology).filter(TTerminology.word.in_(all_words)).first()
         if existing:
             raise MyException(SysCodeEnum.PARAM_ERROR, f"术语或同义词 '{existing.word}' 已存在")
-            
+
         # 创建父节点
         parent = TTerminology(
+            parent_id=0,
             word=word,
             description=description,
             specific_ds=specific_ds,
             datasource_ids=json.dumps(datasource_ids) if datasource_ids else '[]',
-            # oid=oid,
             enabled_flag=1,
-            create_time=datetime.now()
+            create_time=datetime.now(),
+            update_time=datetime.now()
         )
         session.add(parent)
-        session.flush() # 获取ID
-        
+        session.flush()  # 获取ID
+
         # 创建子节点
         for ow in other_words:
             if not ow.strip():
@@ -140,14 +144,14 @@ async def create_terminology(word: str, description: str, other_words: List[str]
                 word=ow,
                 specific_ds=specific_ds,
                 datasource_ids=json.dumps(datasource_ids) if datasource_ids else '[]',
-                # oid=oid,
                 enabled_flag=parent.enabled_flag,
-                create_time=datetime.now()
+                create_time=datetime.now(),
+                update_time=datetime.now()
             )
             session.add(child)
-            
+
         session.commit()
-        
+
         # 计算并保存 embedding（异步处理，不阻塞）
         if EMBEDDING_ENABLED:
             try:
@@ -155,15 +159,17 @@ async def create_terminology(word: str, description: str, other_words: List[str]
             except Exception as e:
                 logger.warning(f"保存术语 embedding 失败: {e}", exc_info=True)
                 # 不抛出异常，避免影响创建流程
-        
+
         return True
 
-async def update_terminology(id: int, word: str, description: str, other_words: List[str], specific_ds: bool, datasource_ids: List[int], oid: int = 1):
+
+async def update_terminology(id: int, word: str, description: str, other_words: List[str], specific_ds: int,
+                             datasource_ids: List[str]):
     with pool.get_session() as session:
         parent = session.query(TTerminology).filter(TTerminology.id == id).first()
         if not parent:
             raise MyException(SysCodeEnum.PARAM_ERROR, "术语不存在")
-            
+
         # 检查重复 (排除自己和自己的子节点)
         all_words = [word] + other_words
         existing = session.query(TTerminology).filter(
@@ -171,19 +177,20 @@ async def update_terminology(id: int, word: str, description: str, other_words: 
             TTerminology.id != id,
             or_(TTerminology.parent_id != id, TTerminology.parent_id.is_(None))
         ).first()
-        
+
         if existing:
-             raise MyException(SysCodeEnum.PARAM_ERROR, f"术语或同义词 '{existing.word}' 已存在")
+            raise MyException(SysCodeEnum.PARAM_ERROR, f"术语或同义词 '{existing.word}' 已存在")
 
         # 更新父节点
         parent.word = word
         parent.description = description
         parent.specific_ds = specific_ds
         parent.datasource_ids = json.dumps(datasource_ids) if datasource_ids else '[]'
-        
+        parent.update_time = datetime.now()
+
         # 删除旧子节点
-        session.query(TTerminology).filter(TTerminology.pid == id).delete()
-        
+        session.query(TTerminology).filter(TTerminology.parent_id == id).delete()
+
         # 添加新子节点
         for ow in other_words:
             if not ow.strip():
@@ -194,12 +201,13 @@ async def update_terminology(id: int, word: str, description: str, other_words: 
                 specific_ds=specific_ds,
                 datasource_ids=json.dumps(datasource_ids) if datasource_ids else '[]',
                 enabled_flag=parent.enabled_flag,
-                create_time=datetime.now()
+                create_time=datetime.now(),
+                update_time=datetime.now()
             )
             session.add(child)
-            
+
         session.commit()
-        
+
         # 计算并保存 embedding（异步处理，不阻塞）
         if EMBEDDING_ENABLED:
             try:
@@ -207,40 +215,45 @@ async def update_terminology(id: int, word: str, description: str, other_words: 
             except Exception as e:
                 logger.warning(f"保存术语 embedding 失败: {e}", exc_info=True)
                 # 不抛出异常，避免影响更新流程
-        
+
         return True
+
 
 async def delete_terminology(ids: List[int]):
     with pool.get_session() as session:
         # 删除父节点和子节点
-        session.query(TTerminology).filter(or_(TTerminology.id.in_(ids), TTerminology.parent_id.in_(ids))).delete(synchronize_session=False)
+        session.query(TTerminology).filter(or_(TTerminology.id.in_(ids), TTerminology.parent_id.in_(ids))).delete(
+            synchronize_session=False)
         session.commit()
         return True
+
 
 async def enable_terminology(id: int, enabled: bool):
     with pool.get_session() as session:
         # 更新父节点和子节点
-        enabled_flag =1 if enabled else 0
-        session.query(TTerminology).filter(or_(TTerminology.id == id, TTerminology.parent_id == id)).update({TTerminology.enabled_flag: enabled_flag}, synchronize_session=False)
+        enabled_flag = 1 if enabled else 0
+        session.query(TTerminology).filter(or_(TTerminology.id == id, TTerminology.parent_id == id)).update(
+            {TTerminology.enabled_flag: enabled_flag}, synchronize_session=False)
         session.commit()
         return True
+
 
 async def get_terminology_detail(id: int):
     with pool.get_session() as session:
         record = session.query(TTerminology).filter(TTerminology.id == id).first()
         if not record:
             return None
-            
+
         item = model_to_dict(record)
-        
+
         # 排除 embedding 字段（前端不需要，且可能包含 numpy 数组）
         if 'embedding' in item:
             del item['embedding']
-        
+
         # 查询子节点
         children = session.query(TTerminology).filter(TTerminology.parent_id == record.id).all()
         item['other_words'] = [c.word for c in children]
-        
+
         # 解析 datasource_ids
         item['datasource_ids'] = []
         item['datasource_names'] = []
@@ -253,8 +266,9 @@ async def get_terminology_detail(id: int):
                     item['datasource_names'] = [r[0] for r in ds_names]
             except:
                 pass
-                
+
         return item
+
 
 async def generate_synonyms_by_llm(word: str) -> List[str]:
     """
@@ -269,7 +283,7 @@ async def generate_synonyms_by_llm(word: str) -> List[str]:
         """
         response = await llm.ainvoke([HumanMessage(content=prompt)])
         content = response.content.strip()
-        
+
         # 清理可能存在的markdown代码块标记
         if content.startswith("```json"):
             content = content[7:]
@@ -278,7 +292,7 @@ async def generate_synonyms_by_llm(word: str) -> List[str]:
         if content.endswith("```"):
             content = content[:-3]
         content = content.strip()
-            
+
         try:
             result = json.loads(content)
             if isinstance(result, list):
@@ -288,12 +302,12 @@ async def generate_synonyms_by_llm(word: str) -> List[str]:
         except json.JSONDecodeError:
             # 如果解析失败，尝试按逗号分割
             return [w.strip() for w in content.split(",") if w.strip()]
-            
+
     except Exception as e:
         logger.error(f"Error generating synonyms: {e}")
         # 如果是因为没有配置模型，抛出特定错误
         if "No default AI model" in str(e):
-             raise MyException(SysCodeEnum.PARAM_ERROR, "未配置默认AI模型，请先在模型管理中配置")
+            raise MyException(SysCodeEnum.PARAM_ERROR, "未配置默认AI模型，请先在模型管理中配置")
         raise MyException(SysCodeEnum.c_9999, f"AI生成失败: {str(e)}")
 
 
@@ -306,10 +320,10 @@ def _save_terminology_embeddings_sync(ids: List[int]):
     """
     if not EMBEDDING_ENABLED:
         return
-    
+
     if not ids or len(ids) == 0:
         return
-    
+
     try:
         with pool.get_session() as session:
             # 查询术语及其子节点（所有需要计算 embedding 的术语）
@@ -317,18 +331,18 @@ def _save_terminology_embeddings_sync(ids: List[int]):
             terminology_list = session.query(TTerminology).filter(
                 or_(TTerminology.id.in_(ids), TTerminology.parent_id.in_(ids))
             ).all()
-            
+
             if not terminology_list:
                 return
-            
+
             # 收集所有术语的 word（用于批量生成 embedding）
             words_list = [term.word for term in terminology_list if term.word]
-            
+
             if not words_list:
                 return
-            
+
             logger.info(f"开始计算 {len(words_list)} 个术语的 embedding（父节点和子节点）...")
-            
+
             # 批量生成 embedding（优先使用用户配置的模型，没有则使用离线模型）
             # 术语 embedding 存储在 pgvector 中
             embeddings = []
@@ -343,22 +357,22 @@ def _save_terminology_embeddings_sync(ids: List[int]):
                     loop.close()
                 except Exception as e:
                     logger.debug(f"获取在线模型配置失败: {e}，将使用离线模型")
-                
+
                 if model_config:
                     # 使用在线模型逐个生成（在线模型通常不支持批量）
                     from openai import OpenAI
-                    
+
                     # 处理 Ollama 特殊格式
                     base_url = model_config["api_domain"]
                     if model_config["supplier"] == 3:  # Ollama
                         if not base_url.endswith("/v1"):
                             base_url = f"{base_url.rstrip('/')}/v1"
-                    
+
                     client = OpenAI(
                         api_key=model_config["api_key"] or "empty",
                         base_url=base_url
                     )
-                    
+
                     embeddings = []
                     for word in words_list:
                         try:
@@ -370,18 +384,18 @@ def _save_terminology_embeddings_sync(ids: List[int]):
                         except Exception as e:
                             logger.warning(f"在线模型生成术语 '{word}' 的 embedding 失败: {e}，跳过")
                             embeddings.append(None)
-                    
+
                     success_count = sum(1 for e in embeddings if e is not None)
                     logger.info(f"✅ 使用在线模型生成 {success_count}/{len(words_list)} 个术语 embedding")
                 else:
                     # 使用离线模型批量生成
                     from common.local_embedding import _get_local_embedding_model
                     local_model = _get_local_embedding_model()
-                    
+
                     if not local_model:
                         logger.error("❌ 本地 embedding 模型不可用，无法计算术语 embedding")
                         return
-                    
+
                     # 使用本地模型的批量方法
                     if hasattr(local_model, 'embed_documents'):
                         embeddings = local_model.embed_documents(words_list)
@@ -391,11 +405,11 @@ def _save_terminology_embeddings_sync(ids: List[int]):
                         from common.local_embedding import generate_embedding_local_sync
                         embeddings = [generate_embedding_local_sync(word) for word in words_list]
                         logger.info(f"✅ 使用离线模型逐个生成 {len(embeddings)} 个术语 embedding（维度: 768）")
-                        
+
             except Exception as e:
                 logger.error(f"批量生成术语 embedding 失败: {e}", exc_info=True)
                 return
-            
+
             # 逐个更新到数据库（每个更新单独 commit，避免一个失败影响其他）
             success_count = 0
             for index in range(len(terminology_list)):
@@ -424,9 +438,9 @@ def _save_terminology_embeddings_sync(ids: List[int]):
                         except:
                             pass
                         # 继续处理下一个，不中断
-            
+
             logger.info(f"✅ 成功保存 {success_count}/{len(terminology_list)} 个术语的 embedding")
-            
+
     except Exception as e:
         logger.error(f"保存术语 embedding 失败: {e}", exc_info=True)
         # 不抛出异常，避免影响主流程
@@ -441,10 +455,10 @@ async def save_terminology_embeddings(ids: List[int]):
     """
     if not EMBEDDING_ENABLED:
         return
-    
+
     if not ids or len(ids) == 0:
         return
-    
+
     # 在后台线程中执行，不阻塞主流程
     import asyncio
     loop = asyncio.get_event_loop()

@@ -24,11 +24,8 @@ async def page_data_training(page: int, size: int, question: Optional[str] = Non
             session.query(
                 TDataTraining,
                 Datasource.name.label("datasource_name")
-                # TAiModel.name.label("advanced_application_name"),
             )
             .outerjoin(Datasource, TDataTraining.ds_id == Datasource.id)
-            # .outerjoin(TAiModel, TDataTraining.advanced_application == TAiModel.id)
-            # .filter(TDataTraining.oid == oid)
         )
 
         if question:
@@ -48,13 +45,11 @@ async def page_data_training(page: int, size: int, question: Optional[str] = Non
             training, ds_name = row
             items.append(
                 DataTrainingItem(
-                    id=training.id,
+                    id=str(training.id),
                     question=training.question,
                     description=training.description,
-                    ds_id=training.ds_id,
+                    ds_id=str(training.ds_id),
                     datasource_name=ds_name,
-                    # advanced_application=training.advanced_application,
-                    # advanced_application_name=app_name,
                     enabled_flag=training.enabled_flag,
                     create_time=str(training.create_time) if training.create_time else None,
                 )
@@ -63,7 +58,7 @@ async def page_data_training(page: int, size: int, question: Optional[str] = Non
         return {"records": items, "total_count": total_count, "current_page": page, "total_pages": total_pages}
 
 
-async def create_training(data: Dict[str, Any], oid: int = 1) -> bool:
+async def create_training(data: Dict[str, Any]) -> bool:
     question = data.get("question")
     description = data.get("description")
     datasource = data.get("datasource")
@@ -83,8 +78,6 @@ async def create_training(data: Dict[str, Any], oid: int = 1) -> bool:
             query = query.filter(TDataTraining.ds_id == datasource)
         elif datasource:
             query = query.filter(TDataTraining.ds_id == datasource)
-        # elif advanced_application:
-        #     query = query.filter(TDataTraining.advanced_application == advanced_application)
 
         if query.count() > 0:
             raise MyException(SysCodeEnum.PARAM_ERROR, "Training data already exists")
@@ -94,15 +87,16 @@ async def create_training(data: Dict[str, Any], oid: int = 1) -> bool:
             question=question,
             description=description,
             embedding=embedding,
-            enabled=data.get("enabled_flag", 1),
+            enabled_flag=data.get("enabled_flag", 1),
             create_time=datetime.now(),
+            update_time=datetime.now()
         )
         session.add(new_training)
         session.commit()
         return True
 
 
-async def update_training(data: Dict[str, Any], oid: int = 1) -> bool:
+async def update_training(data: Dict[str, Any]) -> bool:
     question = data.get("question")
 
     with pool.get_session() as session:
@@ -114,14 +108,7 @@ async def update_training(data: Dict[str, Any], oid: int = 1) -> bool:
         # Check if question changed to update embedding
         embedding = None
         if question and question != training.question:
-            # This should be done outside lock/transaction if possible, but here we are inside session
-            # However, we can just await it? session is not async session, but we are in async function.
-            # Ideally we shouldn't hold db session while doing network request.
             pass
-
-    # Generate embedding if question changed (outside session)
-    # We need to re-fetch to check? Or just check data.
-    # To avoid complexity, let's query first, check, then generate, then update.
 
     # Refactored update logic:
     training_id = data.get("id")
@@ -148,8 +135,8 @@ async def update_training(data: Dict[str, Any], oid: int = 1) -> bool:
 
             training.description = data.get("description", training.description)
             training.ds_id = data.get("ds_id", training.ds_id)
-            # training.advanced_application = data.get("advanced_application", training.advanced_application)
-            training.enabled_flag = 1 if data.get("enabled", True) else 0
+            training.enabled_flag = data.get("enabled_flag", 1)
+            training.update_time = datetime.now()
 
             session.commit()
             return True
@@ -169,6 +156,6 @@ async def enable_training(training_id: int, enabled: bool) -> bool:
         if not training:
             raise MyException(SysCodeEnum.PARAM_ERROR, "Training data not found")
 
-        training.enabled = enabled
+        training.enabled_flag = 1 if enabled else 0
         session.commit()
         return True
