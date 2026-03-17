@@ -1,13 +1,16 @@
 # .cursorindexingignore
 
 # 1. 永远要忽略的依赖和构建产物
-node_modules/
-dist/
-build/
-.out/
-.next/
-coverage/
-__pycache__/
+**/node_modules/
+**/dist/
+**/build/
+**/public/
+**/.out/
+**/.next/
+**/coverage/
+**/__pycache__/
+web/public/
+web/public/pdfjs-4.10.38-dist/
 
 # 2. 环境变量和敏感信息文件（安全第一）
 .env
@@ -20,7 +23,9 @@ config/secrets.*
 *.jsonl
 *.parquet
 data/
-public/images/
+docs/
+models/
+**/public/images/
 *.mp4
 *.jpg
 *.png
@@ -32,11 +37,9 @@ temp/
 *.tmp
 
 # 5. IDE 和系统文件
-.idea/
-.vscode/
+**/.idea/
+**/.vscode/
 .venv/
 .DS_Store
 Thumbs.db
 docker/volume/
-
-
