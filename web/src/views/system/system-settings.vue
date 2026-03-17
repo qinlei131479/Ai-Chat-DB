@@ -10,7 +10,6 @@ const isSidebarCollapsed = ref(false)
 const DatasourceManager = defineAsyncComponent(() => import('@/views/datasource/datasource-manager.vue'))
 const UserManager = defineAsyncComponent(() => import('@/views/user/user-manager.vue'))
 const LLMConfig = defineAsyncComponent(() => import('@/views/system/config/llm-config.vue'))
-const PermissionConfig = defineAsyncComponent(() => import('@/views/system/permission/permission-list.vue'))
 const TerminologyConfig = defineAsyncComponent(() => import('@/views/system/config/terminology-config.vue'))
 const SqlExampleLibrary = defineAsyncComponent(() => import('@/views/system/config/sql-example-library.vue'))
 const EmbeddingMigration = defineAsyncComponent(() => import('@/views/system/config/embedding-migration.vue'))
@@ -118,13 +117,6 @@ const handleBack = () => {
           class="h-full"
       >
         <UserManager/>
-      </div>
-
-      <div
-          v-else-if="activeTab === 'permission'"
-          class="h-full"
-      >
-        <PermissionConfig/>
       </div>
 
       <div

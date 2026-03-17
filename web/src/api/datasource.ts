@@ -248,7 +248,7 @@ export async function update_datasource(data: any) {
  * @param tables 表列表
  * @param isSelectAll 是否全选（用于后端优化处理逻辑）
  */
-export async function sync_datasource_tables(dsId: number | string, tables: any[], isSelectAll: boolean = false) {
+export async function sync_datasource_tables(dsId:  string, tables: any[], isSelectAll: boolean = false) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
   const url = new URL(`${location.origin}/sanic/datasource/syncTables/${dsId}`)
@@ -283,41 +283,3 @@ export async function sync_datasource_tables(dsId: number | string, tables: any[
   })
 }
 
-/**
- * 获取已授权用户
- */
-export async function get_authorized_users(datasourceId: number) {
-  const userStore = useUserStore()
-  const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/getAuthorizedUsers/${datasourceId}`)
-  const req = new Request(url, {
-    mode: 'cors',
-    method: 'post',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  })
-  return fetch(req)
-}
-
-/**
- * 数据源授权
- */
-export async function authorize_datasource(datasourceId: number, userIds: number[]) {
-  const userStore = useUserStore()
-  const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/authorize`)
-  const req = new Request(url, {
-    mode: 'cors',
-    method: 'post',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      datasource_id: datasourceId,
-      user_ids: userIds,
-    }),
-  })
-  return fetch(req)
-}

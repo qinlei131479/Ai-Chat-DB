@@ -475,19 +475,6 @@ onMounted(() => {
             </n-spin>
           </div>
 
-          <div class="sidebar-footer">
-            <n-button
-              block
-              secondary
-              :type="activeRelationship ? 'primary' : 'default'"
-              @click="handleRelationship"
-            >
-              <template #icon>
-                <div class="i-carbon-ibm-data-product-exchange"></div>
-              </template>
-              {{ activeRelationship ? '返回列表' : '表关系管理' }}
-            </n-button>
-          </div>
         </n-layout-sider>
 
         <n-layout-content class="main-content">

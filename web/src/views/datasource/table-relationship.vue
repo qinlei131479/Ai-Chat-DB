@@ -412,81 +412,20 @@ const initializeGraph = (container: HTMLElement, resolve: () => void, reject: (e
 // （此处省略以节省篇幅，实际使用时保留原逻辑）
 
 const getTableData = async () => {
+  // table_relation 字段已移除，初始化空图即可；表关系请通过 Neo4j 视图查看
   loading.value = true
   try {
-    const url = new URL(`${location.origin}/sanic/datasource/get/${props.dsId}`)
-    const response = await fetch(url, { method: 'POST' })
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+    await nextTick()
+    if (!graph) {
+      await initGraph()
     }
-    const result = await response.json()
-    if (result.code === 200) {
-      const ds = result.data || {}
-      const data = ds.table_relation || ds.tableRelation || []
-      nodeIds.value = data.filter((ele: any) => ele.shape === 'er-rect').map((ele: any) => ele.id)
-      await nextTick()
-      if (!graph) {
-        await initGraph()
-      }
-      await nextTick()
-      if (!graph) {
-        message.error('图形未初始化，请重试')
-        return
-      }
-      if (!Array.isArray(data) || data.length === 0) {
-        graph.clearCells()
-        cells.value = []
-        nodeIds.value = []
-        return
-      }
-      cells.value = []
-      data.forEach((item: any) => {
-        if (item.shape === 'edge') {
-          // 创建 edge 时应用优化后的配置和路由
-          // 移除可能存在的 tools 配置，确保默认不显示删除按钮
-          const { tools, ...edgeData } = item
-          cells.value.push(
-            graph.createEdge({
-              ...edgeData,
-              ...edgeOption,
-              router: {
-                name: 'manhattan',
-                args: {
-                  padding: 8,
-                  startDirections: ['top', 'right', 'bottom', 'left'],
-                  endDirections: ['top', 'right', 'bottom', 'left'],
-                },
-              },
-            }),
-          )
-        } else {
-          cells.value.push(
-            graph.createNode({
-              ...item,
-              height: LINE_HEIGHT + 15,
-              width: NODE_WIDTH,
-            }),
-          )
-        }
-      })
-      graph.resetCells(cells.value)
-      // 确保所有 edge 默认不显示 tools
-      await nextTick()
-      graph.getEdges().forEach((edge: any) => {
-        edge.removeTools()
-      })
-      // 确保容器尺寸更新后再调整视图
-      await nextTick()
-      // 延迟一点时间确保所有元素渲染完成后再调整视图
-      setTimeout(() => {
-        if (graph && cells.value.length > 0) {
-          graph.zoomToFit({ padding: 20, maxScale: 1 })
-        }
-      }, 100)
+    if (graph) {
+      graph.clearCells()
     }
+    cells.value = []
+    nodeIds.value = []
   } catch (error) {
-    console.error('获取表关系数据失败:', error)
-    message.error('获取表关系数据失败')
+    console.error('初始化关系图失败:', error)
   } finally {
     loading.value = false
   }
@@ -567,35 +506,7 @@ const clickTable = async (table: any) => {
 }
 
 const save = async () => {
-  if (!graph) {
-    message.warning('没有可保存的数据')
-    return
-  }
-  try {
-    const cells = graph.toJSON().cells || []
-    const url = new URL(`${location.origin}/sanic/datasource/tableRelation`)
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ds_id: props.dsId,
-        relations: cells,
-      }),
-    })
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-    const result = await response.json()
-    if (result.code === 200) {
-      message.success('保存成功')
-      await getTableData()
-    } else {
-      message.error(result.msg || '保存失败')
-    }
-  } catch (error) {
-    console.error('保存表关系失败:', error)
-    message.error('保存表关系失败')
-  }
+  message.warning('表关系持久化功能已停用，当前仅支持查看 Neo4j 中的关系')
 }
 
 const handleDrop = (e: DragEvent) => {

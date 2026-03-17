@@ -45,6 +45,16 @@ class DatasourceService:
         return session.query(Datasource).filter(Datasource.id == ds_id).first()
 
     @staticmethod
+    def _apply_config_fields(datasource: Datasource, config_dict: Dict[str, Any]):
+        """从配置字典中提取连接参数并写入数据源独立字段（供列表页快速展示）"""
+        datasource.host = config_dict.get("host") or ""
+        datasource.port = str(config_dict.get("port") or "")
+        datasource.username = config_dict.get("username") or ""
+        datasource.password = config_dict.get("password") or ""
+        datasource.ds_name = config_dict.get("database") or config_dict.get("db") or ""
+        datasource.instance = config_dict.get("dbSchema") or config_dict.get("schema") or ""
+
+    @staticmethod
     def create_datasource(session: Session, data: Dict[str, Any], user_id: int) -> Datasource:
         """创建数据源"""
         import json
@@ -53,15 +63,15 @@ class DatasourceService:
 
         # 如果配置是字典，需要加密
         configuration = data.get("configuration", "")
+        config_dict: Dict[str, Any] = {}
         if isinstance(configuration, dict):
+            config_dict = configuration
             configuration = DatasourceConfigUtil.encrypt_config(configuration)
         elif isinstance(configuration, str):
             try:
-                # 尝试解析JSON，如果是JSON字符串则加密
                 config_dict = json.loads(configuration)
                 configuration = DatasourceConfigUtil.encrypt_config(config_dict)
             except (json.JSONDecodeError, TypeError):
-                # 已经是加密后的字符串，直接使用
                 pass
 
         datasource = Datasource(
@@ -70,8 +80,13 @@ class DatasourceService:
             ds_type=data.get("type") or data.get("ds_type", ""),
             conf_type=configuration,
             create_time=datetime.now(),
+            update_time=datetime.now(),
             status="Success",
         )
+        # 同步保存独立连接字段，供列表页展示
+        if config_dict:
+            DatasourceService._apply_config_fields(datasource, config_dict)
+
         session.add(datasource)
         session.commit()
         session.refresh(datasource)
@@ -105,7 +120,7 @@ class DatasourceService:
         keep_table_ids: List[int] = []
         # 用于批量 embedding 计算的 (table, fields) 列表
         embedding_items: List[Dict[str, Any]] = []
-
+        current_time = datetime.now()
         # 获取源库总表数
         try:
             all_db_tables = DatasourceConnectionUtil.get_tables(datasource.ds_type, config)
@@ -138,6 +153,8 @@ class DatasourceService:
                     table_name=table_name,
                     table_comment=table_comment,
                     custom_comment=table_comment,
+                    create_time=current_time,
+                    update_time=current_time
                 )
                 session.add(table)
                 session.flush()
@@ -162,7 +179,7 @@ class DatasourceService:
                     continue
                 field_comment = field.get("fieldComment") or ""
                 field_type = field.get("fieldType") or ""
-                field_index = field.get("fieldIndex") or 0
+                weight = field.get("fieldIndex") or 0
 
                 record = (
                     session.query(DatasourceField)
@@ -173,7 +190,7 @@ class DatasourceService:
                 if record:
                     record.field_comment = field_comment
                     record.field_type = field_type
-                    record.weight = field_index
+                    record.weight = weight
                     if record.custom_comment is None:
                         record.custom_comment = field_comment
                 else:
@@ -184,7 +201,9 @@ class DatasourceService:
                         field_type=field_type,
                         field_comment=field_comment,
                         custom_comment=field_comment,
-                        weight=field_index,
+                        weight=weight,
+                        create_time=current_time,
+                        update_time=current_time
                     )
                     session.add(record)
                     session.flush()
@@ -446,19 +465,24 @@ class DatasourceService:
             datasource.description = data["description"]
         if "configuration" in data:
             configuration = data["configuration"]
+            upd_config_dict: Dict[str, Any] = {}
             if isinstance(configuration, dict):
                 from common.datasource_util import DatasourceConfigUtil
+                upd_config_dict = configuration
                 configuration = DatasourceConfigUtil.encrypt_config(configuration)
             elif isinstance(configuration, str):
                 try:
                     import json
 
                     from common.datasource_util import DatasourceConfigUtil
-                    config_dict = json.loads(configuration)
-                    configuration = DatasourceConfigUtil.encrypt_config(config_dict)
+                    upd_config_dict = json.loads(configuration)
+                    configuration = DatasourceConfigUtil.encrypt_config(upd_config_dict)
                 except (json.JSONDecodeError, TypeError):
                     pass
             datasource.conf_type = configuration
+            # 同步更新独立连接字段
+            if upd_config_dict:
+                DatasourceService._apply_config_fields(datasource, upd_config_dict)
         if "status" in data:
             datasource.status = data["status"]
 
@@ -467,6 +491,7 @@ class DatasourceService:
         if tables is not None:
             DatasourceService._save_tables_and_fields(session, datasource, tables)
 
+        datasource.update_time = datetime.now()
         session.commit()
         session.refresh(datasource)
         return datasource
@@ -781,5 +806,3 @@ class DatasourceService:
         except Exception as e:
             logger.error(f"获取 Neo4j 关系失败: {e}", exc_info=True)
             return []
-
-

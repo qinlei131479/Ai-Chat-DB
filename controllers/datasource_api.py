@@ -81,7 +81,7 @@ async def create_datasource(
             )
             return success_response(
                 {
-                    "id": datasource.id,
+                    "id": str(datasource.id),
                     "name": datasource.name,
                     "type": datasource.ds_type,
                     "status": datasource.status,
@@ -112,7 +112,7 @@ async def update_datasource(
                 raise MyException(SysCodeEnum.DATA_NOT_FOUND, "数据源不存在")
 
             return success_response(
-                {"id": datasource.id, "name": datasource.name}
+                {"id": str(datasource.id), "name": datasource.name}
             )
     except MyException:
         raise
@@ -170,24 +170,35 @@ async def delete_datasource(ds_id: int, user: dict = Depends(get_admin_user)):
 
 @router.post("/get/{ds_id}", summary="获取数据源详情")
 async def get_datasource(ds_id: int):
-    """根据ID获取数据源详情"""
+    """根据ID获取数据源详情，包含解密后的连接配置供编辑表单回填"""
     try:
+        import json as _json
         db_pool = get_db_pool()
         with db_pool.get_session() as session:
             datasource = DatasourceService.get_datasource_by_id(session, ds_id)
             if not datasource:
                 raise MyException(SysCodeEnum.DATA_NOT_FOUND, "数据源不存在")
 
+            # 解密连接配置，供前端编辑表单回填
+            configuration = None
+            try:
+                if datasource.conf_type:
+                    from common.datasource_util import DatasourceConfigUtil
+                    config_dict = DatasourceConfigUtil.decrypt_config(datasource.conf_type)
+                    configuration = _json.dumps(config_dict, ensure_ascii=False)
+            except Exception as cfg_err:
+                logger.warning(f"解密数据源配置失败: {cfg_err}")
+
             return success_response(
                 {
                     "id": str(datasource.id),
                     "name": datasource.name,
-                    "description": datasource.description,
+                    "description": datasource.description or "",
                     "type": datasource.ds_type,
-                    "type_name": '',
                     "status": datasource.status,
-                    "num": 0,
-                    "table_relation": '',
+                    "host": datasource.host or "",
+                    "database": datasource.ds_name or "",
+                    "configuration": configuration,
                     "create_time": (
                         datasource.create_time.isoformat()
                         if datasource.create_time

@@ -53,12 +53,6 @@ const childrenRoutes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: true },
   },
   {
-    path: 'permission-config',
-    name: 'PermissionConfig',
-    component: () => import('@/views/system/permission/permission-list.vue'),
-    meta: { requiresAuth: true },
-  },
-  {
     path: 'terminology-config',
     name: 'TerminologyConfig',
     component: () => import('@/views/system/config/terminology-config.vue'),
