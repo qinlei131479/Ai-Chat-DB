@@ -39,7 +39,7 @@ temp/
 # 5. IDE 和系统文件
 **/.idea/
 **/.vscode/
-.venv/
-.DS_Store
+**/.venv/
+**/.DS_Store
 Thumbs.db
-docker/volume/
+**/docker/volume/
