@@ -14,8 +14,6 @@ interface DataTrainingItem {
   description: string
   ds_id: number
   datasource_name: string
-  advanced_application: number
-  advanced_application_name: string
   enabled_flag: number
   create_time: string
 }
@@ -35,7 +33,7 @@ const formModel = reactive({
   id: undefined as number | undefined,
   question: '',
   description: '',
-  datasource: null as number | null,
+  ds_id: null as number | null,
   advanced_application: null as number | null,
   enabled: true
 })
@@ -77,11 +75,6 @@ const columns = [
     render(row: DataTrainingItem) {
       return row.datasource_name || '全部数据源'
     }
-  },
-  {
-    title: '高级应用',
-    key: 'advanced_application_name',
-    width: 150
   },
   {
     title: '状态',
@@ -208,7 +201,7 @@ const handleAdd = () => {
   formModel.id = undefined
   formModel.question = ''
   formModel.description = ''
-  formModel.datasource = null
+  formModel.ds_id = null
   formModel.advanced_application = null
   formModel.enabled = true
   showModal.value = true
@@ -219,8 +212,7 @@ const handleEdit = (row: DataTrainingItem) => {
   formModel.id = row.id
   formModel.question = row.question
   formModel.description = row.description
-  formModel.datasource = row.datasource
-  formModel.advanced_application = row.advanced_application
+  formModel.ds_id = row.ds_id
   formModel.enabled = row.enabled_flag === 1
   showModal.value = true
 }
@@ -230,7 +222,11 @@ const handleSave = async () => {
     if (!errors) {
       modalLoading.value = true
       try {
-        const res = await trainingApi.updateEmbedded(formModel)
+        const submitData = {
+        ...formModel,
+        enabled_flag: formModel.enabled ? 1 : 0
+      };
+        const res = await trainingApi.updateEmbedded(submitData)
         const result = await res.json()
         if (result.code === 200) {
           message.success('保存成功')
@@ -381,9 +377,9 @@ onMounted(() => {
             </div>
           </div>
         </n-form-item>
-        <n-form-item label="数据源" path="datasource">
+        <n-form-item label="数据源" path="ds_id">
           <n-select
-              v-model:value="formModel.datasource"
+              v-model:value="formModel.ds_id"
               filterable
               clearable
               placeholder="请选择数据源（留空则为通用）"
