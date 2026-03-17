@@ -22,7 +22,7 @@ sqlacodegen postgresql+psycopg2://postgres:postgres@127.0.0.1:5432/chat_db --out
 
 
 class TUser(Base):
-    __tablename__ = "t_user"
+    __tablename__ = "user"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     userName: Mapped[Optional[str]] = mapped_column(String(200), comment="用户名称")
@@ -34,7 +34,7 @@ class TUser(Base):
 
 
 class TUserQaRecord(Base):
-    __tablename__ = "t_user_qa_record"
+    __tablename__ = "user_qa_record"
     __table_args__ = {"comment": "问答记录表"}
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
