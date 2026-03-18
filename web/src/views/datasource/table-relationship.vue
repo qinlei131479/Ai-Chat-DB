@@ -466,7 +466,7 @@ const addNode = async (node: any) => {
 const clickTable = async (table: any) => {
   loading.value = true
   try {
-    const url = new URL(`${location.origin}/sanic/datasource/fieldList/${table.id}`)
+    const url = new URL(`${location.origin}/agi/datasource/fieldList/${table.id}`)
     const response = await fetch(url, { method: 'POST' })
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)

@@ -1,6 +1,6 @@
 import { useUserStore } from '@/store/business/userStore'
 
-const BASE_URL = `${location.origin}/sanic/system/embedding-migration`
+const BASE_URL = `${location.origin}/agi/system/embedding-migration`
 
 const getHeaders = () => {
   const userStore = useUserStore()

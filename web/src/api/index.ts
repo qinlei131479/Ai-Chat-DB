@@ -8,7 +8,7 @@
 export async function createOllama3Stylized(text, qa_type, uuid, chat_id, file_list, datasource_id) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/dify/get_answer`)
+  const url = new URL(`${location.origin}/agi/dify/get_answer`)
   const params = {}
   Object.keys(params).forEach((key) => {
     url.searchParams.append(key, params[key])
@@ -58,7 +58,7 @@ export async function createOllama3Stylized(text, qa_type, uuid, chat_id, file_l
  * @returns
  */
 export async function login(username, password) {
-  const url = new URL(`${location.origin}/sanic/user/login`)
+  const url = new URL(`${location.origin}/agi/user/login`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -82,7 +82,7 @@ export async function login(username, password) {
 export async function query_user_qa_record(page, limit, search_text, chat_id) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/user/query_user_record`)
+  const url = new URL(`${location.origin}/agi/user/query_user_record`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -110,7 +110,7 @@ export async function query_user_qa_record(page, limit, search_text, chat_id) {
 export async function query_user_record_list(page, limit, search_text) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/user/query_user_record_list`)
+  const url = new URL(`${location.origin}/agi/user/query_user_record_list`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -136,7 +136,7 @@ export async function query_user_record_list(page, limit, search_text) {
 export async function delete_user_record(ids) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/user/delete_user_record`)
+  const url = new URL(`${location.origin}/agi/user/delete_user_record`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -159,7 +159,7 @@ export async function delete_user_record(ids) {
 export async function get_record_sql(record_id) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/user/get_record_sql`)
+  const url = new URL(`${location.origin}/agi/user/get_record_sql`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -183,7 +183,7 @@ export async function get_record_sql(record_id) {
 export async function fead_back(chat_id, rating) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/user/dify_fead_back`)
+  const url = new URL(`${location.origin}/agi/user/dify_fead_back`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -208,7 +208,7 @@ export async function fead_back(chat_id, rating) {
 export async function dify_suggested(chat_id) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/dify/get_dify_suggested`)
+  const url = new URL(`${location.origin}/agi/dify/get_dify_suggested`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -231,7 +231,7 @@ export async function dify_suggested(chat_id) {
 export async function word_to_md(file_key) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/ta/word_to_md`)
+  const url = new URL(`${location.origin}/agi/ta/word_to_md`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -255,7 +255,7 @@ export async function word_to_md(file_key) {
 export async function query_demand_records(page, limit) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/ta/query_demand_records`)
+  const url = new URL(`${location.origin}/agi/ta/query_demand_records`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -279,7 +279,7 @@ export async function query_demand_records(page, limit) {
 export async function insert_demand_manager(project_data) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/ta/insert_demand_manager`)
+  const url = new URL(`${location.origin}/agi/ta/insert_demand_manager`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -302,7 +302,7 @@ export async function insert_demand_manager(project_data) {
 export async function delete_demand_records(id) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/ta/delete_demand_records`)
+  const url = new URL(`${location.origin}/agi/ta/delete_demand_records`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -325,7 +325,7 @@ export async function delete_demand_records(id) {
 export async function abstract_doc_func(doc_id) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/ta/abstract_doc_func`)
+  const url = new URL(`${location.origin}/agi/ta/abstract_doc_func`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -350,7 +350,7 @@ export async function abstract_doc_func(doc_id) {
 export async function stop_chat(task_id, qa_type) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/dify/stop_chat`)
+  const url = new URL(`${location.origin}/agi/dify/stop_chat`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',

@@ -277,7 +277,7 @@ model/            # 数据模型
 - 基于 FastAPI 框架的 RESTful API
 - 使用 Pydantic 进行请求/响应验证（FastAPI 原生支持）
 - 使用 `Depends()` 依赖注入进行认证和权限校验
-- 使用 `APIRouter` 组织路由（替代原 Sanic Blueprint）
+- 使用 `APIRouter` 组织路由（替代原 Blueprint）
 - 统一响应格式（通过 `success_response()` 和全局异常处理器）：
 
 ```python
@@ -504,7 +504,7 @@ LLM_API_KEY=sk-xxx
 3. **SSE 超时**：DeepAgent 报告生成可能耗时较长，Nginx 需配置 `proxy_read_timeout`
 4. **数据库连接池**：外部数据库连接使用连接池管理
 5. **向量检索**：pgvector 用于术语和训练数据的向量相似度搜索
-6. **前端 API 前缀**：前端统一使用 `/sanic` 前缀，Vite 和 Nginx 均做 rewrite 去掉前缀后转发到后端
+6. **前端 API 前缀**：前端统一使用 `/agi` 前缀，Vite 和 Nginx 均做 rewrite 去掉前缀后转发到后端
 
 ---
 

@@ -9,7 +9,7 @@ import { useUserStore } from '@/store/business/userStore'
 export async function fetch_skill_list() {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/system/skill/list`)
+  const url = new URL(`${location.origin}/agi/system/skill/list`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'get',
