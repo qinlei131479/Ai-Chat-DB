@@ -68,12 +68,12 @@ register_exception_handlers(app)
 from controllers.llm_chat_api import router as llm_chat_router
 from controllers.db_chat_api import router as db_chat_router
 from controllers.file_chat_api import router as file_chat_router
-from controllers.user_rest_api import router as user_router
+from controllers.user_api import router as user_router
 from controllers.datasource_api import router as datasource_router
 from controllers.aimodel_api import router as aimodel_router
 from controllers.terminology_api import router as terminology_router
 from controllers.skill_api import router as skill_router
-from controllers.data_training_api import router as data_training_router
+from controllers.sql_train_api import router as data_training_router
 from controllers.embedding_migration_api import router as embedding_migration_router
 
 app.include_router(llm_chat_router)

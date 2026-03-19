@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query
 
 from common.res_decorator import success_response
 from common.token_decorator import get_current_user
-from services.data_training_service import (
+from services.sql_train_service import (
     page_data_training,
     create_training,
     update_training,
@@ -13,7 +13,7 @@ from services.data_training_service import (
 )
 from model.schemas import SaveDataTrainingRequest, DeleteDataTrainingRequest
 
-router = APIRouter(prefix="/system/data-training", tags=["数据训练"])
+router = APIRouter(prefix="/system/sql-train", tags=["数据训练"])
 
 
 @router.get("/page/{page}/{size}", summary="分页查询数据训练")

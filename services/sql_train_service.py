@@ -10,7 +10,7 @@ from constants.code_enum import SysCodeEnum
 from model.db_connection_pool import get_db_pool
 from model.db_models import SqlTrain, TAiModel
 from model.datasource_models import Datasource
-from model.schemas import DataTrainingItem, PaginatedResponse
+from model.schemas import SqlTrainItem, PaginatedResponse
 from services.embedding_service import generate_embedding
 
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ async def page_data_training(page: int, size: int, question: Optional[str] = Non
         for row in results:
             training, ds_name = row
             items.append(
-                DataTrainingItem(
+                SqlTrainItem(
                     id=str(training.id),
                     question=training.question,
                     description=training.description,

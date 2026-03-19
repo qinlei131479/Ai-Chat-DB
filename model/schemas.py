@@ -617,7 +617,7 @@ class GenerateSynonymsResponse(BaseResponse):
 
 
 # ==================== 数据训练相关模型 ====================
-class DataTrainingItem(BaseModel):
+class SqlTrainItem(BaseModel):
     id: Optional[str] = Field(description="ID")
     question: str = Field(description="问题描述")
     description: str = Field(description="示例SQL")
@@ -628,7 +628,7 @@ class DataTrainingItem(BaseModel):
 
 
 class DataTrainingListResponse(BaseResponse):
-    data: PaginatedResponse[DataTrainingItem] = Field(description="数据训练列表")
+    data: PaginatedResponse[SqlTrainItem] = Field(description="数据训练列表")
 
 
 class SaveDataTrainingRequest(BaseModel):

@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import {onMounted, ref, reactive, h, resolveComponent} from 'vue'
-import {trainingApi} from '@/api/training'
+import {trainingApi} from '@/api/sql-train'
 import {useMessage, useDialog, NButton, NSwitch, NSpace, FormInst, NTooltip} from 'naive-ui'
 import {fetch_datasource_list} from '@/api/datasource'
 import {formatSQL} from '@/utils/sqlFormatter'
