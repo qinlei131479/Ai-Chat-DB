@@ -151,19 +151,6 @@ const sidebarItems = ref<SidebarItemType[]>([
     props: {},
   },
   {
-    label: '权限配置',
-    key: 'PermissionConfig',
-    renderIcon() {
-      return (
-        <div class="i-material-symbols:lock-outline text-24"></div>
-      )
-    },
-    onClick() {
-      router.push({ name: 'PermissionConfig' })
-    },
-    props: {},
-  },
-  {
     label: '术语配置',
     key: 'TerminologyConfig',
     renderIcon() {
@@ -210,11 +197,11 @@ const avatarMenuOptions = computed(() => {
       key: 'systemSettings',
       icon: () => <div class="i-material-symbols:settings-outline text-16"></div>,
     },
-    {
-      label: '知识库管理',
-      key: 'knowledgeManager',
-      icon: () => <div class="i-material-symbols:library-books-outline text-16"></div>,
-    },
+    // {
+    //   label: '知识库管理',
+    //   key: 'knowledgeManager',
+    //   icon: () => <div class="i-material-symbols:library-books-outline text-16"></div>,
+    // },
     {
       label: '退出登录',
       key: 'logout',
@@ -363,15 +350,15 @@ const handleMenuSelect = (key: string) => {
             <span class="text-12 text-[#666] group-hover:text-[#333]">系统设置</span>
           </div>
 
-          <div
-            class="flex flex-col items-center gap-2 cursor-pointer group"
-            @click="handleMenuSelect('knowledgeManager')"
-          >
-            <div class="relative">
-              <div class="i-hugeicons:book-open-01 text-20 text-[#666] group-hover:text-[#333] transition-colors"></div>
-            </div>
-            <span class="text-12 text-[#666] group-hover:text-[#333]">知识库管理</span>
-          </div>
+<!--          <div-->
+<!--            class="flex flex-col items-center gap-2 cursor-pointer group"-->
+<!--            @click="handleMenuSelect('knowledgeManager')"-->
+<!--          >-->
+<!--            <div class="relative">-->
+<!--              <div class="i-hugeicons:book-open-01 text-20 text-[#666] group-hover:text-[#333] transition-colors"></div>-->
+<!--            </div>-->
+<!--            <span class="text-12 text-[#666] group-hover:text-[#333]">知识库管理</span>-->
+<!--          </div>-->
         </div>
 
         <!-- Logout -->
@@ -380,7 +367,7 @@ const handleMenuSelect = (key: string) => {
           @click="handleMenuSelect('logout')"
         >
           <div class="i-hugeicons:logout-01 text-20 text-red-500 group-hover:text-red-600 transition-colors"></div>
-          <span class="text-12 text-red-500 group-hover:text-red-600">退出登录</span>
+          <span class="text-12 text-red-500 group-hover:text-red-600">退出</span>
         </div>
       </div>
     </n-popover>

@@ -1,7 +1,7 @@
 services:
-  aix-db:
-    image: crpi-7xkxsdc0iki61l0q.cn-hangzhou.personal.cr.aliyuncs.com/apconw/aix-db:1.2.3
-    container_name: aix-db
+  ai-chat-db:
+    image: crpi-7xkxsdc0iki61l0q.cn-hangzhou.personal.cr.aliyuncs.com/apconw/ai-chat-db:1.2.3
+    container_name: ai-chat-db
     restart: unless-stopped
     environment:
       # 时区
@@ -38,7 +38,7 @@ services:
       # 日志目录（可选）
       - ./volume/logs/supervisor:/var/log/supervisor
       - ./volume/logs/nginx:/var/log/nginx
-      - ./volume/logs/aix-db:/var/log/aix-db
+      - ./volume/logs/ai-chat-db:/var/log/ai-chat-db
       - ./volume/logs/minio:/var/log/minio
       - ./volume/logs/postgresql:/var/log/postgresql
 
@@ -46,7 +46,7 @@ services:
       - "host.docker.internal:host-gateway"
 
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost/ && pg_isready -U aix_db -h localhost" ]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost/ && pg_isready -U postgre -h localhost" ]
       interval: 30s
       timeout: 10s
       retries: 3

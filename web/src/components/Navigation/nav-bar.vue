@@ -13,7 +13,7 @@ withDefaults(defineProps<Props>(), {
 })
 
 const handleToRepo = () => {
-  const link = ref('https://github.com/apconw/sanic-web')
+  const link = ref('')
   window.open(link.value, '_blank')
 }
 </script>

@@ -1,6 +1,6 @@
 import { useUserStore } from '@/store/business/userStore'
 
-const BASE_URL = `${location.origin}/sanic/user`
+const BASE_URL = `${location.origin}/agi/user`
 
 const getHeaders = () => {
   const userStore = useUserStore()

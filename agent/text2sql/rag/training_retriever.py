@@ -9,7 +9,7 @@ from sqlalchemy import or_, and_, text, bindparam
 from sqlalchemy.orm import Session
 
 from model.db_connection_pool import get_db_pool
-from model.db_models import TDataTraining
+from model.db_models import SqlTrain
 from services.embedding_service import generate_embedding
 
 logger = logging.getLogger(__name__)
@@ -169,12 +169,12 @@ async def _select_training_by_question(
     
     # 1. 关键词匹配
     question_pattern = f"%{question}%"
-    stmt = session.query(TDataTraining.id).filter(
+    stmt = session.query(SqlTrain.id).filter(
         and_(
-            TDataTraining.question.ilike(question_pattern),
-            TDataTraining.oid == oid,
-            TDataTraining.datasource == datasource_id,
-            TDataTraining.enabled == True,
+            SqlTrain.question.ilike(question_pattern),
+            # SqlTrain.oid == oid,
+            SqlTrain.ds_id == datasource_id,
+            SqlTrain.enabled_flag == 1,
         )
     )
     
@@ -212,8 +212,8 @@ async def _select_training_by_question(
                     embedding_sql,
                     {
                         "embedding_array": embedding_str,
-                        "oid": oid,
-                        "datasource": datasource_id,
+                        # "oid": oid,
+                        "ds_id": datasource_id,
                         "top_k": top_k,
                     }
                 ).fetchall()
@@ -229,10 +229,10 @@ async def _select_training_by_question(
     
     # 查询完整的训练示例信息
     training_examples = session.query(
-        TDataTraining.id,
-        TDataTraining.question,
-        TDataTraining.description,
-    ).filter(TDataTraining.id.in_(list(training_ids)[:top_k])).all()
+        SqlTrain.id,
+        SqlTrain.question,
+        SqlTrain.description,
+    ).filter(SqlTrain.id.in_(list(training_ids)[:top_k])).all()
     
     # 转换为字典格式
     result_list = []

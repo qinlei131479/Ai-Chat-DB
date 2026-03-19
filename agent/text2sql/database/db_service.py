@@ -23,16 +23,14 @@ import pandas as pd
 import requests
 
 # Langfuse OpenAI 延迟导入，避免在模块加载时触发 Langfuse 客户端初始化
-# from langfuse.openai import OpenAI
 from rank_bm25 import BM25Okapi
 from sqlalchemy.inspection import inspect
 from sqlalchemy.sql.expression import text
 
 from agent.text2sql.state.agent_state import AgentState, ExecutionResult
 from model.db_connection_pool import get_db_pool
-from model.db_models import TAiModel, TDsPermission, TDsRules
-from model.datasource_models import DatasourceTable, DatasourceField
-from agent.text2sql.permission.permission_retriever import get_user_permission_filters
+from model.db_models import TAiModel
+from model.datasource_models import DatasourceTable, DatasourceTableField
 from sqlalchemy import select
 
 # 日志配置
@@ -122,7 +120,7 @@ class DatabaseService:
         if datasource_id:
             try:
                 with db_pool.get_session() as session:
-                    ds = session.query(Datasource).filter(Datasource.id == datasource_id).first()
+                    ds = session.query(Datasource).filter(Datasource.id == datasource_id,Datasource.del_flag == "0").first()
                     if ds:
                         # 在 session 内提取并存储需要的属性
                         self._datasource_type = ds.type
@@ -304,7 +302,7 @@ class DatabaseService:
 
     def _get_table_comment_from_metadata(self, table_name: str) -> str:
         """
-        从 t_datasource_table 元数据表获取表注释。
+        从 datasource_table 元数据表获取表注释。
         用于原生驱动的数据库（如 Doris、StarRocks 等），这些数据库无法通过 SQLAlchemy inspector 获取注释。
 
         Args:
@@ -377,14 +375,13 @@ class DatabaseService:
             use_native_driver = db_enum.connect_type == ConnectType.py_driver
 
         if use_native_driver and self._datasource_id:
-            # 对于原生驱动的数据库（如 Doris、StarRocks 等），从 t_datasource_table 获取表结构
+            # 对于原生驱动的数据库（如 Doris、StarRocks 等），从 datasource_table 获取表结构
             return self._fetch_table_info_from_metadata(user_id, use_cache, start_time)
 
         inspector = inspect(self._engine)
         table_names = inspector.get_table_names()
         logger.info(f"🔍 开始加载 {len(table_names)} 张表的 schema 信息...")
 
-        # 获取列权限配置（集成完整的权限系统）
         column_permissions = {}
         if user_id and not is_admin(user_id) and self._datasource_id:
             try:
@@ -396,67 +393,12 @@ class DatabaseService:
                     ).all()
 
                     # 获取所有规则
-                    rules_stmt = select(TDsRules).where(TDsRules.enable == True)
-                    rules = session.execute(rules_stmt).scalars().all()
-
                     for table in tables:
                         allowed_fields = set()
-
-                        # 如果有规则，查询列权限配置
-                        if rules:
-                            permissions_stmt = select(TDsPermission).where(
-                                TDsPermission.table_id == table.id,
-                                TDsPermission.type == 'column',
-                                TDsPermission.enable == True
-                            )
-                            column_perms = session.execute(permissions_stmt).scalars().all()
-
-                            if column_perms:
-                                # 检查权限是否与用户匹配
-                                matching_permissions = []
-                                for permission in column_perms:
-                                    for rule in rules:
-                                        perm_ids = []
-                                        if rule.permission_list:
-                                            try:
-                                                perm_ids = json.loads(rule.permission_list)
-                                            except:
-                                                pass
-
-                                        user_ids = []
-                                        if rule.user_list:
-                                            try:
-                                                user_ids = json.loads(rule.user_list)
-                                            except:
-                                                pass
-
-                                        if perm_ids and user_ids:
-                                            if permission.id in perm_ids and (
-                                                user_id in user_ids or str(user_id) in user_ids
-                                            ):
-                                                matching_permissions.append(permission)
-                                                break
-
-                                # 解析列权限配置
-                                for perm in matching_permissions:
-                                    if perm.permissions:
-                                        try:
-                                            perm_config = json.loads(perm.permissions)
-                                            if isinstance(perm_config, list):
-                                                for field_perm in perm_config:
-                                                    if field_perm.get("enable", False):
-                                                        field_name = field_perm.get("field_name")
-                                                        if field_name:
-                                                            allowed_fields.add(field_name)
-                                        except Exception as e:
-                                            logger.debug(f"解析列权限配置失败: {e}, permission_id={perm.id}")
-
-                        # 如果没有匹配的权限配置，使用 checked 字段作为基础
                         if not allowed_fields:
-                            fields = session.query(DatasourceField).filter(
-                                DatasourceField.ds_id == self._datasource_id,
-                                DatasourceField.table_id == table.id,
-                                DatasourceField.checked == True
+                            fields = session.query(DatasourceTableField).filter(
+                                DatasourceTableField.ds_id == self._datasource_id,
+                                DatasourceTableField.table_id == table.id
                             ).all()
                             allowed_fields = {field.field_name for field in fields}
 
@@ -513,7 +455,7 @@ class DatabaseService:
 
     def _fetch_table_info_from_metadata(self, user_id: Optional[int], use_cache: bool, start_time: float) -> Dict[str, Dict]:
         """
-        从 t_datasource_table 和 t_datasource_field 获取表结构信息。
+        从 datasource_table 和 datasource_field 获取表结构信息。
         用于原生驱动的数据库（如 Doris、StarRocks 等），这些数据库不能通过 SQLAlchemy inspect 获取表结构。
 
         Args:
@@ -534,17 +476,16 @@ class DatabaseService:
                 # 获取该数据源下所有已勾选的表
                 tables = session.query(DatasourceTable).filter(
                     DatasourceTable.ds_id == self._datasource_id,
-                    DatasourceTable.checked == True
+                    DatasourceTable.checked_flag == 1
                 ).all()
 
                 logger.info(f"🔍 从元数据加载 {len(tables)} 张表的 schema 信息（原生驱动模式）...")
 
                 # 获取所有表的字段
                 table_ids = [t.id for t in tables]
-                fields = session.query(DatasourceField).filter(
-                    DatasourceField.ds_id == self._datasource_id,
-                    DatasourceField.table_id.in_(table_ids),
-                    DatasourceField.checked == True
+                fields = session.query(DatasourceTableField).filter(
+                    DatasourceTableField.ds_id == self._datasource_id,
+                    DatasourceTableField.table_id.in_(table_ids),
                 ).all()
 
                 # 按表ID分组字段
@@ -591,7 +532,7 @@ class DatabaseService:
     def _get_precomputed_embeddings(self, table_info: Dict[str, Dict]) -> Tuple[Optional[np.ndarray], List[str], List[str]]:
         """
         尝试从数据库获取预计算的 embedding。
-        仅从 t_datasource_table.embedding 字段读取，不做任何实时计算。
+        仅从 datasource_table.embedding 字段读取，不做任何实时计算。
 
         Returns:
             (预计算的 embedding 数组, 有预计算 embedding 的表名列表, 需要计算的表名列表)
@@ -1065,7 +1006,7 @@ class DatabaseService:
                 node_by_id = {str(n.get("id")): n for n in table_nodes if n.get("id") is not None}
 
                 def _get_field_name(cell_id: str, port_id: str) -> str:
-                    """从关系图节点或 DatasourceField 中解析字段名。"""
+                    """从关系图节点或 DatasourceTableField 中解析字段名。"""
                     # 1) 从前端关系图的 ports 中取
                     node = node_by_id.get(cell_id)
                     if node:
@@ -1078,11 +1019,11 @@ class DatabaseService:
                                     .get("text", "")
                                     .strip()
                                 )
-                    # 2) 兜底：从 DatasourceField.id 读取
+                    # 2) 兜底：从 DatasourceTableField.id 读取
                     try:
                         if port_id and str(port_id).isdigit():
-                            field = session.query(DatasourceField).filter(
-                                DatasourceField.id == int(port_id)
+                            field = session.query(DatasourceTableField).filter(
+                                DatasourceTableField.id == int(port_id)
                             ).first()
                             if field and field.field_name:
                                 return field.field_name.strip()

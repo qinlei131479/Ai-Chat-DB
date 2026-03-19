@@ -78,7 +78,7 @@ const handleFileUpload = async (fileInfo: ExtendedUploadFileInfo) => {
   }
 
   try {
-    const response = await fetch('sanic/file/upload_file_and_parse', {
+    const response = await fetch('agi/file/upload_file_and_parse', {
       method: 'POST',
       body: formData,
     })

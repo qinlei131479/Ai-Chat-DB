@@ -9,8 +9,8 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from model.db_connection_pool import get_db_pool
-from model.db_models import TTerminology, TDataTraining
-from model.datasource_models import DatasourceTable, DatasourceField
+from model.db_models import Terminology, SqlTrain
+from model.datasource_models import DatasourceTable, DatasourceTableField
 from services.embedding_service import get_default_embedding_model, generate_embedding
 from services.datasource_service import DatasourceService
 from common.local_embedding import generate_embedding_local_sync, _get_local_embedding_model
@@ -82,8 +82,8 @@ async def recalculate_terminology_embeddings(progress_callback: Optional[Callabl
     try:
         with pool.get_session() as session:
             # 查询所有术语（只查询父节点）
-            terminology_list = session.query(TTerminology).filter(
-                TTerminology.pid.is_(None)
+            terminology_list = session.query(Terminology).filter(
+                Terminology.parent_id.is_(None)
             ).all()
             
             total = len(terminology_list)
@@ -121,24 +121,24 @@ async def recalculate_terminology_embeddings(progress_callback: Optional[Callabl
                         
                         if embedding:
                             # 更新 embedding
-                            stmt = update(TTerminology).where(
-                                TTerminology.id == term.id
+                            stmt = update(Terminology).where(
+                                Terminology.id == term.id
                             ).values(embedding=embedding)
                             session.execute(stmt)
                             session.commit()
                             success_count += 1
                             
                             # 更新子节点（同义词）的 embedding
-                            children = session.query(TTerminology).filter(
-                                TTerminology.pid == term.id
+                            children = session.query(Terminology).filter(
+                                Terminology.parent_id == term.id
                             ).all()
                             
                             for child in children:
                                 if child.word:
                                     child_embedding = await generate_embedding(child.word)
                                     if child_embedding:
-                                        child_stmt = update(TTerminology).where(
-                                            TTerminology.id == child.id
+                                        child_stmt = update(Terminology).where(
+                                            Terminology.id == child.id
                                         ).values(embedding=child_embedding)
                                         session.execute(child_stmt)
                                         session.commit()
@@ -205,7 +205,7 @@ async def recalculate_training_embeddings(progress_callback: Optional[Callable[[
     try:
         with pool.get_session() as session:
             # 查询所有训练数据
-            training_list = session.query(TDataTraining).all()
+            training_list = session.query(SqlTrain).all()
             
             total = len(training_list)
             if total == 0:
@@ -238,8 +238,8 @@ async def recalculate_training_embeddings(progress_callback: Optional[Callable[[
                         # 使用显式 UPDATE，避免 SQLAlchemy 在比较旧值/新值时触发
                         # numpy 向量维度不一致导致的广播错误
                         stmt = (
-                            update(TDataTraining)
-                            .where(TDataTraining.id == training_id)
+                            update(SqlTrain)
+                            .where(SqlTrain.id == training_id)
                             .values(embedding=embedding)
                         )
                         session.execute(stmt)
@@ -336,9 +336,9 @@ async def recalculate_table_embeddings(progress_callback: Optional[Callable[[int
                     items = []
                     for table in tables:
                         # 查询表的字段
-                        fields = session.query(DatasourceField).filter(
-                            DatasourceField.ds_id == ds.id,
-                            DatasourceField.table_id == table.id
+                        fields = session.query(DatasourceTableField).filter(
+                            DatasourceTableField.ds_id == ds.id,
+                            DatasourceTableField.table_id == table.id
                         ).all()
                         
                         fields_data = []

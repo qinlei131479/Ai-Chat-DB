@@ -5,12 +5,12 @@
 #   docker compose -f docker-compose.dev.yaml up -d
 #
 # 重启后端服务（代码修改后）:
-#   docker exec aix-db-dev supervisorctl restart aix-db
+#   docker exec ai-chat-db-dev supervisorctl restart ai-chat-db
 
 services:
-  aix-db:
-    image: crpi-7xkxsdc0iki61l0q.cn-hangzhou.personal.cr.aliyuncs.com/apconw/aix-db:1.2.2
-    container_name: aix-db-dev
+  ai-chat-db:
+    image: crpi-7xkxsdc0iki61l0q.cn-hangzhou.personal.cr.aliyuncs.com/apconw/ai-chat-db:1.2.2
+    container_name: ai-chat-db-dev
     restart: unless-stopped
     environment:
       # 时区
@@ -44,16 +44,16 @@ services:
     volumes:
       # ============ 后端源码挂载（开发调试用）============
       # 核心模块
-      - ../common:/aix-db/common:ro
-      - ../config:/aix-db/config:ro
-      - ../constants:/aix-db/constants:ro
-      - ../controllers:/aix-db/controllers:ro
-      - ../model:/aix-db/model:ro
-      - ../models:/aix-db/models:ro
-      - ../services:/aix-db/services:ro
-      - ../agent:/aix-db/agent:ro
+      - ../common:/ai-chat-db/common:ro
+      - ../config:/ai-chat-db/config:ro
+      - ../constants:/ai-chat-db/constants:ro
+      - ../controllers:/ai-chat-db/controllers:ro
+      - ../model:/ai-chat-db/model:ro
+      - ../models:/ai-chat-db/models:ro
+      - ../services:/ai-chat-db/services:ro
+      - ../agent:/ai-chat-db/agent:ro
       # 入口文件
-      - ../serv.py:/aix-db/serv.py:ro
+      - ../serv.py:/ai-chat-db/serv.py:ro
 
       # ============ 数据持久化 ============
       # PostgreSQL 数据目录
@@ -66,7 +66,7 @@ services:
       # ============ 日志目录 ============
       - ./volume/logs/supervisor:/var/log/supervisor
       - ./volume/logs/nginx:/var/log/nginx
-      - ./volume/logs/aix-db:/var/log/aix-db
+      - ./volume/logs/ai-chat-db:/var/log/ai-chat-db
       - ./volume/logs/minio:/var/log/minio
       - ./volume/logs/postgresql:/var/log/postgresql
 
@@ -74,7 +74,7 @@ services:
       - "host.docker.internal:host-gateway"
 
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost/ && pg_isready -U aix_db -h localhost" ]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost/ && pg_isready -U postgre -h localhost" ]
       interval: 30s
       timeout: 10s
       retries: 3

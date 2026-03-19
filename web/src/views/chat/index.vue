@@ -12,7 +12,7 @@ import FileListItem from '@/views/file/file-list-item.vue'
 import FileUploadManager from '@/views/file/file-upload-manager.vue'
 
 import SuggestedView from './suggested-page.vue'
-import TableModal from '@/views/datasource/table-modal.vue'
+import TableModal from '@/views/system/datasource/table-modal.vue'
 
 const route = useRoute()
 const router = useRouter()

@@ -12,8 +12,7 @@ from sqlalchemy import or_, and_, text
 from sqlalchemy.orm import Session
 
 from model.db_connection_pool import get_db_pool
-from model.db_models import TTerminology
-from model.datasource_models import Datasource
+from model.db_models import Terminology
 from services.embedding_service import generate_embedding
 
 logger = logging.getLogger(__name__)
@@ -173,11 +172,10 @@ async def _select_terminology_by_word(
     terminology_ids = set()
     
     # 1. 关键词匹配
-    stmt = session.query(TTerminology).filter(
+    stmt = session.query(Terminology).filter(
         and_(
             text(":sentence ILIKE '%' || word || '%'"),
-            TTerminology.oid == oid,
-            TTerminology.enabled == True,
+            Terminology.enabled_flag == 1,
         )
     )
     
@@ -185,17 +183,17 @@ async def _select_terminology_by_word(
         # 数据源筛选：通用术语或指定数据源的术语
         stmt = stmt.filter(
             or_(
-                or_(TTerminology.specific_ds == False, TTerminology.specific_ds.is_(None)),
+                or_(Terminology.specific_ds == False, Terminology.specific_ds.is_(None)),
                 and_(
-                    TTerminology.specific_ds == True,
-                    TTerminology.datasource_ids.isnot(None),
+                    Terminology.specific_ds == True,
+                    Terminology.datasource_ids.isnot(None),
                     text(f"datasource_ids::jsonb @> jsonb_build_array({datasource_id})")
                 )
             )
         )
     else:
         stmt = stmt.filter(
-            or_(TTerminology.specific_ds == False, TTerminology.specific_ds.is_(None))
+            or_(Terminology.specific_ds == False, Terminology.specific_ds.is_(None))
         )
     
     # 执行查询
@@ -283,8 +281,8 @@ async def _select_terminology_by_word(
         return []
     
     # 查询完整的术语信息（包含父节点和子节点）
-    all_terms = session.query(TTerminology).filter(
-        or_(TTerminology.id.in_(list(terminology_ids)), TTerminology.pid.in_(list(terminology_ids)))
+    all_terms = session.query(Terminology).filter(
+        or_(Terminology.id.in_(list(terminology_ids)), Terminology.pid.in_(list(terminology_ids)))
     ).all()
     
     # 组织为字典格式

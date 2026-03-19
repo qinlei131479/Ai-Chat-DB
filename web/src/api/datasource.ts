@@ -9,7 +9,7 @@ import { useUserStore } from '@/store/business/userStore'
 export async function fetch_datasource_list() {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/list`)
+  const url = new URL(`${location.origin}/agi/datasource/list`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'get',
@@ -26,7 +26,7 @@ export async function fetch_datasource_list() {
 export async function fetch_datasource_table_list(dsId: number | string) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/tableList/${dsId}`)
+  const url = new URL(`${location.origin}/agi/datasource/tableList/${dsId}`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -40,10 +40,10 @@ export async function fetch_datasource_table_list(dsId: number | string) {
 /**
  * 获取表字段列表
  */
-export async function fetch_datasource_field_list(tableId: number | string) {
+export async function fetch_datasource_field_list(tableId:  string) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/fieldList/${tableId}`)
+  const url = new URL(`${location.origin}/agi/datasource/fieldList/${tableId}`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -60,7 +60,7 @@ export async function fetch_datasource_field_list(tableId: number | string) {
 export async function fetch_datasource_preview_data(dsId: number | string, buildData: any) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/previewData`)
+  const url = new URL(`${location.origin}/agi/datasource/previewData`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -82,7 +82,7 @@ export async function fetch_datasource_preview_data(dsId: number | string, build
 export async function save_datasource_table(tableData: any) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/saveTable`)
+  const url = new URL(`${location.origin}/agi/datasource/saveTable`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -101,7 +101,7 @@ export async function save_datasource_table(tableData: any) {
 export async function save_datasource_field(fieldData: any) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/saveField`)
+  const url = new URL(`${location.origin}/agi/datasource/saveField`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -120,7 +120,7 @@ export async function save_datasource_field(fieldData: any) {
 export async function fetch_datasource_detail(id: number | string) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/get/${id}`)
+  const url = new URL(`${location.origin}/agi/datasource/get/${id}`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -137,7 +137,7 @@ export async function fetch_datasource_detail(id: number | string) {
 export async function delete_datasource(id: number | string) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/delete/${id}`)
+  const url = new URL(`${location.origin}/agi/datasource/delete/${id}`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -154,7 +154,7 @@ export async function delete_datasource(id: number | string) {
 export async function fetch_neo4j_relation(dsId: number | string) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/getNeo4jRelation/${dsId}`)
+  const url = new URL(`${location.origin}/agi/datasource/getNeo4jRelation/${dsId}`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -171,7 +171,7 @@ export async function fetch_neo4j_relation(dsId: number | string) {
 export async function check_datasource_connection(data: any) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/check`)
+  const url = new URL(`${location.origin}/agi/datasource/check`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -190,7 +190,7 @@ export async function check_datasource_connection(data: any) {
 export async function fetch_tables_by_conf(data: any) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/getTablesByConf`)
+  const url = new URL(`${location.origin}/agi/datasource/getTablesByConf`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -209,7 +209,7 @@ export async function fetch_tables_by_conf(data: any) {
 export async function add_datasource(data: any) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/add`)
+  const url = new URL(`${location.origin}/agi/datasource/add`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -228,7 +228,7 @@ export async function add_datasource(data: any) {
 export async function update_datasource(data: any) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/update`)
+  const url = new URL(`${location.origin}/agi/datasource/update`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -248,10 +248,10 @@ export async function update_datasource(data: any) {
  * @param tables 表列表
  * @param isSelectAll 是否全选（用于后端优化处理逻辑）
  */
-export async function sync_datasource_tables(dsId: number | string, tables: any[], isSelectAll: boolean = false) {
+export async function sync_datasource_tables(dsId:  string, tables: any[], isSelectAll: boolean = false) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/syncTables/${dsId}`)
+  const url = new URL(`${location.origin}/agi/datasource/syncTables/${dsId}`)
   
   // 根据表数量动态设置超时时间：每100张表增加1分钟，最少5分钟，最多30分钟
   const tableCount = tables.length
@@ -283,41 +283,3 @@ export async function sync_datasource_tables(dsId: number | string, tables: any[
   })
 }
 
-/**
- * 获取已授权用户
- */
-export async function get_authorized_users(datasourceId: number) {
-  const userStore = useUserStore()
-  const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/getAuthorizedUsers/${datasourceId}`)
-  const req = new Request(url, {
-    mode: 'cors',
-    method: 'post',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  })
-  return fetch(req)
-}
-
-/**
- * 数据源授权
- */
-export async function authorize_datasource(datasourceId: number, userIds: number[]) {
-  const userStore = useUserStore()
-  const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/authorize`)
-  const req = new Request(url, {
-    mode: 'cors',
-    method: 'post',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      datasource_id: datasourceId,
-      user_ids: userIds,
-    }),
-  })
-  return fetch(req)
-}

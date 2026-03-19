@@ -3,20 +3,16 @@
 """
 
 import logging
-import os
 from pathlib import Path
-from typing import List
 
-from sanic import Blueprint, Request
-from sanic_ext import openapi
+from fastapi import APIRouter, Depends
 
-from common.res_decorator import async_json_resp
-from common.token_decorator import check_token
-from model.schemas import BaseResponse, get_schema
+from common.res_decorator import success_response
+from common.token_decorator import get_current_user
 
 logger = logging.getLogger(__name__)
 
-bp = Blueprint("skillService", url_prefix="/system/skill")
+router = APIRouter(prefix="/system/skill", tags=["技能管理"])
 
 
 def parse_skill_markdown(file_path: Path) -> dict:
@@ -25,12 +21,10 @@ def parse_skill_markdown(file_path: Path) -> dict:
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        # 解析 YAML front matter
         if content.startswith("---"):
             parts = content.split("---", 2)
             if len(parts) >= 3:
                 front_matter = parts[1].strip()
-                # 简单解析 YAML
                 name = None
                 description = None
 
@@ -50,29 +44,13 @@ def parse_skill_markdown(file_path: Path) -> dict:
     except Exception as e:
         logger.error(f"解析技能文件失败 {file_path}: {e}")
 
-    # 如果解析失败，返回默认值
     return {"name": file_path.parent.name, "description": ""}
 
 
-@bp.get("/list")
-@openapi.summary("获取技能列表")
-@openapi.description("获取深度问数技能列表")
-@openapi.tag("技能管理")
-@openapi.response(
-    200,
-    {
-        "application/json": {
-            "schema": get_schema(BaseResponse),
-        }
-    },
-    description="获取成功",
-)
-@check_token
-@async_json_resp
-async def get_skill_list(request: Request):
-    """获取技能列表"""
+@router.get("/list", summary="获取技能列表")
+async def get_skill_list(user: dict = Depends(get_current_user)):
+    """获取深度问数技能列表"""
     try:
-        # 获取项目根目录
         current_file = Path(__file__)
         project_root = current_file.parent.parent
         skills_dir = project_root / "agent" / "deepagent" / "skills"
@@ -80,7 +58,6 @@ async def get_skill_list(request: Request):
         skills = []
 
         if skills_dir.exists() and skills_dir.is_dir():
-            # 遍历 skills 目录下的所有子目录
             for skill_dir in skills_dir.iterdir():
                 if skill_dir.is_dir():
                     skill_file = skill_dir / "SKILL.md"
@@ -88,10 +65,9 @@ async def get_skill_list(request: Request):
                         skill_info = parse_skill_markdown(skill_file)
                         skills.append(skill_info)
 
-        # 按名称排序
         skills.sort(key=lambda x: x["name"])
 
-        return skills
+        return success_response(skills)
     except Exception as e:
         logger.error(f"获取技能列表失败: {e}", exc_info=True)
         raise

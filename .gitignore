@@ -69,3 +69,5 @@ examples/
 !config/**/*.py
 !constants/
 !constants/**/*.py
+models/
+uv.lock

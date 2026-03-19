@@ -20,7 +20,7 @@ from common.datasource_util import (
     DatasourceConnectionUtil,
 )
 from model.db_connection_pool import get_db_pool
-from model.datasource_models import DatasourceTable, DatasourceField
+from model.datasource_models import DatasourceTable, DatasourceTableField
 from model import Datasource
 
 from .tool_call_manager import (
@@ -96,15 +96,14 @@ def _get_table_info_from_metadata() -> dict:
             # 获取该数据源下所有已勾选的表
             tables = session.query(DatasourceTable).filter(
                 DatasourceTable.ds_id == datasource_id,
-                DatasourceTable.checked == True
+                DatasourceTable.checked_flag == 1
             ).all()
             
             # 获取所有表的字段
             table_ids = [t.id for t in tables]
-            fields = session.query(DatasourceField).filter(
-                DatasourceField.ds_id == datasource_id,
-                DatasourceField.table_id.in_(table_ids),
-                DatasourceField.checked == True
+            fields = session.query(DatasourceTableField).filter(
+                DatasourceTableField.ds_id == datasource_id,
+                DatasourceTableField.table_id.in_(table_ids),
             ).all()
             
             # 按表ID分组字段
@@ -481,7 +480,8 @@ def _get_table_relationships_from_datasource(table_names: Optional[list] = None)
         with db_pool.get_session() as session:
             # 获取数据源的表关系配置
             datasource = session.query(Datasource).filter(
-                Datasource.id == datasource_id
+                Datasource.id == datasource_id,
+                Datasource.del_flag == "0"
             ).first()
             
             if not datasource or not datasource.table_relation:
@@ -514,7 +514,7 @@ def _get_table_relationships_from_datasource(table_names: Optional[list] = None)
             node_by_id = {str(n.get("id")): n for n in table_nodes if n.get("id") is not None}
             
             def _get_field_name(cell_id: str, port_id: str) -> str:
-                """从关系图节点或 DatasourceField 中解析字段名"""
+                """从关系图节点或 DatasourceTableField 中解析字段名"""
                 # 1) 从前端关系图的 ports 中取
                 node = node_by_id.get(cell_id)
                 if node:
@@ -527,11 +527,11 @@ def _get_table_relationships_from_datasource(table_names: Optional[list] = None)
                                 .get("text", "")
                                 .strip()
                             )
-                # 2) 兜底：从 DatasourceField.id 读取
+                # 2) 兜底：从 DatasourceTableField.id 读取
                 try:
                     if port_id and str(port_id).isdigit():
-                        field = session.query(DatasourceField).filter(
-                            DatasourceField.id == int(port_id)
+                        field = session.query(DatasourceTableField).filter(
+                            DatasourceTableField.id == int(port_id)
                         ).first()
                         if field and field.field_name:
                             return field.field_name.strip()

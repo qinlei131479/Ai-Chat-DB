@@ -7,8 +7,7 @@ from model.db_models import *  # noqa: F401, F403
 from model.datasource_models import (  # noqa: F401
     Datasource,
     DatasourceTable,
-    DatasourceField,
-    DatasourceAuth,
+    DatasourceTableField,
 )
 
 __all__ = [
@@ -17,8 +16,7 @@ __all__ = [
     "get_db_pool",
     "Datasource",
     "DatasourceTable",
-    "DatasourceField",
-    "DatasourceAuth",
+    "DatasourceTableField",
 ]
 
 

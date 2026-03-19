@@ -455,7 +455,7 @@ class DeepAgent:
 
         start_time = time.time()
         connection_closed = False
-        # 收集所有输出内容，流结束后写入 t_user_qa_record
+        # 收集所有输出内容，流结束后写入 user_qa_record
         answer_collector: list[str] = []
 
         try:
@@ -512,7 +512,7 @@ class DeepAgent:
                 except Exception:
                     pass
         finally:
-            # 写入对话记录到 t_user_qa_record
+            # 写入对话记录到 user_qa_record
             try:
                 if answer_collector:
                     record_id = await add_user_record(

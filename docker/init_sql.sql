@@ -1,5 +1,5 @@
 -- PostgreSQL 初始化脚本
--- 只包含核心业务表：t_datasource, t_datasource_field, t_datasource_table, t_user, t_user_qa_record
+-- 只包含核心业务表：datasource, datasource_field, datasource_table, t_user, user_qa_record
 
 -- 创建数据库（如果不存在）
 -- 注意：PostgreSQL 中需要先连接到 postgres 数据库才能创建新数据库
@@ -8,9 +8,9 @@
 -- 启用向量扩展（只需一次）
 CREATE EXTENSION IF NOT EXISTS vector;
 
--- t_datasource definition
-DROP TABLE IF EXISTS t_datasource CASCADE;
-CREATE TABLE t_datasource (
+-- datasource definition
+DROP TABLE IF EXISTS datasource CASCADE;
+CREATE TABLE datasource (
   id BIGSERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   description TEXT,
@@ -24,21 +24,21 @@ CREATE TABLE t_datasource (
   table_relation JSONB
 );
 
-COMMENT ON TABLE t_datasource IS '数据源表';
-COMMENT ON COLUMN t_datasource.name IS '数据源名称';
-COMMENT ON COLUMN t_datasource.description IS '描述';
-COMMENT ON COLUMN t_datasource.type IS '数据源类型: mysql, postgresql, oracle, sqlserver等';
-COMMENT ON COLUMN t_datasource.type_name IS '类型名称';
-COMMENT ON COLUMN t_datasource.configuration IS '配置信息(加密)';
-COMMENT ON COLUMN t_datasource.create_time IS '创建时间';
-COMMENT ON COLUMN t_datasource.create_by IS '创建人ID';
-COMMENT ON COLUMN t_datasource.status IS '状态: Success, Failed';
-COMMENT ON COLUMN t_datasource.num IS '表数量统计: selected/total';
-COMMENT ON COLUMN t_datasource.table_relation IS '表关系';
+COMMENT ON TABLE datasource IS '数据源表';
+COMMENT ON COLUMN datasource.name IS '数据源名称';
+COMMENT ON COLUMN datasource.description IS '描述';
+COMMENT ON COLUMN datasource.type IS '数据源类型: mysql, postgresql, oracle, sqlserver等';
+COMMENT ON COLUMN datasource.type_name IS '类型名称';
+COMMENT ON COLUMN datasource.configuration IS '配置信息(加密)';
+COMMENT ON COLUMN datasource.create_time IS '创建时间';
+COMMENT ON COLUMN datasource.create_by IS '创建人ID';
+COMMENT ON COLUMN datasource.status IS '状态: Success, Failed';
+COMMENT ON COLUMN datasource.num IS '表数量统计: selected/total';
+COMMENT ON COLUMN datasource.table_relation IS '表关系';
 
--- t_datasource_table definition
-DROP TABLE IF EXISTS t_datasource_table CASCADE;
-CREATE TABLE t_datasource_table (
+-- datasource_table definition
+DROP TABLE IF EXISTS datasource_table CASCADE;
+CREATE TABLE datasource_table (
   id BIGSERIAL PRIMARY KEY,
   ds_id BIGINT NOT NULL,
   checked BOOLEAN DEFAULT TRUE,
@@ -48,17 +48,17 @@ CREATE TABLE t_datasource_table (
   embedding TEXT
 );
 
-COMMENT ON TABLE t_datasource_table IS '数据源表信息';
-COMMENT ON COLUMN t_datasource_table.ds_id IS '数据源ID';
-COMMENT ON COLUMN t_datasource_table.checked IS '是否选中';
-COMMENT ON COLUMN t_datasource_table.table_name IS '表名';
-COMMENT ON COLUMN t_datasource_table.table_comment IS '表注释';
-COMMENT ON COLUMN t_datasource_table.custom_comment IS '自定义注释';
-COMMENT ON COLUMN t_datasource_table.embedding IS '表结构 embedding (JSON 数组字符串)';
+COMMENT ON TABLE datasource_table IS '数据源表信息';
+COMMENT ON COLUMN datasource_table.ds_id IS '数据源ID';
+COMMENT ON COLUMN datasource_table.checked IS '是否选中';
+COMMENT ON COLUMN datasource_table.table_name IS '表名';
+COMMENT ON COLUMN datasource_table.table_comment IS '表注释';
+COMMENT ON COLUMN datasource_table.custom_comment IS '自定义注释';
+COMMENT ON COLUMN datasource_table.embedding IS '表结构 embedding (JSON 数组字符串)';
 
--- t_datasource_field definition
-DROP TABLE IF EXISTS t_datasource_field CASCADE;
-CREATE TABLE t_datasource_field (
+-- datasource_field definition
+DROP TABLE IF EXISTS datasource_tabel_field CASCADE;
+CREATE TABLE datasource_tabel_field (
   id BIGSERIAL PRIMARY KEY,
   ds_id BIGINT NOT NULL,
   table_id BIGINT NOT NULL,
@@ -70,15 +70,15 @@ CREATE TABLE t_datasource_field (
   field_index BIGINT
 );
 
-COMMENT ON TABLE t_datasource_field IS '数据源字段信息';
-COMMENT ON COLUMN t_datasource_field.ds_id IS '数据源ID';
-COMMENT ON COLUMN t_datasource_field.table_id IS '表ID';
-COMMENT ON COLUMN t_datasource_field.checked IS '是否选中';
-COMMENT ON COLUMN t_datasource_field.field_name IS '字段名';
-COMMENT ON COLUMN t_datasource_field.field_type IS '字段类型';
-COMMENT ON COLUMN t_datasource_field.field_comment IS '字段注释';
-COMMENT ON COLUMN t_datasource_field.custom_comment IS '自定义注释';
-COMMENT ON COLUMN t_datasource_field.field_index IS '字段顺序';
+COMMENT ON TABLE datasource_tabel_field IS '数据源字段信息';
+COMMENT ON COLUMN datasource_tabel_field.ds_id IS '数据源ID';
+COMMENT ON COLUMN datasource_tabel_field.table_id IS '表ID';
+COMMENT ON COLUMN datasource_tabel_field.checked IS '是否选中';
+COMMENT ON COLUMN datasource_tabel_field.field_name IS '字段名';
+COMMENT ON COLUMN datasource_tabel_field.field_type IS '字段类型';
+COMMENT ON COLUMN datasource_tabel_field.field_comment IS '字段注释';
+COMMENT ON COLUMN datasource_tabel_field.custom_comment IS '自定义注释';
+COMMENT ON COLUMN datasource_tabel_field.field_index IS '字段顺序';
 
 -- t_user definition
 DROP TABLE IF EXISTS t_user CASCADE;
@@ -102,9 +102,9 @@ COMMENT ON COLUMN t_user."updateTime" IS '修改时间';
 INSERT INTO t_user (id, "userName", password, mobile, role, "createTime", "updateTime")
 VALUES (1, 'admin', '$2b$12$rmnFss1KlnSgcRKCv/Q8e.cSeK2OpV9qPg.7TFc7QyCAxdJEnEfDK', NULL, 'admin', '2024-01-15 15:30:00', '2024-01-15 15:30:00');
 
--- t_user_qa_record definition
-DROP TABLE IF EXISTS t_user_qa_record CASCADE;
-CREATE TABLE t_user_qa_record (
+-- user_qa_record definition
+DROP TABLE IF EXISTS user_qa_record CASCADE;
+CREATE TABLE user_qa_record (
   id BIGSERIAL PRIMARY KEY,
   user_id INTEGER,
   uuid VARCHAR(200),
@@ -122,21 +122,21 @@ CREATE TABLE t_user_qa_record (
   create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-COMMENT ON TABLE t_user_qa_record IS '问答记录表';
-COMMENT ON COLUMN t_user_qa_record.user_id IS '用户id';
-COMMENT ON COLUMN t_user_qa_record.uuid IS '自定义id';
-COMMENT ON COLUMN t_user_qa_record.conversation_id IS '对话id';
-COMMENT ON COLUMN t_user_qa_record.message_id IS '消息id';
-COMMENT ON COLUMN t_user_qa_record.task_id IS '任务id';
-COMMENT ON COLUMN t_user_qa_record.chat_id IS '对话id';
-COMMENT ON COLUMN t_user_qa_record.question IS '用户问题';
-COMMENT ON COLUMN t_user_qa_record.to2_answer IS '大模型答案';
-COMMENT ON COLUMN t_user_qa_record.to4_answer IS '业务数据';
-COMMENT ON COLUMN t_user_qa_record.qa_type IS '问答类型';
-COMMENT ON COLUMN t_user_qa_record.datasource_id IS '数据源ID';
-COMMENT ON COLUMN t_user_qa_record.file_key IS '文件minio/key';
-COMMENT ON COLUMN t_user_qa_record.sql_statement IS 'SQL语句（数据问答时保存）';
-COMMENT ON COLUMN t_user_qa_record.create_time IS '创建时间';
+COMMENT ON TABLE user_qa_record IS '问答记录表';
+COMMENT ON COLUMN user_qa_record.user_id IS '用户id';
+COMMENT ON COLUMN user_qa_record.uuid IS '自定义id';
+COMMENT ON COLUMN user_qa_record.conversation_id IS '对话id';
+COMMENT ON COLUMN user_qa_record.message_id IS '消息id';
+COMMENT ON COLUMN user_qa_record.task_id IS '任务id';
+COMMENT ON COLUMN user_qa_record.chat_id IS '对话id';
+COMMENT ON COLUMN user_qa_record.question IS '用户问题';
+COMMENT ON COLUMN user_qa_record.to2_answer IS '大模型答案';
+COMMENT ON COLUMN user_qa_record.to4_answer IS '业务数据';
+COMMENT ON COLUMN user_qa_record.qa_type IS '问答类型';
+COMMENT ON COLUMN user_qa_record.datasource_id IS '数据源ID';
+COMMENT ON COLUMN user_qa_record.file_key IS '文件minio/key';
+COMMENT ON COLUMN user_qa_record.sql_statement IS 'SQL语句（数据问答时保存）';
+COMMENT ON COLUMN user_qa_record.create_time IS '创建时间';
 
 -- t_ai_model definition
 DROP TABLE IF EXISTS t_ai_model CASCADE;
@@ -168,51 +168,9 @@ COMMENT ON COLUMN t_ai_model.config IS '配置JSON';
 COMMENT ON COLUMN t_ai_model.status IS '状态: 1:正常';
 COMMENT ON COLUMN t_ai_model.create_time IS '创建时间';
 
--- t_ds_rules definition
-DROP TABLE IF EXISTS t_ds_rules CASCADE;
-CREATE TABLE t_ds_rules (
-  id BIGSERIAL PRIMARY KEY,
-  name VARCHAR(128) NOT NULL,
-  description VARCHAR(512),
-  permission_list TEXT,
-  user_list TEXT,
-  white_list_user TEXT,
-  enable BOOLEAN DEFAULT TRUE,
-  create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  oid BIGINT
-);
 
-COMMENT ON TABLE t_ds_rules IS '权限规则组';
-COMMENT ON COLUMN t_ds_rules.name IS '规则名称';
-COMMENT ON COLUMN t_ds_rules.permission_list IS '权限ID列表(JSON)';
-COMMENT ON COLUMN t_ds_rules.user_list IS '用户ID列表(JSON)';
-COMMENT ON COLUMN t_ds_rules.enable IS '是否启用';
-
--- t_ds_permission definition
-DROP TABLE IF EXISTS t_ds_permission CASCADE;
-CREATE TABLE t_ds_permission (
-  id BIGSERIAL PRIMARY KEY,
-  name VARCHAR(128),
-  type VARCHAR(64) NOT NULL,
-  ds_id BIGINT,
-  table_id BIGINT,
-  expression_tree TEXT,
-  permissions TEXT,
-  white_list_user TEXT,
-  enable BOOLEAN DEFAULT TRUE,
-  create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  auth_target_type VARCHAR(128),
-  auth_target_id BIGINT
-);
-
-COMMENT ON TABLE t_ds_permission IS '数据权限详情';
-COMMENT ON COLUMN t_ds_permission.type IS '权限类型: row, column';
-COMMENT ON COLUMN t_ds_permission.expression_tree IS '行权限表达式树(JSON)';
-COMMENT ON COLUMN t_ds_permission.permissions IS '列权限配置(JSON)';
-
-
-DROP TABLE IF EXISTS t_terminology CASCADE;
-CREATE TABLE t_terminology (
+DROP TABLE IF EXISTS terminology CASCADE;
+CREATE TABLE terminology (
     id BIGSERIAL PRIMARY KEY,
     oid BIGINT DEFAULT 1,
     pid BIGINT,
@@ -225,19 +183,19 @@ CREATE TABLE t_terminology (
     embedding VECTOR
 );
 
-COMMENT ON TABLE t_terminology IS '术语配置表';
-COMMENT ON COLUMN t_terminology.oid IS '组织ID';
-COMMENT ON COLUMN t_terminology.pid IS '父ID';
-COMMENT ON COLUMN t_terminology.word IS '术语名称';
-COMMENT ON COLUMN t_terminology.description IS '描述';
-COMMENT ON COLUMN t_terminology.specific_ds IS '是否指定数据源';
-COMMENT ON COLUMN t_terminology.datasource_ids IS '数据源ID列表(JSON)';
-COMMENT ON COLUMN t_terminology.enabled IS '是否启用';
-COMMENT ON COLUMN t_terminology.create_time IS '创建时间';
-COMMENT ON COLUMN t_terminology.embedding IS '术语向量数据（pgvector VECTOR 类型，支持动态维度）';
+COMMENT ON TABLE terminology IS '术语配置表';
+COMMENT ON COLUMN terminology.oid IS '组织ID';
+COMMENT ON COLUMN terminology.pid IS '父ID';
+COMMENT ON COLUMN terminology.word IS '术语名称';
+COMMENT ON COLUMN terminology.description IS '描述';
+COMMENT ON COLUMN terminology.specific_ds IS '是否指定数据源';
+COMMENT ON COLUMN terminology.datasource_ids IS '数据源ID列表(JSON)';
+COMMENT ON COLUMN terminology.enabled IS '是否启用';
+COMMENT ON COLUMN terminology.create_time IS '创建时间';
+COMMENT ON COLUMN terminology.embedding IS '术语向量数据（pgvector VECTOR 类型，支持动态维度）';
 
-DROP TABLE IF EXISTS t_data_training CASCADE;
-CREATE TABLE t_data_training (
+DROP TABLE IF EXISTS sql_train CASCADE;
+CREATE TABLE sql_train (
   id BIGSERIAL PRIMARY KEY,
   oid BIGINT DEFAULT 1,
   datasource BIGINT,
@@ -249,28 +207,13 @@ CREATE TABLE t_data_training (
   advanced_application BIGINT
 );
 
-COMMENT ON TABLE t_data_training IS '数据训练表';
-COMMENT ON COLUMN t_data_training.oid IS '组织ID';
-COMMENT ON COLUMN t_data_training.datasource IS '数据源ID';
-COMMENT ON COLUMN t_data_training.create_time IS '创建时间';
-COMMENT ON COLUMN t_data_training.question IS '问题描述';
-COMMENT ON COLUMN t_data_training.description IS '示例SQL';
-COMMENT ON COLUMN t_data_training.embedding IS '向量数据';
-COMMENT ON COLUMN t_data_training.enabled IS '是否启用';
-COMMENT ON COLUMN t_data_training.advanced_application IS '高级应用ID';
+COMMENT ON TABLE sql_train IS '数据训练表';
+COMMENT ON COLUMN sql_train.oid IS '组织ID';
+COMMENT ON COLUMN sql_train.datasource IS '数据源ID';
+COMMENT ON COLUMN sql_train.create_time IS '创建时间';
+COMMENT ON COLUMN sql_train.question IS '问题描述';
+COMMENT ON COLUMN sql_train.description IS '示例SQL';
+COMMENT ON COLUMN sql_train.embedding IS '向量数据';
+COMMENT ON COLUMN sql_train.enabled IS '是否启用';
+COMMENT ON COLUMN sql_train.advanced_application IS '高级应用ID';
 
--- t_datasource_auth definition
-DROP TABLE IF EXISTS t_datasource_auth CASCADE;
-CREATE TABLE t_datasource_auth (
-  id BIGSERIAL PRIMARY KEY,
-  datasource_id BIGINT NOT NULL,
-  user_id BIGINT NOT NULL,
-  enable BOOLEAN DEFAULT TRUE,
-  create_time TIMESTAMP
-);
-
-COMMENT ON TABLE t_datasource_auth IS '数据源授权表';
-COMMENT ON COLUMN t_datasource_auth.datasource_id IS '数据源ID';
-COMMENT ON COLUMN t_datasource_auth.user_id IS '用户ID';
-COMMENT ON COLUMN t_datasource_auth.enable IS '是否启用';
-COMMENT ON COLUMN t_datasource_auth.create_time IS '创建时间';

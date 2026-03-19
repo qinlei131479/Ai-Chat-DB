@@ -29,9 +29,9 @@ def create_datasource_tables():
         
         logger.info("数据源表创建成功！")
         logger.info("已创建的表：")
-        logger.info("  - t_datasource (数据源表)")
-        logger.info("  - t_datasource_table (数据源表信息)")
-        logger.info("  - t_datasource_field (数据源字段信息)")
+        logger.info("  - datasource (数据源表)")
+        logger.info("  - datasource_table (数据源表信息)")
+        logger.info("  - datasource_field (数据源字段信息)")
         return True
     except Exception as e:
         logger.error(f"创建数据源表失败: {e}", exc_info=True)

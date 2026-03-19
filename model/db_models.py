@@ -21,8 +21,8 @@ sqlacodegen postgresql+psycopg2://postgres:postgres@127.0.0.1:5432/chat_db --out
 """
 
 
-class TUser(Base):
-    __tablename__ = "t_user"
+class User(Base):
+    __tablename__ = "user"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     userName: Mapped[Optional[str]] = mapped_column(String(200), comment="用户名称")
@@ -33,8 +33,8 @@ class TUser(Base):
     updateTime: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP, comment="修改时间")
 
 
-class TUserQaRecord(Base):
-    __tablename__ = "t_user_qa_record"
+class UserQaRecord(Base):
+    __tablename__ = "user_qa_record"
     __table_args__ = {"comment": "问答记录表"}
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -78,76 +78,38 @@ class TAiModel(Base):
     create_time: Mapped[int] = mapped_column(BigInteger, default=0, comment="创建时间")
 
 
-class TDsRules(Base):
-    __tablename__ = "t_ds_rules"
-    __table_args__ = {"comment": "权限规则组"}
-
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    name: Mapped[str] = mapped_column(String(128), nullable=False, comment="规则名称")
-    description: Mapped[Optional[str]] = mapped_column(String(512), comment="描述")
-    permission_list: Mapped[Optional[str]] = mapped_column(Text, comment="权限ID列表(JSON)")
-    user_list: Mapped[Optional[str]] = mapped_column(Text, comment="用户ID列表(JSON)")
-    white_list_user: Mapped[Optional[str]] = mapped_column(Text, comment="白名单用户")
-    enable: Mapped[Optional[bool]] = mapped_column(Boolean, default=True, comment="是否启用")
-    create_time: Mapped[Optional[datetime.datetime]] = mapped_column(
-        TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"), comment="创建时间"
-    )
-    oid: Mapped[Optional[int]] = mapped_column(BigInteger, comment="OID")
-
-
-class TDsPermission(Base):
-    __tablename__ = "t_ds_permission"
-    __table_args__ = {"comment": "数据权限详情"}
-
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    name: Mapped[Optional[str]] = mapped_column(String(128), comment="权限名称")
-    type: Mapped[str] = mapped_column(String(64), nullable=False, comment="权限类型: row, column")
-    ds_id: Mapped[Optional[int]] = mapped_column(BigInteger, comment="数据源ID")
-    table_id: Mapped[Optional[int]] = mapped_column(BigInteger, comment="表ID")
-    expression_tree: Mapped[Optional[str]] = mapped_column(Text, comment="行权限表达式树(JSON)")
-    permissions: Mapped[Optional[str]] = mapped_column(Text, comment="列权限配置(JSON)")
-    white_list_user: Mapped[Optional[str]] = mapped_column(Text, comment="白名单用户")
-    enable: Mapped[Optional[bool]] = mapped_column(Boolean, default=True, comment="是否启用")
-    create_time: Mapped[Optional[datetime.datetime]] = mapped_column(
-        TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"), comment="创建时间"
-    )
-    auth_target_type: Mapped[Optional[str]] = mapped_column(String(128), comment="授权目标类型")
-    auth_target_id: Mapped[Optional[int]] = mapped_column(BigInteger, comment="授权目标ID")
-
-
-class TTerminology(Base):
-    __tablename__ = "t_terminology"
+class Terminology(Base):
+    __tablename__ = "terminology"
     __table_args__ = {"comment": "术语配置表"}
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    oid: Mapped[Optional[int]] = mapped_column(BigInteger, default=1, comment="组织ID")
-    pid: Mapped[Optional[int]] = mapped_column(BigInteger, comment="父ID")
+    # oid: Mapped[Optional[int]] = mapped_column(BigInteger, default=1, comment="组织ID")
+    parent_id: Mapped[Optional[int]] = mapped_column(BigInteger, comment="父ID")
     word: Mapped[Optional[str]] = mapped_column(String(255), comment="术语名称")
     description: Mapped[Optional[str]] = mapped_column(Text, comment="描述")
-    specific_ds: Mapped[Optional[bool]] = mapped_column(Boolean, default=False, comment="是否指定数据源")
+    specific_ds: Mapped[Optional[int]] = mapped_column(Integer, default=0, comment="是否指定数据源")
     datasource_ids: Mapped[Optional[str]] = mapped_column(Text, comment="数据源ID列表(JSON)")
-    enabled: Mapped[Optional[bool]] = mapped_column(Boolean, default=True, comment="是否启用")
-    create_time: Mapped[Optional[datetime.datetime]] = mapped_column(
-        TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"), comment="创建时间"
-    )
+    enabled_flag: Mapped[Optional[int]] = mapped_column(Integer, default=1, comment="是否启用")
     # VECTOR 类型：用于在数据库中进行向量相似度搜索（使用 <=> 操作符）
     # 不指定维度，支持动态维度（768/1024等），pgvector 会自动处理
     # Python 类型：List[float] 或 numpy.ndarray，SQLAlchemy 会自动转换
     embedding: Mapped[Optional[Union[List[float], str]]] = mapped_column(
         VECTOR, nullable=True, comment="术语向量数据（pgvector VECTOR 类型，支持动态维度）"
     )
-
-
-class TDataTraining(Base):
-    __tablename__ = "t_data_training"
-    __table_args__ = {"comment": "数据训练表"}
-
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    oid: Mapped[Optional[int]] = mapped_column(BigInteger, default=1, comment="组织ID")
-    datasource: Mapped[Optional[int]] = mapped_column(BigInteger, comment="数据源ID")
     create_time: Mapped[Optional[datetime.datetime]] = mapped_column(
         TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"), comment="创建时间"
     )
+    update_time: Mapped[Optional[datetime.datetime]] = mapped_column(
+        TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"), comment="更新时间"
+    )
+
+
+class SqlTrain(Base):
+    __tablename__ = "sql_train"
+    __table_args__ = {"comment": "SQL数据训练表"}
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    ds_id: Mapped[Optional[int]] = mapped_column(BigInteger, comment="数据源ID")
     question: Mapped[Optional[str]] = mapped_column(String(255), comment="问题描述")
     description: Mapped[Optional[str]] = mapped_column(Text, comment="示例SQL")
     # VECTOR 类型：用于在数据库中进行向量相似度搜索（使用 <=> 操作符）
@@ -156,5 +118,10 @@ class TDataTraining(Base):
     embedding: Mapped[Optional[Union[List[float], str]]] = mapped_column(
         VECTOR, nullable=True, comment="向量数据（pgvector VECTOR 类型，支持动态维度）"
     )
-    enabled: Mapped[Optional[bool]] = mapped_column(Boolean, default=True, comment="是否启用")
-    advanced_application: Mapped[Optional[int]] = mapped_column(BigInteger, comment="高级应用ID")
+    enabled_flag: Mapped[Optional[int]] = mapped_column(Integer, default=1, comment="是否启用")
+    create_time: Mapped[Optional[datetime.datetime]] = mapped_column(
+        TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"), comment="创建时间"
+    )
+    update_time: Mapped[Optional[datetime.datetime]] = mapped_column(
+        TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"), comment="更新时间"
+    )

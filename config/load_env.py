@@ -11,9 +11,9 @@ def load_env():
     加载日志配置文件
     """
     # 确定日志目录和文件路径（支持容器环境）
-    if os.path.exists("/aix-db"):
+    if os.path.exists("/Ai-Chat-DB"):
         # 容器环境
-        log_dir = "/aix-db/logs"
+        log_dir = "/Ai-Chat-DB/logs"
     else:
         # 本地开发环境
         log_dir = "logs"
@@ -48,11 +48,11 @@ def load_env():
         # 检查配置文件路径
         config_path = "config/logging.conf"
         if not os.path.exists(config_path):
-            # 尝试从 /aix-db 目录加载（容器环境）
-            if os.path.exists("/aix-db/config/logging.conf"):
-                config_path = "/aix-db/config/logging.conf"
+            # 尝试从 /Ai-Chat-DB 目录加载（容器环境）
+            if os.path.exists("/Ai-Chat-DB/config/logging.conf"):
+                config_path = "/Ai-Chat-DB/config/logging.conf"
             else:
-                raise FileNotFoundError(f"logging.conf not found at config/logging.conf or /aix-db/config/logging.conf")
+                raise FileNotFoundError(f"logging.conf not found at config/logging.conf or /Ai-Chat-DB/config/logging.conf")
         
         # 清除所有现有的 handler，避免重复
         root_logger = logging.getLogger()
