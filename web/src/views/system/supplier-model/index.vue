@@ -274,7 +274,7 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-@use "@/styles/typography.scss" as *;
+@use "@/styles/typography" as *;
 .llm-config {
   padding: 24px 32px;
   height: 100%;

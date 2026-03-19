@@ -7,12 +7,12 @@ const activeTab = ref('datasource')
 const isSidebarCollapsed = ref(false)
 
 // Dynamically import components to avoid circular dependencies and keep bundle size small
-const DatasourceManager = defineAsyncComponent(() => import('@/views/datasource/datasource-manager.vue'))
-const UserManager = defineAsyncComponent(() => import('@/views/user/user-manager.vue'))
-const LLMConfig = defineAsyncComponent(() => import('@/views/system/config/llm-config.vue'))
-const TerminologyConfig = defineAsyncComponent(() => import('@/views/system/config/terminology-config.vue'))
-const SqlExampleLibrary = defineAsyncComponent(() => import('@/views/system/config/sql-example-library.vue'))
-const EmbeddingMigration = defineAsyncComponent(() => import('@/views/system/config/embedding-migration.vue'))
+const DatasourceManager = defineAsyncComponent(() => import('@/views/system/datasource/index.vue'))
+const UserManager = defineAsyncComponent(() => import('@/views/system/user/index.vue'))
+const LLMConfig = defineAsyncComponent(() => import('@/views/system/supplier-model/index.vue'))
+const TerminologyConfig = defineAsyncComponent(() => import('@/views/system/terminology/index.vue'))
+const SqlExampleLibrary = defineAsyncComponent(() => import('@/views/system/sql-train/index.vue'))
+const EmbeddingMigration = defineAsyncComponent(() => import('@/views/system/embedding-migration/index.vue'))
 
 const menuItems = [
   {key: 'datasource', label: '库表配置', icon: 'i-material-symbols:database-outline'},

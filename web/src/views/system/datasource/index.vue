@@ -339,7 +339,7 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-@use "@/styles/typography.scss" as *;
+@use "@/styles/typography" as *;
 .datasource-manager {
   padding: 24px 32px;
   height: 100%;

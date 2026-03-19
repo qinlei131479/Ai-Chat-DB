@@ -647,7 +647,7 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-@use "@/styles/typography.scss" as *;
+@use "@/styles/typography" as *;
 .table-list-layout {
   height: 100vh;
   background-color: #f9fafb;

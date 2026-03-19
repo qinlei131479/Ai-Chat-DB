@@ -294,7 +294,7 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-@use "@/styles/typography.scss" as *;
+@use "@/styles/typography" as *;
 .user-manager {
   height: 100%;
   display: flex;

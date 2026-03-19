@@ -4,7 +4,7 @@ const childrenRoutes: Array<RouteRecordRaw> = [
   {
     path: 'skill-center',
     name: 'SkillCenter',
-    component: () => import('@/views/skill-center.vue'),
+    component: () => import('@/views/skills/skill-center.vue'),
     meta: { requiresAuth: true },
   },
   {
@@ -25,43 +25,38 @@ const childrenRoutes: Array<RouteRecordRaw> = [
   {
     path: 'datasource',
     name: 'DatasourceManager',
-    component: () => import('@/views/datasource/datasource-manager.vue'),
+    component: () => import('@/views/system/datasource/index.vue'),
     meta: { requiresAuth: true }, // 标记需要认证
   },
   {
     path: 'datasource/table/:dsId/:dsName',
     name: 'DatasourceTableList',
-    component: () => import('@/views/datasource/datasource-table-list.vue'),
+    component: () => import('@/views/system/datasource/datasource-table-list.vue'),
     meta: { requiresAuth: true }, // 标记需要认证
   },
   {
     path: 'user-manager',
     name: 'UserManager',
-    component: () => import('@/views/user/user-manager.vue'),
+    component: () => import('@/views/system/user/index.vue'),
     meta: { requiresAuth: true },
   },
-  {
-    path: 'knowledge-manager',
-    name: 'KnowledgeManager',
-    component: () => import('@/views/knowledge/knowledge-manager.vue'),
-    meta: { requiresAuth: true },
-  },
+
   {
     path: 'llm-config',
     name: 'LLMConfig',
-    component: () => import('@/views/system/config/llm-config.vue'),
+    component: () => import('@/views/system/supplier-model/index.vue'),
     meta: { requiresAuth: true },
   },
   {
     path: 'terminology-config',
     name: 'TerminologyConfig',
-    component: () => import('@/views/system/config/terminology-config.vue'),
+    component: () => import('@/views/system/terminology/index.vue'),
     meta: { requiresAuth: true },
   },
   {
     path: 'set/training',
     name: 'SqlExampleLibrary',
-    component: () => import('@/views/system/config/sql-example-library.vue'),
+    component: () => import('@/views/system/sql-train/index.vue'),
     meta: { requiresAuth: true },
   },
   {
