@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { FormInst, FormRules } from 'naive-ui'
 import { reactive, ref, watch } from 'vue'
-import { add_model, check_model_status, fetch_model_detail, update_model } from '@/api/aimodel'
+import { add_model, check_model_status, fetch_model_detail, update_model } from '@/api/supplier-model'
 
 interface Props {
   show: boolean

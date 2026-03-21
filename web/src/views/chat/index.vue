@@ -3,7 +3,7 @@ import type { InputInst, UploadFileInfo } from 'naive-ui'
 // Import Cookies to clear token on logout
 import { UAParser } from 'ua-parser-js'
 import * as GlobalAPI from '@/api'
-import { fetch_model_list, set_default_model } from '@/api/aimodel'
+import { fetch_model_list, set_default_model } from '@/api/supplier-model'
 import { fetch_datasource_list } from '@/api/datasource'
 import { isMockDevelopment } from '@/config'
 import SideBar from '@/components/Navigation/SideBar.vue'

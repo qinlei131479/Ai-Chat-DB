@@ -5,7 +5,7 @@ from typing import List, Optional
 from openai import AsyncOpenAI
 
 from model.db_connection_pool import get_db_pool
-from model.db_models import TAiModel
+from model.db_models import SupplierModel
 
 logger = logging.getLogger(__name__)
 pool = get_db_pool()
@@ -18,14 +18,14 @@ async def get_default_embedding_model():
     """
     with pool.get_session() as session:
         # 优先查找默认的 embedding 模型 (model_type=2)
-        model = session.query(TAiModel).filter(
-            TAiModel.model_type == 2,
-            TAiModel.default_model == True
+        model = session.query(SupplierModel).filter(
+            SupplierModel.model_type == 2,
+            SupplierModel.default_model == True
         ).first()
 
         # 如果没有默认的，查找任何可用的 embedding 模型
         if not model:
-            model = session.query(TAiModel).filter(TAiModel.model_type == 2).first()
+            model = session.query(SupplierModel).filter(SupplierModel.model_type == 2).first()
 
         # 如果找到了 embedding 模型，返回配置
         if model:

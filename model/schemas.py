@@ -534,7 +534,7 @@ class QueryGuidedReportResponse(BaseResponse):
 
 
 # ==================== AI模型相关模型 ====================
-class AiModelItem(BaseModel):
+class SupplierModelItem(BaseModel):
     name: str = Field(description="模型名称")
     model_type: int = Field(default=1, description="模型类型")
     base_model: str = Field(description="基础模型")
@@ -543,33 +543,33 @@ class AiModelItem(BaseModel):
     default_model: bool = Field(False, description="是否默认")
 
 
-class AiModelConfigItem(BaseModel):
+class SupplierModelConfigItem(BaseModel):
     key: str = Field(description="配置Key")
     val: Any = Field(description="配置Value")
     name: Optional[str] = Field(None, description="配置名称")
 
 
-class AiModelCreator(AiModelItem):
+class SupplierModelCreator(SupplierModelItem):
     api_domain: str = Field(description="API域名")
     api_key: Optional[str] = Field(None, description="API Key（可选，某些模型如本地 Ollama 不需要）")
-    config_list: List[AiModelConfigItem] = Field(default=[], description="额外配置列表")
+    config_list: List[SupplierModelConfigItem] = Field(default=[], description="额外配置列表")
 
 
-class AiModelEditor(AiModelCreator):
+class SupplierModelEditor(SupplierModelCreator):
     id: int = Field(description="模型ID")
 
 
-class AiModelGridItem(AiModelItem):
+class SupplierModelGridItem(SupplierModelItem):
     id: int = Field(description="模型ID")
     create_time: int = Field(description="创建时间")
 
 
-class AiModelListResponse(BaseResponse):
-    data: List[AiModelGridItem] = Field(description="模型列表")
+class SupplierModelListResponse(BaseResponse):
+    data: List[SupplierModelGridItem] = Field(description="模型列表")
 
 
-class AiModelDetailResponse(BaseResponse):
-    data: AiModelEditor = Field(description="模型详情")
+class SupplierModelDetailResponse(BaseResponse):
+    data: SupplierModelEditor = Field(description="模型详情")
 
 
 # ==================== 术语管理相关模型 ====================

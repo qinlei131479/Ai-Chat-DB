@@ -70,7 +70,7 @@ from controllers.db_chat_api import router as db_chat_router
 from controllers.file_chat_api import router as file_chat_router
 from controllers.user_api import router as user_router
 from controllers.datasource_api import router as datasource_router
-from controllers.aimodel_api import router as aimodel_router
+from controllers.supplier_model_api import router as supplier_model_router
 from controllers.terminology_api import router as terminology_router
 from controllers.skill_api import router as skill_router
 from controllers.sql_train_api import router as data_training_router
@@ -81,7 +81,7 @@ app.include_router(db_chat_router)
 app.include_router(file_chat_router)
 app.include_router(user_router)
 app.include_router(datasource_router)
-app.include_router(aimodel_router)
+app.include_router(supplier_model_router)
 app.include_router(terminology_router)
 app.include_router(skill_router)
 app.include_router(data_training_router)

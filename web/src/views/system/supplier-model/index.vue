@@ -2,7 +2,7 @@
 import { useDialog } from 'naive-ui'
 import { computed, h, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { delete_model, fetch_model_list, set_default_model } from '@/api/aimodel'
+import { delete_model, fetch_model_list, set_default_model } from '@/api/supplier-model'
 import LLMForm from '@/components/llm/llm-form.vue'
 
 const dialog = useDialog()

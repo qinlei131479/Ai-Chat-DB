@@ -2,7 +2,7 @@
 import type { UploadFileInfo } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { fetch_datasource_list } from '@/api/datasource'
-import { fetch_model_list, set_default_model } from '@/api/aimodel'
+import { fetch_model_list, set_default_model } from '@/api/supplier-model'
 import { fetch_skill_list } from '@/api/skill'
 import FileUploadManager from '@/views/file/file-upload-manager.vue'
 

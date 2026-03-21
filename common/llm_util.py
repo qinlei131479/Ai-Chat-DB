@@ -2,7 +2,7 @@ import json
 import os
 
 from model.db_connection_pool import get_db_pool
-from model.db_models import TAiModel
+from model.db_models import SupplierModel
 
 pool = get_db_pool()
 
@@ -22,8 +22,8 @@ def get_llm(temperature=0.75, timeout=None):
     with pool.get_session() as session:
         # Fetch default model
         model = (
-            session.query(TAiModel)
-            .filter(TAiModel.default_model == True, TAiModel.model_type == 1)
+            session.query(SupplierModel)
+            .filter(SupplierModel.default_model == True, SupplierModel.model_type == 1)
             .first()
         )
         if not model:

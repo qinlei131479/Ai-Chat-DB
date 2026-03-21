@@ -29,7 +29,7 @@ from sqlalchemy.sql.expression import text
 
 from agent.text2sql.state.agent_state import AgentState, ExecutionResult
 from model.db_connection_pool import get_db_pool
-from model.db_models import TAiModel
+from model.db_models import SupplierModel
 from model.datasource_models import DatasourceTable, DatasourceTableField
 from sqlalchemy import select
 
@@ -58,11 +58,11 @@ def get_embedding_model_config():
     """
     with db_pool.get_session() as session:
         # model_type: 2 -> Embedding
-        model = session.query(TAiModel).filter(TAiModel.model_type == 2, TAiModel.default_model == True).first()
+        model = session.query(SupplierModel).filter(SupplierModel.model_type == 2, SupplierModel.default_model == True).first()
 
         if not model:
             # 尝试查找任何 embedding 模型
-            model = session.query(TAiModel).filter(TAiModel.model_type == 2).first()
+            model = session.query(SupplierModel).filter(SupplierModel.model_type == 2).first()
 
         if not model:
             # 没有找到在线模型，返回 None（将使用离线模型）
@@ -88,11 +88,11 @@ def get_embedding_model_config():
 def get_rerank_model_config():
     with db_pool.get_session() as session:
         # model_type: 3 -> Rerank
-        model = session.query(TAiModel).filter(TAiModel.model_type == 3, TAiModel.default_model == True).first()
+        model = session.query(SupplierModel).filter(SupplierModel.model_type == 3, SupplierModel.default_model == True).first()
 
         if not model:
             # Fallback
-            model = session.query(TAiModel).filter(TAiModel.model_type == 3).first()
+            model = session.query(SupplierModel).filter(SupplierModel.model_type == 3).first()
 
         if not model:
             return None
