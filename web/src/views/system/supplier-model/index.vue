@@ -1,9 +1,23 @@
 <script lang="ts" setup>
-import { useDialog } from 'naive-ui'
-import { computed, h, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { delete_model, fetch_model_list, set_default_model } from '@/api/supplier-model'
+import {useDialog} from 'naive-ui'
+import {onMounted, ref} from 'vue'
+import {useRouter} from 'vue-router'
+import {delete_model, fetch_model_list, fetch_supplier_list, set_default_model} from '@/api/supplier-model'
 import LLMForm from '@/components/llm/llm-form.vue'
+
+/** 模型类型枚举（与后端 ModelTypeEnum 保持一致） */
+const MODEL_TYPE_LIST = [
+  {value: 1, label: '聊天'},
+  {value: 2, label: '推理'},
+  {value: 3, label: '向量'},
+  {value: 4, label: '排序'},
+  {value: 5, label: '图片'},
+  {value: 6, label: '视觉'},
+]
+
+const MODEL_TYPE_MAP = Object.fromEntries(MODEL_TYPE_LIST.map(t => [t.value, t.label])) as Record<number, string>
+
+const getModelTypeName = (type: number) => MODEL_TYPE_MAP[type] ?? '未知'
 
 const dialog = useDialog()
 const router = useRouter()
@@ -13,11 +27,32 @@ const modelList = ref<any[]>([])
 const keywords = ref('')
 const showForm = ref(false)
 const currentModelId = ref<number | null>(null)
+const currentModelType = ref<number>(1)
+
+/** 供应商 id -> name 的动态映射，从接口加载 */
+const supplierMap = ref<Record<number, string>>({})
+
+const getSupplierName = (supplierId: number) => supplierMap.value[supplierId] ?? 'Unknown'
+
+const fetchSuppliers = async () => {
+  try {
+    const res = await fetch_supplier_list()
+    if (Array.isArray(res.data)) {
+      const map: Record<number, string> = {}
+      for (const s of res.data) {
+        map[s.id] = s.name
+      }
+      supplierMap.value = map
+    }
+  } catch {
+    // 供应商加载失败不影响主流程，静默处理
+  }
+}
 
 const fetchData = async () => {
   loading.value = true
   try {
-    const res = await fetch_model_list(keywords.value)
+    const res = await fetch_model_list(keywords.value, currentModelType.value)
     if (res.data) {
       modelList.value = res.data
     } else if (Array.isArray(res)) {
@@ -28,6 +63,11 @@ const fetchData = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const handleTabChange = (type: number) => {
+  currentModelType.value = type
+  fetchData()
 }
 
 const handleAdd = () => {
@@ -78,23 +118,8 @@ const handleBack = () => {
   router.push('/')
 }
 
-const getSupplierName = (supplier: number) => {
-  const map: Record<number, string> = {
-    1: 'OpenAI',
-    2: 'Azure OpenAI',
-    3: 'Ollama',
-    4: 'vLLM',
-    5: 'DeepSeek',
-    6: 'Qwen',
-    7: 'Moonshot',
-    8: 'ZhipuAI',
-    10: 'MiniMax',
-    9: 'Other',
-  }
-  return map[supplier] || 'Unknown'
-}
-
-onMounted(() => {
+onMounted(async () => {
+  await fetchSuppliers()
   fetchData()
 })
 </script>
@@ -104,8 +129,8 @@ onMounted(() => {
     <div class="header">
       <div class="title-section">
         <div
-          class="back-btn"
-          @click="handleBack"
+            class="back-btn"
+            @click="handleBack"
         >
           <div class="i-hugeicons:arrow-left-01 text-24"></div>
         </div>
@@ -113,26 +138,26 @@ onMounted(() => {
       </div>
       <div class="actions">
         <n-input
-          v-model:value="keywords"
-          placeholder="搜索模型"
-          class="search-input"
-          @keyup.enter="fetchData"
+            v-model:value="keywords"
+            placeholder="搜索模型"
+            class="search-input"
+            @keyup.enter="fetchData"
         >
           <template #prefix>
             <div class="i-carbon-search"></div>
           </template>
         </n-input>
         <n-button
-          secondary
-          @click="fetchData"
+            secondary
+            @click="fetchData"
         >
           <template #icon>
             <div class="i-carbon-renew"></div>
           </template>
         </n-button>
         <n-button
-          type="primary"
-          @click="handleAdd"
+            type="primary"
+            @click="handleAdd"
         >
           <template #icon>
             <div class="i-carbon-add"></div>
@@ -142,25 +167,38 @@ onMounted(() => {
       </div>
     </div>
 
+    <div class="type-tabs">
+      <n-button
+          v-for="type in MODEL_TYPE_LIST"
+          :key="type.value"
+          :type="currentModelType === type.value ? 'primary' : 'default'"
+          size="small"
+          secondary
+          @click="handleTabChange(type.value)"
+      >
+        {{ type.label }}
+      </n-button>
+    </div>
+
     <n-spin :show="loading">
       <div
-        v-if="modelList.length > 0"
-        class="content"
+          v-if="modelList.length > 0"
+          class="content"
       >
         <n-grid
-          :x-gap="24"
-          :y-gap="24"
-          cols="1 600:2 900:3 1200:4"
+            :x-gap="24"
+            :y-gap="24"
+            cols="1 600:2 900:3 1200:4"
         >
           <n-grid-item
-            v-for="item in modelList"
-            :key="item.id"
+              v-for="item in modelList"
+              :key="item.id"
           >
             <n-card
-              hoverable
-              class="model-card"
-              :bordered="false"
-              content-style="padding: 0;"
+                hoverable
+                class="model-card"
+                :bordered="false"
+                content-style="padding: 0;"
             >
               <div class="card-body">
                 <div class="card-top">
@@ -170,16 +208,16 @@ onMounted(() => {
                   <div class="info">
                     <div class="name-row">
                       <h3
-                        class="name"
-                        :title="item.name"
+                          class="name"
+                          :title="item.name"
                       >
                         {{ item.name }}
                       </h3>
                       <n-tag
-                        v-if="item.default_model"
-                        type="success"
-                        size="small"
-                        round
+                          v-if="item.default_model"
+                          type="success"
+                          size="small"
+                          round
                       >
                         默认
                       </n-tag>
@@ -191,20 +229,20 @@ onMounted(() => {
                 <div class="card-meta">
                   <div class="meta-item">
                     <span class="label">模型类型</span>
-                    <span class="value">{{ item.model_type === 1 ? '大语言模型' : (item.model_type === 2 ? 'Embedding' : 'Rerank') }}</span>
+                    <span class="value">{{ getModelTypeName(Number(item.model_type)) }}</span>
                   </div>
                   <div class="meta-item">
                     <span class="label">基础模型</span>
                     <span
-                      class="value"
-                      :title="item.base_model"
+                        class="value"
+                        :title="item.base_model"
                     >{{ item.base_model }}</span>
                   </div>
                   <div class="meta-item">
                     <span class="label">API域名</span>
                     <span
-                      class="value"
-                      :title="item.api_domain"
+                        class="value"
+                        :title="item.api_domain"
                     >{{ item.api_domain }}</span>
                   </div>
                 </div>
@@ -213,29 +251,29 @@ onMounted(() => {
               <div class="card-actions">
                 <div class="left-actions">
                   <n-button
-                    v-if="!item.default_model && item.model_type === 1"
-                    size="small"
-                    text
-                    type="primary"
-                    @click.stop="handleSetDefault(item)"
+                      v-if="item.default_flag==='0' && item.model_type === '1'"
+                      size="small"
+                      text
+                      type="primary"
+                      @click.stop="handleSetDefault(item)"
                   >
                     设为默认模型
                   </n-button>
                 </div>
                 <div class="right-actions">
                   <n-button
-                    text
-                    size="small"
-                    @click.stop="handleEdit(item)"
+                      text
+                      size="small"
+                      @click.stop="handleEdit(item)"
                   >
                     编辑
                   </n-button>
-                  <n-divider vertical />
+                  <n-divider vertical/>
                   <n-button
-                    text
-                    size="small"
-                    type="error"
-                    @click.stop="handleDelete(item)"
+                      text
+                      size="small"
+                      type="error"
+                      @click.stop="handleDelete(item)"
                   >
                     删除
                   </n-button>
@@ -246,17 +284,17 @@ onMounted(() => {
         </n-grid>
       </div>
       <div
-        v-else
-        class="empty-container"
+          v-else
+          class="empty-container"
       >
         <n-empty
-          description="暂无模型配置"
-          size="large"
+            description="暂无模型配置"
+            size="large"
         >
           <template #extra>
             <n-button
-              type="primary"
-              @click="handleAdd"
+                type="primary"
+                @click="handleAdd"
             >
               添加模型
             </n-button>
@@ -266,15 +304,16 @@ onMounted(() => {
     </n-spin>
 
     <LLMForm
-      v-model:show="showForm"
-      :model-id="currentModelId"
-      @success="handleSuccess"
+        v-model:show="showForm"
+        :model-id="currentModelId"
+        @success="handleSuccess"
     />
   </div>
 </template>
 
 <style lang="scss" scoped>
 @use "@/styles/typography" as *;
+
 .llm-config {
   padding: 24px 32px;
   height: 100%;
@@ -325,6 +364,13 @@ onMounted(() => {
         width: 260px;
       }
     }
+  }
+
+  .type-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
   }
 
   .content {

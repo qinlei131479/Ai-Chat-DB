@@ -17,7 +17,7 @@ const getHeaders = () => {
  * @param model_type
  */
 export async function fetch_model_list(keyword?: string, model_type?: number) {
-  const url = new URL(`${BASE_URL}`)
+  const url = new URL(`${BASE_URL}/list`)
   if (keyword) {
     url.searchParams.append('keyword', keyword)
   }
@@ -36,7 +36,7 @@ export async function fetch_model_list(keyword?: string, model_type?: number) {
  * 获取模型详情
  * @param id
  */
-export async function fetch_model_detail(id: number) {
+export async function fetch_model_detail(id: string) {
   const url = new URL(`${BASE_URL}/${id}`)
   const req = new Request(url, {
     mode: 'cors',
@@ -96,7 +96,7 @@ export async function update_model(data: any) {
  * 删除模型
  * @param id
  */
-export async function delete_model(id: number) {
+export async function delete_model(id: string) {
   const url = new URL(`${BASE_URL}/${id}`)
   const req = new Request(url, {
     mode: 'cors',
@@ -118,7 +118,7 @@ export async function delete_model(id: number) {
  * 设为默认模型
  * @param id
  */
-export async function set_default_model(id: number) {
+export async function set_default_model(id: string) {
   const url = new URL(`${BASE_URL}/default/${id}`)
   const req = new Request(url, {
     mode: 'cors',
@@ -148,6 +148,32 @@ export async function check_model_status(data: any) {
     method: 'post',
     headers: getHeaders(),
     body: JSON.stringify(data),
+  })
+  return fetch(req).then((res) => res.json())
+}
+
+/**
+ * 查询供应商列表
+ */
+export async function fetch_supplier_list() {
+  const url = new URL(`${BASE_URL}/suppliers`)
+  const req = new Request(url, {
+    mode: 'cors',
+    method: 'get',
+    headers: getHeaders(),
+  })
+  return fetch(req).then((res) => res.json())
+}
+
+/**
+ * 查询模型类型枚举列表
+ */
+export async function fetch_model_type_list() {
+  const url = new URL(`${BASE_URL}/model-types`)
+  const req = new Request(url, {
+    mode: 'cors',
+    method: 'get',
+    headers: getHeaders(),
   })
   return fetch(req).then((res) => res.json())
 }

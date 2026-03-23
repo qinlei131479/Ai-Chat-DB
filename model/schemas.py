@@ -536,11 +536,11 @@ class QueryGuidedReportResponse(BaseResponse):
 # ==================== AI模型相关模型 ====================
 class SupplierModelItem(BaseModel):
     name: str = Field(description="模型名称")
-    model_type: int = Field(default=1, description="模型类型")
-    base_model: str = Field(description="基础模型")
-    supplier: int = Field(default=1, description="供应商")
-    protocol: int = Field(default=1, description="协议")
-    default_model: bool = Field(False, description="是否默认")
+    model_type: int = Field(default=1, description="模型类型: 1聊天, 2推理, 3向量, 4排序, 5图片, 6视觉")
+    base_model: str = Field(description="基础模型（别名）")
+    supplier: int = Field(default=1, description="供应商ID（对应 Supplier 表 id）")
+    protocol: int = Field(default=1, description="协议（保留字段，兼容前端）")
+    default_model: bool = Field(False, description="是否默认模型")
 
 
 class SupplierModelConfigItem(BaseModel):
@@ -550,9 +550,11 @@ class SupplierModelConfigItem(BaseModel):
 
 
 class SupplierModelCreator(SupplierModelItem):
-    api_domain: str = Field(description="API域名")
-    api_key: Optional[str] = Field(None, description="API Key（可选，某些模型如本地 Ollama 不需要）")
-    config_list: List[SupplierModelConfigItem] = Field(default=[], description="额外配置列表")
+    api_domain: str = Field(description="API域名（写入关联供应商）")
+    api_key: Optional[str] = Field(None, description="API Key（可选，写入关联供应商）")
+    config_list: List[SupplierModelConfigItem] = Field(default=[], description="额外配置列表（存入 ext_config）")
+    description: Optional[str] = Field(None, description="模型描述")
+    context_length: Optional[str] = Field(None, description="上下文长度")
 
 
 class SupplierModelEditor(SupplierModelCreator):
@@ -561,7 +563,7 @@ class SupplierModelEditor(SupplierModelCreator):
 
 class SupplierModelGridItem(SupplierModelItem):
     id: int = Field(description="模型ID")
-    create_time: int = Field(description="创建时间")
+    create_time: Optional[str] = Field(None, description="创建时间")
 
 
 class SupplierModelListResponse(BaseResponse):

@@ -29,7 +29,7 @@ from sqlalchemy.sql.expression import text
 
 from agent.text2sql.state.agent_state import AgentState, ExecutionResult
 from model.db_connection_pool import get_db_pool
-from model.db_models import SupplierModel
+from model.db_models import Supplier, SupplierModel
 from model.datasource_models import DatasourceTable, DatasourceTableField
 from sqlalchemy import select
 
@@ -52,52 +52,74 @@ CACHE_TTL = int(os.getenv("TABLE_INFO_CACHE_TTL", "300"))  # 缓存有效期（�
 # 嵌入模型配置
 def get_embedding_model_config():
     """
-    获取嵌入模型配置
-    只查找 Embedding 类型的模型（model_type=2），不回退到 LLM
-    如果没有配置，返回 None（将使用离线模型）
+    获取嵌入模型配置。
+    只查找 Embedding 类型的模型（model_type='2'），JOIN Supplier 表获取 api_key / api_domain。
+    如果没有配置，返回 None（将使用离线模型）。
     """
     with db_pool.get_session() as session:
-        # model_type: 2 -> Embedding
-        model = session.query(SupplierModel).filter(SupplierModel.model_type == 2, SupplierModel.default_model == True).first()
+        row = session.query(SupplierModel, Supplier).join(
+            Supplier, SupplierModel.supplier_id == Supplier.id
+        ).filter(
+            SupplierModel.model_type == '2',
+            SupplierModel.default_flag == '1',
+            SupplierModel.del_flag == '0'
+        ).first()
 
-        if not model:
-            # 尝试查找任何 embedding 模型
-            model = session.query(SupplierModel).filter(SupplierModel.model_type == 2).first()
+        if not row:
+            row = session.query(SupplierModel, Supplier).join(
+                Supplier, SupplierModel.supplier_id == Supplier.id
+            ).filter(
+                SupplierModel.model_type == '2',
+                SupplierModel.del_flag == '0'
+            ).first()
 
-        if not model:
-            # 没有找到在线模型，返回 None（将使用离线模型）
+        if not row:
             return None
 
-        # 处理 base_url，确保包含协议前缀
-        base_url = (model.api_domain or "").strip()
+        model, supplier = row
+
+        base_url = (supplier.api_domain or "").strip()
         if not base_url:
             logger.warning("表结构检索使用的 embedding 模型 API Domain 为空，将使用离线模型")
             return None
 
         if not base_url.startswith(("http://", "https://")):
-            # 本地地址默认 http，其它默认 https
             if base_url.startswith(("localhost", "127.0.0.1", "0.0.0.0")):
                 base_url = f"http://{base_url}"
             else:
                 base_url = f"https://{base_url}"
 
-        return {"name": model.base_model, "api_key": model.api_key, "base_url": base_url}
+        return {"name": model.base_model, "api_key": supplier.api_key, "base_url": base_url}
 
 
 # 重排模型配置
 def get_rerank_model_config():
+    """
+    获取重排模型配置。
+    查找 Rerank 类型的模型（model_type='3'），JOIN Supplier 表获取 api_key / api_domain。
+    """
     with db_pool.get_session() as session:
-        # model_type: 3 -> Rerank
-        model = session.query(SupplierModel).filter(SupplierModel.model_type == 3, SupplierModel.default_model == True).first()
+        row = session.query(SupplierModel, Supplier).join(
+            Supplier, SupplierModel.supplier_id == Supplier.id
+        ).filter(
+            SupplierModel.model_type == '3',
+            SupplierModel.default_flag == '1',
+            SupplierModel.del_flag == '0'
+        ).first()
 
-        if not model:
-            # Fallback
-            model = session.query(SupplierModel).filter(SupplierModel.model_type == 3).first()
+        if not row:
+            row = session.query(SupplierModel, Supplier).join(
+                Supplier, SupplierModel.supplier_id == Supplier.id
+            ).filter(
+                SupplierModel.model_type == '3',
+                SupplierModel.del_flag == '0'
+            ).first()
 
-        if not model:
+        if not row:
             return None
 
-        return {"name": model.base_model, "api_key": model.api_key, "base_url": model.api_domain}
+        model, supplier = row
+        return {"name": model.base_model, "api_key": supplier.api_key, "base_url": supplier.api_domain}
 
 
 # 全局变量占位，实际使用时动态获取或在 init 中初始化

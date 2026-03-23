@@ -4,8 +4,10 @@ from fastapi import APIRouter, Depends, Query
 
 from common.res_decorator import success_response
 from common.token_decorator import get_current_user
+from constants.code_enum import ModelTypeEnum
 from services.supplier_model_service import (
     query_model_list,
+    query_supplier_list,
     get_model_detail,
     add_model,
     update_model,
@@ -19,14 +21,25 @@ from model.schemas import SupplierModelCreator, SupplierModelEditor
 router = APIRouter(prefix="/system/supplier-model", tags=["模型管理"])
 
 
-@router.get("", summary="查询模型列表")
+@router.get("/list", summary="查询模型列表（按模型类型过滤，默认聊天模型）")
 async def list_models(
         keyword: Optional[str] = Query(None),
-        model_type: Optional[int] = Query(None),
+        model_type: int = Query(int(ModelTypeEnum.CHAT.value[0]), description="模型类型: 1聊天 2推理 3向量 4排序 5图片 6视觉"),
         user: dict = Depends(get_current_user),
 ):
     result = await query_model_list(keyword, model_type)
     return success_response(result)
+
+
+@router.get("/suppliers", summary="查询供应商列表")
+async def list_suppliers(user: dict = Depends(get_current_user)):
+    result = await query_supplier_list()
+    return success_response(result)
+
+
+@router.get("/model-types", summary="查询模型类型枚举列表")
+async def list_model_types(user: dict = Depends(get_current_user)):
+    return success_response(ModelTypeEnum.to_list())
 
 
 @router.get("/{id}", summary="获取模型详情")

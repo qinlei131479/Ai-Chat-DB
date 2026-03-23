@@ -7,45 +7,70 @@ from typing import List, Optional
 from sqlalchemy import desc
 
 from common.exception import MyException
-from constants.code_enum import SysCodeEnum
+from constants.code_enum import ModelTypeEnum, SysCodeEnum
 from model.db_connection_pool import get_db_pool
-from model.db_models import SupplierModel
+from model.db_models import Supplier, SupplierModel
 from model.serializers import model_to_dict
 
 logger = logging.getLogger(__name__)
 pool = get_db_pool()
 
 
+def _merge_model_with_supplier(model: SupplierModel, supplier: Supplier) -> dict:
+    """将 SupplierModel 和 Supplier 合并为前端期望的平坦结构，保持与旧接口的字段兼容性。"""
+    result = model_to_dict(model)
+    result['id'] = str(model.id)
+    result['supplier'] = supplier.id if supplier else None
+    result['supplier_name'] = supplier.name if supplier else None
+    result['api_key'] = supplier.api_key if supplier else None
+    result['api_domain'] = supplier.api_domain if supplier else None
+    result['protocol'] = 1
+    # 字段映射：default_flag('0'/'1') -> default_model(bool)
+    result['default_model'] = (result.get('default_flag') == '1')
+    # 字段映射：ext_config -> config（保留两个键以兼容不同调用方）
+    result['config'] = result.get('ext_config')
+    return result
+
+
 async def query_model_list(keyword: str = None, model_type: int = None) -> List[dict]:
     with pool.get_session() as session:
-        query = session.query(SupplierModel)
+        query = session.query(SupplierModel, Supplier).join(
+            Supplier, SupplierModel.supplier_id == Supplier.id
+        ).filter(SupplierModel.del_flag == '0')
+
         if keyword:
             query = query.filter(SupplierModel.name.like(f"%{keyword}%"))
-
         if model_type:
-            query = query.filter(SupplierModel.model_type == model_type)
+            query = query.filter(SupplierModel.model_type == str(model_type))
 
-        # Order by default_model desc, then name
-        models = query.order_by(desc(SupplierModel.default_model), SupplierModel.name).all()
+        rows = query.order_by(desc(SupplierModel.default_flag), SupplierModel.name).all()
 
         result = []
-        for model in models:
-            m_dict = model_to_dict(model)
-            result.append(m_dict)
+        for model, supplier in rows:
+            result.append(_merge_model_with_supplier(model, supplier))
         return result
 
 
 async def get_model_detail(model_id: int) -> dict:
     with pool.get_session() as session:
-        model = session.query(SupplierModel).filter(SupplierModel.id == model_id).first()
-        if not model:
+        row = session.query(SupplierModel, Supplier).join(
+            Supplier, SupplierModel.supplier_id == Supplier.id
+        ).filter(
+            SupplierModel.id == model_id,
+            SupplierModel.del_flag == '0'
+        ).first()
+
+        if not row:
             raise MyException(SysCodeEnum.PARAM_ERROR, "Model not found")
 
-        data = model_to_dict(model)
-        if data.get('config'):
+        model, supplier = row
+        data = _merge_model_with_supplier(model, supplier)
+
+        ext_config = data.get('ext_config')
+        if ext_config:
             try:
-                data['config_list'] = json.loads(data['config'])
-            except:
+                data['config_list'] = json.loads(ext_config)
+            except Exception:
                 data['config_list'] = []
         else:
             data['config_list'] = []
@@ -54,37 +79,46 @@ async def get_model_detail(model_id: int) -> dict:
 
 async def add_model(data: dict) -> bool:
     with pool.get_session() as session:
-        # Check if default
-        model_type = data.get('model_type', 1)
+        supplier_id = data.get('supplier')
+        model_type = str(data.get('model_type', 1))
 
-        # Only LLM (type 1) can be default
-        is_default = False
-        if model_type == 1:
+        # 若前端传入 api_key/api_domain，同步更新对应 Supplier 记录
+        supplier = session.query(Supplier).filter(Supplier.id == supplier_id).first()
+        if supplier:
+            api_key = data.get('api_key')
+            if api_key is not None:
+                supplier.api_key = api_key.strip() if api_key.strip() else None
+            if data.get('api_domain'):
+                supplier.api_domain = data['api_domain']
+            supplier.update_time = datetime.now()
+
+        # 仅聊天模型（CHAT）在首次添加时自动设为默认
+        is_default = '0'
+        if model_type == ModelTypeEnum.CHAT.value[0]:
             count = session.query(SupplierModel).filter(
-                SupplierModel.model_type == 1
+                SupplierModel.model_type == ModelTypeEnum.CHAT.value[0],
+                SupplierModel.del_flag == '0'
             ).count()
-            is_default = (count == 0)  # First LLM is default
+            is_default = '1' if count == 0 else '0'
 
         config_list = data.get('config_list', [])
-        config_str = json.dumps(config_list)
+        ext_config = json.dumps(config_list) if config_list else None
 
-        # 处理 api_key：空字符串转换为 None
-        api_key = data.get('api_key')
-        if api_key is not None and api_key.strip() == '':
-            api_key = None
-
+        now = datetime.now()
         new_model = SupplierModel(
+            supplier_id=supplier_id,
             name=data['name'],
             base_model=data['base_model'],
-            model_type=data.get('model_type', 1),  # Default to 1 (LLM)
-            supplier=data.get('supplier', 1),
-            protocol=data.get('protocol', 1),
-            api_domain=data['api_domain'],
-            api_key=api_key,
-            config=config_str,
-            default_model=is_default,
-            status=1,
-            create_time=int(datetime.now().timestamp())
+            model_type=model_type,
+            description=data.get('description', ''),
+            context_length=data.get('context_length', ''),
+            default_flag=is_default,
+            ext_config=ext_config,
+            del_flag='0',
+            create_by=data.get('create_by', 'system'),
+            update_by=data.get('update_by', 'system'),
+            create_time=now,
+            update_time=now,
         )
         session.add(new_model)
         session.commit()
@@ -93,32 +127,51 @@ async def add_model(data: dict) -> bool:
 
 async def update_model(model_id: int, data: dict) -> bool:
     with pool.get_session() as session:
-        model = session.query(SupplierModel).filter(SupplierModel.id == model_id).first()
-        if not model:
+        row = session.query(SupplierModel, Supplier).join(
+            Supplier, SupplierModel.supplier_id == Supplier.id
+        ).filter(
+            SupplierModel.id == model_id,
+            SupplierModel.del_flag == '0'
+        ).first()
+
+        if not row:
             raise MyException(SysCodeEnum.PARAM_ERROR, "Model not found")
 
-        # 更新所有可修改的字段
+        model, supplier = row
+
+        # 更新 SupplierModel 字段
         if 'name' in data:
             model.name = data['name']
         if 'base_model' in data:
             model.base_model = data['base_model']
-        if 'supplier' in data:
-            model.supplier = data['supplier']
         if 'model_type' in data:
-            model.model_type = data['model_type']
-        if 'protocol' in data:
-            model.protocol = data['protocol']
-        if 'api_domain' in data:
-            model.api_domain = data['api_domain']
-        if 'api_key' in data:
-            # 处理 api_key：空字符串转换为 None
-            api_key = data['api_key']
-            if api_key is not None and api_key.strip() == '':
-                api_key = None
-            model.api_key = api_key
-
+            model.model_type = str(data['model_type'])
+        if 'description' in data:
+            model.description = data['description']
+        if 'context_length' in data:
+            model.context_length = data['context_length']
         if 'config_list' in data:
-            model.config = json.dumps(data['config_list'])
+            model.ext_config = json.dumps(data['config_list'])
+
+        # 若前端切换了供应商
+        new_supplier_id = data.get('supplier')
+        if new_supplier_id and new_supplier_id != model.supplier_id:
+            model.supplier_id = new_supplier_id
+            supplier = session.query(Supplier).filter(Supplier.id == new_supplier_id).first()
+
+        model.update_by = data.get('update_by', 'system')
+        model.update_time = datetime.now()
+
+        # 同步更新 Supplier 的 api_key / api_domain
+        if supplier:
+            if 'api_key' in data:
+                api_key = data['api_key']
+                if api_key is not None and api_key.strip() == '':
+                    api_key = None
+                supplier.api_key = api_key
+            if 'api_domain' in data:
+                supplier.api_domain = data['api_domain']
+            supplier.update_time = datetime.now()
 
         session.commit()
         return True
@@ -126,75 +179,103 @@ async def update_model(model_id: int, data: dict) -> bool:
 
 async def delete_model(model_id: int) -> bool:
     with pool.get_session() as session:
-        model = session.query(SupplierModel).filter(SupplierModel.id == model_id).first()
+        model = session.query(SupplierModel).filter(
+            SupplierModel.id == model_id,
+            SupplierModel.del_flag == '0'
+        ).first()
         if not model:
             raise MyException(SysCodeEnum.PARAM_ERROR, "Model not found")
 
-        if model.default_model:
+        if model.default_flag == '1':
             raise MyException(SysCodeEnum.PARAM_ERROR, "Cannot delete default model")
 
-        session.delete(model)
+        model.del_flag = '1'
+        model.update_time = datetime.now()
         session.commit()
         return True
 
 
 async def set_default_model(model_id: int) -> bool:
     with pool.get_session() as session:
-        model = session.query(SupplierModel).filter(SupplierModel.id == model_id).first()
+        model = session.query(SupplierModel).filter(
+            SupplierModel.id == model_id,
+            SupplierModel.del_flag == '0'
+        ).first()
         if not model:
             raise MyException(SysCodeEnum.PARAM_ERROR, "Model not found")
 
-        if model.model_type != 1:
-            raise MyException(SysCodeEnum.PARAM_ERROR, "Only LLM can be set as default")
+        if model.model_type != ModelTypeEnum.CHAT.value[0]:
+            raise MyException(SysCodeEnum.PARAM_ERROR, "只有聊天模型才能设为默认")
 
-        if model.default_model:
+        if model.default_flag == '1':
             return True
 
-        # Unset previous default for LLM
+        # 取消原有默认聊天模型
         session.query(SupplierModel).filter(
-            SupplierModel.default_model == True,
-            SupplierModel.model_type == 1
-        ).update({SupplierModel.default_model: False})
+            SupplierModel.default_flag == '1',
+            SupplierModel.model_type == ModelTypeEnum.CHAT.value[0],
+            SupplierModel.del_flag == '0'
+        ).update({SupplierModel.default_flag: '0'})
 
-        model.default_model = True
+        model.default_flag = '1'
         session.commit()
         return True
 
 
-async def get_default_model() -> Optional[dict]:
-    """
-    查询默认模型
-    :return: 默认模型信息，如果不存在返回None
-    """
+async def query_supplier_list() -> List[dict]:
+    """查询所有可用供应商列表（id + name + api_domain + api_key）。"""
     with pool.get_session() as session:
-        model = session.query(SupplierModel).filter(
-            SupplierModel.default_model == True,
-            SupplierModel.model_type == 1
+        suppliers = session.query(Supplier).filter(
+            Supplier.del_flag == '0'
+        ).order_by(Supplier.id).all()
+        return [
+            {
+                'id': s.id,
+                'name': s.name,
+                'api_domain': s.api_domain or '',
+                'api_key': s.api_key or '',
+            }
+            for s in suppliers
+        ]
+
+
+async def get_default_model() -> Optional[dict]:
+    """查询默认聊天模型，同时返回供应商的 api_key / api_domain 信息。"""
+    with pool.get_session() as session:
+        row = session.query(SupplierModel, Supplier).join(
+            Supplier, SupplierModel.supplier_id == Supplier.id
+        ).filter(
+            SupplierModel.default_flag == '1',
+            SupplierModel.model_type == ModelTypeEnum.CHAT.value[0],
+            SupplierModel.del_flag == '0'
         ).first()
 
-        if not model:
+        if not row:
             return None
 
-        return model_to_dict(model)
+        model, supplier = row
+        return _merge_model_with_supplier(model, supplier)
 
 
 async def check_llm_status(data: dict) -> dict:
-    """
-    测试模型连接状态
-    :param data: 模型配置数据
-    :return: 测试结果
-    """
-    supplier = data.get('supplier', 1)
+    """测试模型连接状态，supplier 字段对应 Supplier 表的 id。"""
+    supplier_id = data.get('supplier', 1)
     api_key = data.get('api_key') or ''
     api_domain = data.get('api_domain', '')
-    base_model = data.get('base_model', '')
+
+    # 未传入 api_key / api_domain 时，从 Supplier 表补充
+    if not api_key or not api_domain:
+        with pool.get_session() as session:
+            supplier = session.query(Supplier).filter(Supplier.id == supplier_id).first()
+            if supplier:
+                api_key = api_key or supplier.api_key or ''
+                api_domain = api_domain or supplier.api_domain or ''
 
     if not api_domain:
         return {"success": False, "message": "API 域名不能为空"}
 
     try:
-        # Ollama 不需要 API Key
-        if supplier == 3:
+        if supplier_id == 3:  # Ollama
             domain = api_domain
             if domain.endswith('/v1'):
                 domain = domain[:-3]
@@ -204,9 +285,7 @@ async def check_llm_status(data: dict) -> dict:
                 resp.raise_for_status()
                 return {"success": True, "message": "连接成功"}
 
-        # 其他供应商需要 API Key（但某些本地部署可能不需要）
-        # 尝试发送一个简单的请求来测试连接
-        if supplier == 1:  # OpenAI
+        if supplier_id == 1:  # OpenAI
             domain = api_domain or "https://api.openai.com/v1"
             url = f"{domain}/models"
             headers = {}
@@ -217,8 +296,7 @@ async def check_llm_status(data: dict) -> dict:
                 resp.raise_for_status()
                 return {"success": True, "message": "连接成功"}
 
-        # vLLM 可能不需要 API Key
-        elif supplier == 4:
+        elif supplier_id == 4:  # vLLM
             url = f"{api_domain}/models"
             headers = {}
             if api_key:
@@ -228,13 +306,8 @@ async def check_llm_status(data: dict) -> dict:
                 resp.raise_for_status()
                 return {"success": True, "message": "连接成功"}
 
-        # MiniMax 特殊处理
-        elif supplier == 10:  # MiniMax
-            # MiniMax 使用兼容OpenAI的API，但可能有特定的端点要求
+        elif supplier_id == 10:  # MiniMax
             domain = api_domain
-
-            # 根据搜索结果，MiniMax的API端点可能不是标准的/models
-            # 尝试使用更简单的连接测试方法
             url = f"{domain}/models"
             headers = {"Content-Type": "application/json"}
             if api_key:
@@ -247,16 +320,12 @@ async def check_llm_status(data: dict) -> dict:
                     return {"success": True, "message": "连接成功"}
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 404:
-                    # 对于MiniMax，如果/models端点不存在，尝试直接测试连接
-                    # 使用一个简单的HEAD请求来测试网络连接
                     try:
                         async with httpx.AsyncClient() as client:
-                            # 尝试对基础域名进行连接测试
                             base_domain = domain.replace('/v1', '')
                             resp = await client.head(base_domain, timeout=5)
-                            # 如果能连接到域名，说明配置基本正确
                             return {"success": True, "message": "连接成功"}
-                    except:
+                    except Exception:
                         return {"success": False, "message": "无法连接到API域名，请检查网络和域名配置"}
                 elif e.response.status_code == 401:
                     return {"success": False, "message": "API Key 无效或未授权"}
@@ -270,11 +339,9 @@ async def check_llm_status(data: dict) -> dict:
                 logger.error(f"MiniMax连接测试失败: {e}")
                 return {"success": False, "message": f"连接失败: {str(e)}"}
 
-        # 其他供应商（DeepSeek, Qwen, Moonshot, ZhipuAI 等）
         else:
-            # 尝试使用 OpenAI 兼容协议测试
             domain = api_domain
-            url = f"{domain}/models" if not domain.endswith('/v1') else f"{domain}/models"
+            url = f"{domain}/models"
             headers = {}
             if api_key:
                 headers["Authorization"] = f"Bearer {api_key}"
@@ -287,8 +354,7 @@ async def check_llm_status(data: dict) -> dict:
         if e.response.status_code == 401:
             return {"success": False, "message": "API Key 无效或未授权"}
         elif e.response.status_code == 404:
-            # 对于MiniMax等供应商，可能需要特殊处理
-            if supplier == 10:  # MiniMax
+            if supplier_id == 10:
                 return {"success": False,
                         "message": "API 端点不存在，请检查 API 域名。MiniMax 可能需要使用完整的模型列表端点"}
             return {"success": False, "message": "API 端点不存在，请检查 API 域名"}
@@ -304,9 +370,17 @@ async def check_llm_status(data: dict) -> dict:
 
 
 async def fetch_base_models(supplier: int, api_key: str = None, api_domain: str = None) -> List[str]:
+    """拉取指定供应商的可用基础模型列表。supplier 为 Supplier 表的 id。"""
+    # 未传入 api_key / api_domain 时，从 Supplier 表补充
+    if not api_key or not api_domain:
+        with pool.get_session() as session:
+            supplier_rec = session.query(Supplier).filter(Supplier.id == supplier).first()
+            if supplier_rec:
+                api_key = api_key or supplier_rec.api_key
+                api_domain = api_domain or supplier_rec.api_domain
+
     try:
-        # OpenAI
-        if supplier == 1:
+        if supplier == 1:  # OpenAI
             if not api_key:
                 return []
             domain = api_domain or "https://api.openai.com/v1"
@@ -319,13 +393,10 @@ async def fetch_base_models(supplier: int, api_key: str = None, api_domain: str 
                 models = [m['id'] for m in data.get('data', []) if 'gpt' in m['id']]
                 return sorted(models)
 
-        # Ollama
-        elif supplier == 3:
+        elif supplier == 3:  # Ollama
             domain = api_domain or "http://localhost:11434"
-            # Ollama API structure: GET /api/tags
             if domain.endswith('/v1'):
-                domain = domain[:-3]  # Strip /v1 if present
-
+                domain = domain[:-3]
             url = f"{domain}/api/tags"
             async with httpx.AsyncClient() as client:
                 resp = await client.get(url, timeout=5)
@@ -334,8 +405,7 @@ async def fetch_base_models(supplier: int, api_key: str = None, api_domain: str 
                 models = [m['name'] for m in data.get('models', [])]
                 return sorted(models)
 
-        # vLLM
-        elif supplier == 4:
+        elif supplier == 4:  # vLLM
             if not api_domain:
                 return []
             url = f"{api_domain}/models"
@@ -349,9 +419,7 @@ async def fetch_base_models(supplier: int, api_key: str = None, api_domain: str 
                 models = [m['id'] for m in data.get('data', [])]
                 return sorted(models)
 
-        # DeepSeek
-        elif supplier == 5:
-            # Similar to OpenAI
+        elif supplier == 5:  # DeepSeek
             if not api_key:
                 return []
             domain = api_domain or "https://api.deepseek.com"
@@ -364,35 +432,27 @@ async def fetch_base_models(supplier: int, api_key: str = None, api_domain: str 
                 models = [m['id'] for m in data.get('data', [])]
                 return sorted(models)
 
-        # MiniMax
-        elif supplier == 10:
+        elif supplier == 10:  # MiniMax
             if not api_key:
                 return []
             domain = api_domain or "https://api.minimaxi.com/v1"
             url = f"{domain}/models"
             headers = {"Authorization": f"Bearer {api_key}"}
-
             try:
                 async with httpx.AsyncClient() as client:
                     resp = await client.get(url, headers=headers, timeout=10)
                     resp.raise_for_status()
                     data = resp.json()
-                    # 根据OpenAI兼容API格式提取模型列表
                     if 'data' in data:
                         models = [m['id'] for m in data.get('data', [])]
                     else:
-                        # 如果没有data字段，尝试其他格式
                         models = [m['id'] for m in data] if isinstance(data, list) else []
                     return sorted(models)
-            except:
-                # 如果获取模型列表失败，返回一些常见的MiniMax模型名称
+            except Exception:
                 return ["MiniMax-M2.1", "abab6.5s-chat", "abab5.5-chat"]
 
-        # Fallback or other providers: Return empty list or hardcoded common ones?
-        # For now return empty, frontend can allow manual entry
         return []
 
     except Exception as e:
         logger.error(f"Failed to fetch models for supplier {supplier}: {e}")
-        # Return empty list on error
         return []

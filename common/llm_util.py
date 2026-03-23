@@ -23,7 +23,7 @@ def get_llm(temperature=0.75, timeout=None):
         # Fetch default model
         model = (
             session.query(SupplierModel)
-            .filter(SupplierModel.default_model == True, SupplierModel.model_type == 1)
+            .filter(SupplierModel.default_flag == '1', SupplierModel.model_type == 1)
             .first()
         )
         if not model:
