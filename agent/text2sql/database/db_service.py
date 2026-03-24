@@ -145,22 +145,22 @@ class DatabaseService:
                     ds = session.query(Datasource).filter(Datasource.id == datasource_id,Datasource.del_flag == "0").first()
                     if ds:
                         # 在 session 内提取并存储需要的属性
-                        self._datasource_type = ds.type
-                        self._datasource_config = ds.configuration
+                        self._datasource_type = ds.ds_type
+                        self._datasource_config = ds.conf_type
                         # 检查数据源是否支持 SQLAlchemy 连接
-                        db_enum = DB.get_db(ds.type, default_if_none=True)
+                        db_enum = DB.get_db(ds.ds_type, default_if_none=True)
                         if db_enum.connect_type == ConnectType.sqlalchemy:
-                            config = DatasourceConfigUtil.decrypt_config(ds.configuration)
-                            uri = DatasourceConnectionUtil.build_connection_uri(ds.type, config)
+                            config = DatasourceConfigUtil.decrypt_config(ds.conf_type)
+                            uri = DatasourceConnectionUtil.build_connection_uri(ds.ds_type, config)
                             # SQL Server 2022 需要禁用加密以兼容 pymssql
-                            if ds.type == "sqlServer":
+                            if ds.ds_type == "sqlServer":
                                 self._engine = create_engine(uri, connect_args={"encryption": "off"})
                             else:
                                 self._engine = create_engine(uri)
                             logger.info(f"Initialized DatabaseService with datasource_id: {datasource_id}")
                         else:
                             # 对于使用原生驱动的数据库（如 Doris），不创建 SQLAlchemy engine
-                            logger.info(f"Datasource {datasource_id} ({ds.type}) uses native driver, skipping SQLAlchemy engine")
+                            logger.info(f"Datasource {datasource_id} ({ds.ds_type}) uses native driver, skipping SQLAlchemy engine")
             except Exception as e:
                 logger.error(f"Failed to initialize datasource {datasource_id}: {e}")
 
@@ -936,20 +936,20 @@ class DatabaseService:
                 datasource = session.query(Datasource).filter(
                     Datasource.id == self._datasource_id
                 ).first()
-                if not datasource or not datasource.table_relation:
+                if not datasource :
                     return selected_table_names
 
-                relations = datasource.table_relation
-                if not isinstance(relations, list):
-                    return selected_table_names
-
-                # 节点和边
-                table_nodes = [
-                    r for r in relations if r.get("shape") in ("er-rect", "rect")
-                ]
-                edges = [r for r in relations if r.get("shape") == "edge"]
-                if not edges:
-                    return selected_table_names
+                # relations = datasource.table_relation
+                # if not isinstance(relations, list):
+                #     return selected_table_names
+                #
+                # # 节点和边
+                # table_nodes = [
+                #     r for r in relations if r.get("shape") in ("er-rect", "rect")
+                # ]
+                # edges = [r for r in relations if r.get("shape") == "edge"]
+                # if not edges:
+                #     return selected_table_names
 
                 # 查询该数据源下所有表，构建 id <-> name 映射
                 all_tables = session.query(DatasourceTable).filter(
@@ -971,138 +971,138 @@ class DatabaseService:
                 selected_table_ids_str = {str(tid) for tid in selected_table_ids}
 
                 # 找出与选中表相关的所有关系（任一端命中即可）
-                related_relations = []
-                for edge in edges:
-                    source = edge.get("source", {}) or {}
-                    target = edge.get("target", {}) or {}
-                    source_id = str(source.get("cell", "")) if source.get("cell") is not None else ""
-                    target_id = str(target.get("cell", "")) if target.get("cell") is not None else ""
-                    if source_id in selected_table_ids_str or target_id in selected_table_ids_str:
-                        related_relations.append(edge)
-
-                if not related_relations:
-                    logger.debug(
-                        f"表关系补充：未发现与选中表 {selected_table_names} 相关的关系边，跳过补充"
-                    )
-                    return selected_table_names
+                # related_relations = []
+                # for edge in edges:
+                #     source = edge.get("source", {}) or {}
+                #     target = edge.get("target", {}) or {}
+                #     source_id = str(source.get("cell", "")) if source.get("cell") is not None else ""
+                #     target_id = str(target.get("cell", "")) if target.get("cell") is not None else ""
+                #     if source_id in selected_table_ids_str or target_id in selected_table_ids_str:
+                #         related_relations.append(edge)
+                #
+                # if not related_relations:
+                #     logger.debug(
+                #         f"表关系补充：未发现与选中表 {selected_table_names} 相关的关系边，跳过补充"
+                #     )
+                #     return selected_table_names
 
                 # 提取关系中的所有表 ID
-                relation_table_ids_str = set()
-                for rel in related_relations:
-                    source = rel.get("source", {}) or {}
-                    target = rel.get("target", {}) or {}
-                    source_id = str(source.get("cell", "")) if source.get("cell") is not None else ""
-                    target_id = str(target.get("cell", "")) if target.get("cell") is not None else ""
-                    if source_id:
-                        relation_table_ids_str.add(source_id)
-                    if target_id:
-                        relation_table_ids_str.add(target_id)
+                # relation_table_ids_str = set()
+                # for rel in related_relations:
+                #     source = rel.get("source", {}) or {}
+                #     target = rel.get("target", {}) or {}
+                #     source_id = str(source.get("cell", "")) if source.get("cell") is not None else ""
+                #     target_id = str(target.get("cell", "")) if target.get("cell") is not None else ""
+                #     if source_id:
+                #         relation_table_ids_str.add(source_id)
+                #     if target_id:
+                #         relation_table_ids_str.add(target_id)
 
                 # 找出缺失的表 ID：关系中出现，但当前未选中
-                missing_table_ids_str = relation_table_ids_str - selected_table_ids_str
+                # missing_table_ids_str = relation_table_ids_str - selected_table_ids_str
+                #
+                # # 根据 ID 映射到表名，并确保在 all_table_info 中（权限过滤之后）
+                # missing_table_names: List[str] = []
+                # for tid_str in missing_table_ids_str:
+                #     try:
+                #         tid = int(tid_str)
+                #     except (TypeError, ValueError):
+                #         continue
+                #     table_name = table_id_to_name.get(tid)
+                #     if table_name and table_name in all_table_info:
+                #         missing_table_names.append(table_name)
 
-                # 根据 ID 映射到表名，并确保在 all_table_info 中（权限过滤之后）
-                missing_table_names: List[str] = []
-                for tid_str in missing_table_ids_str:
-                    try:
-                        tid = int(tid_str)
-                    except (TypeError, ValueError):
-                        continue
-                    table_name = table_id_to_name.get(tid)
-                    if table_name and table_name in all_table_info:
-                        missing_table_names.append(table_name)
-
-                if missing_table_names:
-                    logger.info(
-                        f"🔗 表关系补充：从 {selected_table_names} 补充 "
-                        f"{len(missing_table_names)} 个关联表: {missing_table_names}"
-                    )
-                    extended_names = selected_table_names + [
-                        name for name in missing_table_names if name not in selected_name_set
-                    ]
-                else:
-                    extended_names = selected_table_names
+                # if missing_table_names:
+                #     logger.info(
+                #         f"🔗 表关系补充：从 {selected_table_names} 补充 "
+                #         f"{len(missing_table_names)} 个关联表: {missing_table_names}"
+                #     )
+                #     extended_names = selected_table_names + [
+                #         name for name in missing_table_names if name not in selected_name_set
+                #     ]
+                # else:
+                #     extended_names = selected_table_names
 
                 # 生成 table1.field1=table2.field2 形式的外键信息，写入 all_table_info
                 # 构建 node 映射，便于通过 (cell, port) 找到字段名
-                node_by_id = {str(n.get("id")): n for n in table_nodes if n.get("id") is not None}
+                # node_by_id = {str(n.get("id")): n for n in table_nodes if n.get("id") is not None}
 
-                def _get_field_name(cell_id: str, port_id: str) -> str:
-                    """从关系图节点或 DatasourceTableField 中解析字段名。"""
-                    # 1) 从前端关系图的 ports 中取
-                    node = node_by_id.get(cell_id)
-                    if node:
-                        ports = (node.get("ports") or {}).get("items") or []
-                        for p in ports:
-                            if str(p.get("id")) == str(port_id):
-                                return (
-                                    p.get("attrs", {})
-                                    .get("portNameLabel", {})
-                                    .get("text", "")
-                                    .strip()
-                                )
-                    # 2) 兜底：从 DatasourceTableField.id 读取
-                    try:
-                        if port_id and str(port_id).isdigit():
-                            field = session.query(DatasourceTableField).filter(
-                                DatasourceTableField.id == int(port_id)
-                            ).first()
-                            if field and field.field_name:
-                                return field.field_name.strip()
-                    except Exception:
-                        pass
-                    return ""
+                # def _get_field_name(cell_id: str, port_id: str) -> str:
+                #     """从关系图节点或 DatasourceTableField 中解析字段名。"""
+                #     # 1) 从前端关系图的 ports 中取
+                #     node = node_by_id.get(cell_id)
+                #     if node:
+                #         ports = (node.get("ports") or {}).get("items") or []
+                #         for p in ports:
+                #             if str(p.get("id")) == str(port_id):
+                #                 return (
+                #                     p.get("attrs", {})
+                #                     .get("portNameLabel", {})
+                #                     .get("text", "")
+                #                     .strip()
+                #                 )
+                #     # 2) 兜底：从 DatasourceTableField.id 读取
+                #     try:
+                #         if port_id and str(port_id).isdigit():
+                #             field = session.query(DatasourceTableField).filter(
+                #                 DatasourceTableField.id == int(port_id)
+                #             ).first()
+                #             if field and field.field_name:
+                #                 return field.field_name.strip()
+                #     except Exception:
+                #         pass
+                #     return ""
 
                 # 为参与关系的表构建 foreign_keys 列表
-                extracted_fks = []
-                for rel in related_relations:
-                    source = rel.get("source", {}) or {}
-                    target = rel.get("target", {}) or {}
-                    source_id = str(source.get("cell", "")) if source.get("cell") is not None else ""
-                    target_id = str(target.get("cell", "")) if target.get("cell") is not None else ""
-                    source_port = str(source.get("port", "")) if source.get("port") is not None else ""
-                    target_port = str(target.get("port", "")) if target.get("port") is not None else ""
-
-                    # cell id -> 表名
-                    try:
-                        s_tid = int(source_id) if source_id and source_id.isdigit() else None
-                        t_tid = int(target_id) if target_id and target_id.isdigit() else None
-                    except ValueError:
-                        s_tid = t_tid = None
-
-                    s_table = table_id_to_name.get(s_tid) if s_tid is not None else None
-                    t_table = table_id_to_name.get(t_tid) if t_tid is not None else None
-
-                    if not s_table or not t_table:
-                        logger.debug(f"跳过关系：无法解析表名 (source_id={source_id}, target_id={target_id})")
-                        continue
-                    if s_table not in all_table_info or t_table not in all_table_info:
-                        logger.debug(f"跳过关系：表不在权限范围内 (s_table={s_table}, t_table={t_table})")
-                        continue
-
-                    # 获取字段名
-                    s_field = _get_field_name(source_id, source_port)
-                    t_field = _get_field_name(target_id, target_port)
-                    if not s_field or not t_field:
-                        logger.debug(f"跳过关系：无法解析字段名 (source_id={source_id}, port={source_port}, target_id={target_id}, port={target_port})")
-                        continue
-
-                    fk_str = f"{s_table}.{s_field}={t_table}.{t_field}"
-                    extracted_fks.append(fk_str)
-
-                    # 写入两端表的 foreign_keys 列表（避免重复）
-                    for tbl in (s_table, t_table):
-                        fk_list = all_table_info[tbl].setdefault("foreign_keys", [])
-                        if fk_str not in fk_list:
-                            fk_list.append(fk_str)
-
-                # 记录关系提取结果（仅记录数量）
-                if extracted_fks:
-                    logger.debug(f"提取到 {len(extracted_fks)} 条外键关系")
-                else:
-                    logger.debug("未提取到外键关系")
-
-                return extended_names
+                # extracted_fks = []
+                # for rel in related_relations:
+                #     source = rel.get("source", {}) or {}
+                #     target = rel.get("target", {}) or {}
+                #     source_id = str(source.get("cell", "")) if source.get("cell") is not None else ""
+                #     target_id = str(target.get("cell", "")) if target.get("cell") is not None else ""
+                #     source_port = str(source.get("port", "")) if source.get("port") is not None else ""
+                #     target_port = str(target.get("port", "")) if target.get("port") is not None else ""
+                #
+                #     # cell id -> 表名
+                #     try:
+                #         s_tid = int(source_id) if source_id and source_id.isdigit() else None
+                #         t_tid = int(target_id) if target_id and target_id.isdigit() else None
+                #     except ValueError:
+                #         s_tid = t_tid = None
+                #
+                #     s_table = table_id_to_name.get(s_tid) if s_tid is not None else None
+                #     t_table = table_id_to_name.get(t_tid) if t_tid is not None else None
+                #
+                #     if not s_table or not t_table:
+                #         logger.debug(f"跳过关系：无法解析表名 (source_id={source_id}, target_id={target_id})")
+                #         continue
+                #     if s_table not in all_table_info or t_table not in all_table_info:
+                #         logger.debug(f"跳过关系：表不在权限范围内 (s_table={s_table}, t_table={t_table})")
+                #         continue
+                #
+                #     # 获取字段名
+                #     s_field = _get_field_name(source_id, source_port)
+                #     t_field = _get_field_name(target_id, target_port)
+                #     if not s_field or not t_field:
+                #         logger.debug(f"跳过关系：无法解析字段名 (source_id={source_id}, port={source_port}, target_id={target_id}, port={target_port})")
+                #         continue
+                #
+                #     fk_str = f"{s_table}.{s_field}={t_table}.{t_field}"
+                #     extracted_fks.append(fk_str)
+                #
+                #     # 写入两端表的 foreign_keys 列表（避免重复）
+                #     for tbl in (s_table, t_table):
+                #         fk_list = all_table_info[tbl].setdefault("foreign_keys", [])
+                #         if fk_str not in fk_list:
+                #             fk_list.append(fk_str)
+                #
+                # # 记录关系提取结果（仅记录数量）
+                # if extracted_fks:
+                #     logger.debug(f"提取到 {len(extracted_fks)} 条外键关系")
+                # else:
+                #     logger.debug("未提取到外键关系")
+                #
+                # return extended_names
 
         except Exception as e:
             logger.warning(f"⚠️ 表关系补充失败: {e}", exc_info=True)

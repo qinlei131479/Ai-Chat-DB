@@ -94,7 +94,7 @@ def create_graph(datasource_id: int = None):
     # 优化：在 schema_inspector 之后立即启动推荐问题生成（不阻塞主流程）
     graph.add_edge("schema_inspector", "early_recommender")
     graph.add_edge("early_recommender", "sql_generator")
-    graph.add_edge("sql_generator", "permission_filter")
+    graph.add_edge("sql_generator", "sql_executor")
     # graph.add_edge("permission_filter", "sql_executor")
     # 优化：并行执行 chart_generator 和 summarize（推荐问题已在后台执行）
     graph.add_edge("sql_executor", "parallel_collector")

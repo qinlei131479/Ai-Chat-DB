@@ -67,7 +67,7 @@ def data_render_apache(state: AgentState) -> dict:
                 with db_pool.get_session() as session:
                     ds = DatasourceService.get_datasource_by_id(session, datasource_id)
                     if ds:
-                        db_type = ds.type or "mysql"
+                        db_type = ds.ds_type or "mysql"
             except Exception:
                 pass
         db_type = db_type or "mysql"

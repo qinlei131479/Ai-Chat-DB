@@ -110,7 +110,6 @@ class Terminology(Base):
     __table_args__ = {"comment": "术语配置表"}
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    # oid: Mapped[Optional[int]] = mapped_column(BigInteger, default=1, comment="组织ID")
     parent_id: Mapped[Optional[int]] = mapped_column(BigInteger, comment="父ID")
     word: Mapped[Optional[str]] = mapped_column(String(255), comment="术语名称")
     description: Mapped[Optional[str]] = mapped_column(Text, comment="描述")
