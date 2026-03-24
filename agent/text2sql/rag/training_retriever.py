@@ -19,7 +19,6 @@ pool = get_db_pool()
 def retrieve_training_examples(
     question: str,
     datasource_id: Optional[int] = None,
-    oid: int = 1,
     top_k: int = 5,
     use_embedding: bool = True,
 ) -> str:
@@ -29,7 +28,6 @@ def retrieve_training_examples(
     Args:
         question: 用户问题
         datasource_id: 数据源ID（可选）
-        oid: 组织ID（默认：1）
         top_k: 返回的最大示例数量（默认：5）
         use_embedding: 是否使用 embedding 向量检索（默认：True）
     
@@ -69,7 +67,6 @@ def retrieve_training_examples(
                 results = loop.run_until_complete(_select_training_by_question(
                     session=session,
                     question=question,
-                    oid=oid,
                     datasource_id=datasource_id,
                     top_k=top_k,
                     use_embedding=use_embedding,
@@ -146,7 +143,6 @@ def retrieve_training_examples(
 async def _select_training_by_question(
     session: Session,
     question: str,
-    oid: int,
     datasource_id: int,
     top_k: int = 5,
     use_embedding: bool = True,
@@ -157,7 +153,6 @@ async def _select_training_by_question(
     Args:
         session: 数据库会话
         question: 用户问题
-        oid: 组织ID
         datasource_id: 数据源ID
         top_k: 返回的最大数量
         use_embedding: 是否使用 embedding 向量检索
@@ -172,7 +167,6 @@ async def _select_training_by_question(
     stmt = session.query(SqlTrain.id).filter(
         and_(
             SqlTrain.question.ilike(question_pattern),
-            # SqlTrain.oid == oid,
             SqlTrain.ds_id == datasource_id,
             SqlTrain.enabled_flag == 1,
         )
@@ -199,10 +193,9 @@ async def _select_training_by_question(
                 embedding_sql = text("""
                     SELECT id, question, description,
                            (1 - (embedding <=> CAST(:embedding_array AS vector))) AS similarity
-                    FROM t_data_training
-                    WHERE oid = :oid 
-                      AND datasource = :datasource 
-                      AND enabled = true
+                    FROM sql_train
+                    WHERE ds_id = :ds_id 
+                      AND enabled_flag = 1
                       AND embedding IS NOT NULL
                     ORDER BY embedding <=> CAST(:embedding_array AS vector)
                     LIMIT :top_k
@@ -212,7 +205,6 @@ async def _select_training_by_question(
                     embedding_sql,
                     {
                         "embedding_array": embedding_str,
-                        # "oid": oid,
                         "ds_id": datasource_id,
                         "top_k": top_k,
                     }

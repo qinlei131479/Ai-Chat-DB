@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from openai import AsyncOpenAI
 
+from constants.code_enum import ModelTypeEnum
 from model.db_connection_pool import get_db_pool
 from model.db_models import Supplier, SupplierModel
 
@@ -17,11 +18,12 @@ async def get_default_embedding_model():
     只查找 Embedding 类型的模型（model_type='2'），JOIN Supplier 表获取 api_key / api_domain。
     """
     with pool.get_session() as session:
+        model_type = ModelTypeEnum.EMBEDDING.value[0]
         # 优先取标记为默认的 embedding 模型
         row = session.query(SupplierModel, Supplier).join(
             Supplier, SupplierModel.supplier_id == Supplier.id
         ).filter(
-            SupplierModel.model_type == '2',
+            SupplierModel.model_type == model_type,
             SupplierModel.default_flag == '1',
             SupplierModel.del_flag == '0'
         ).first()
@@ -78,9 +80,9 @@ async def generate_embedding(text: str) -> Optional[List[float]]:
                 base_url = f"https://{base_url}"
 
         # Ollama 需要确保 base_url 以 /v1 结尾
-        if model["supplier"] == 3:
-            if not base_url.endswith("/v1"):
-                base_url = f"{base_url.rstrip('/')}/v1"
+        # if model["supplier"] == 3:
+        #     if not base_url.endswith("/v1"):
+        #         base_url = f"{base_url.rstrip('/')}/v1"
 
         async with AsyncOpenAI(api_key=api_key, base_url=base_url) as client:
             response = await client.embeddings.create(model=model["base_model"], input=text)

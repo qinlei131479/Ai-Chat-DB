@@ -3,6 +3,7 @@ import warnings
 from sqlalchemy import create_engine
 
 from common.datasource_util import DatasourceConfigUtil, DatasourceConnectionUtil, DB, ConnectType
+from constants.code_enum import ModelTypeEnum
 from model import Datasource
 
 warnings.filterwarnings("ignore", message=".*pkg_resources.*deprecated.*")
@@ -39,7 +40,6 @@ logger = logging.getLogger(__name__)
 # 数据库连接池
 db_pool = get_db_pool()
 
-
 # 返回表数量配置（可配置，默认 6 个）
 TABLE_RETURN_COUNT = int(os.getenv("TABLE_RETURN_COUNT", "6"))
 
@@ -57,10 +57,11 @@ def get_embedding_model_config():
     如果没有配置，返回 None（将使用离线模型）。
     """
     with db_pool.get_session() as session:
+        model_type = ModelTypeEnum.EMBEDDING.value[0]
         row = session.query(SupplierModel, Supplier).join(
             Supplier, SupplierModel.supplier_id == Supplier.id
         ).filter(
-            SupplierModel.model_type == '2',
+            SupplierModel.model_type == model_type,
             SupplierModel.default_flag == '1',
             SupplierModel.del_flag == '0'
         ).first()
@@ -69,7 +70,7 @@ def get_embedding_model_config():
             row = session.query(SupplierModel, Supplier).join(
                 Supplier, SupplierModel.supplier_id == Supplier.id
             ).filter(
-                SupplierModel.model_type == '2',
+                SupplierModel.model_type == model_type,
                 SupplierModel.del_flag == '0'
             ).first()
 
@@ -96,13 +97,14 @@ def get_embedding_model_config():
 def get_rerank_model_config():
     """
     获取重排模型配置。
-    查找 Rerank 类型的模型（model_type='3'），JOIN Supplier 表获取 api_key / api_domain。
+    查找 Rerank 类型的模型（model_type='4'），JOIN Supplier 表获取 api_key / api_domain。
     """
     with db_pool.get_session() as session:
+        model_type = ModelTypeEnum.RERANK.value[0]
         row = session.query(SupplierModel, Supplier).join(
             Supplier, SupplierModel.supplier_id == Supplier.id
         ).filter(
-            SupplierModel.model_type == '3',
+            SupplierModel.model_type == model_type,
             SupplierModel.default_flag == '1',
             SupplierModel.del_flag == '0'
         ).first()
@@ -111,7 +113,7 @@ def get_rerank_model_config():
             row = session.query(SupplierModel, Supplier).join(
                 Supplier, SupplierModel.supplier_id == Supplier.id
             ).filter(
-                SupplierModel.model_type == '3',
+                SupplierModel.model_type == model_type,
                 SupplierModel.del_flag == '0'
             ).first()
 
@@ -142,7 +144,8 @@ class DatabaseService:
         if datasource_id:
             try:
                 with db_pool.get_session() as session:
-                    ds = session.query(Datasource).filter(Datasource.id == datasource_id,Datasource.del_flag == "0").first()
+                    ds = session.query(Datasource).filter(Datasource.id == datasource_id,
+                                                          Datasource.del_flag == "0").first()
                     if ds:
                         # 在 session 内提取并存储需要的属性
                         self._datasource_type = ds.ds_type
@@ -160,7 +163,8 @@ class DatabaseService:
                             logger.info(f"Initialized DatabaseService with datasource_id: {datasource_id}")
                         else:
                             # 对于使用原生驱动的数据库（如 Doris），不创建 SQLAlchemy engine
-                            logger.info(f"Datasource {datasource_id} ({ds.ds_type}) uses native driver, skipping SQLAlchemy engine")
+                            logger.info(
+                                f"Datasource {datasource_id} ({ds.ds_type}) uses native driver, skipping SQLAlchemy engine")
             except Exception as e:
                 logger.error(f"Failed to initialize datasource {datasource_id}: {e}")
 
@@ -182,7 +186,8 @@ class DatabaseService:
                 # 延迟导入，避免在模块加载时触发 Langfuse 客户端初始化
                 from langfuse.openai import OpenAI
                 self.embedding_model_name = emb_config["name"]
-                self.embedding_client = OpenAI(api_key=emb_config["api_key"] or "empty", base_url=emb_config["base_url"])
+                self.embedding_client = OpenAI(api_key=emb_config["api_key"] or "empty",
+                                               base_url=emb_config["base_url"])
                 self.use_local_embedding = False
                 logger.info(f"✅ 使用在线 embedding 模型: {self.embedding_model_name}")
             except Exception as e:
@@ -475,7 +480,8 @@ class DatabaseService:
 
         return table_info
 
-    def _fetch_table_info_from_metadata(self, user_id: Optional[int], use_cache: bool, start_time: float) -> Dict[str, Dict]:
+    def _fetch_table_info_from_metadata(self, user_id: Optional[int], use_cache: bool, start_time: float) -> Dict[
+        str, Dict]:
         """
         从 datasource_table 和 datasource_field 获取表结构信息。
         用于原生驱动的数据库（如 Doris、StarRocks 等），这些数据库不能通过 SQLAlchemy inspect 获取表结构。
@@ -551,7 +557,8 @@ class DatabaseService:
 
         return table_info
 
-    def _get_precomputed_embeddings(self, table_info: Dict[str, Dict]) -> Tuple[Optional[np.ndarray], List[str], List[str]]:
+    def _get_precomputed_embeddings(self, table_info: Dict[str, Dict]) -> Tuple[
+        Optional[np.ndarray], List[str], List[str]]:
         """
         尝试从数据库获取预计算的 embedding。
         仅从 datasource_table.embedding 字段读取，不做任何实时计算。
@@ -910,9 +917,9 @@ class DatabaseService:
             return [(name, 1.0) for name in candidate_tables.keys()]
 
     def supplement_related_tables(
-        self,
-        selected_table_names: List[str],
-        all_table_info: Dict[str, Dict],
+            self,
+            selected_table_names: List[str],
+            all_table_info: Dict[str, Dict],
     ) -> List[str]:
         """
 
@@ -928,15 +935,15 @@ class DatabaseService:
         Returns:
             扩展后的表名列表（包含原始表和通过表关系补充的关联表）
         """
-        if not self._datasource_id or not selected_table_names:
-            return selected_table_names
+        # if not self._datasource_id or not selected_table_names:
+        return selected_table_names
 
         try:
             with db_pool.get_session() as session:
                 datasource = session.query(Datasource).filter(
                     Datasource.id == self._datasource_id
                 ).first()
-                if not datasource :
+                if not datasource:
                     return selected_table_names
 
                 # relations = datasource.table_relation
