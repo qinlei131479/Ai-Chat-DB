@@ -8,7 +8,7 @@ from sqlalchemy import select, func, desc, or_, and_
 from common.exception import MyException
 from constants.code_enum import SysCodeEnum
 from model.db_connection_pool import get_db_pool
-from model.db_models import SqlTrain, TAiModel
+from model.db_models import SqlTrain, SupplierModel
 from model.datasource_models import Datasource
 from model.schemas import SqlTrainItem, PaginatedResponse
 from services.embedding_service import generate_embedding

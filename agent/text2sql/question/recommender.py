@@ -52,11 +52,11 @@ def question_recommender(state: AgentState) -> AgentState:
         with db_pool.get_session() as session:
             ds = DatasourceService.get_datasource_by_id(session, datasource_id)
             if ds:
-                db_type = ds.type
+                db_type = ds.ds_type
                 # 尝试从配置中获取数据库名 / Schema
                 try:
                     from common.datasource_util import DatasourceConfigUtil
-                    config = DatasourceConfigUtil.decrypt_config(ds.configuration)
+                    config = DatasourceConfigUtil.decrypt_config(ds.conf_type)
                     database = config.get("database")
                     db_schema = config.get("dbSchema")
                     # 对于需要 Schema 的数据库（如 PostgreSQL），优先使用 dbSchema

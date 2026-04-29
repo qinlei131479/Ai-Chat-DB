@@ -65,7 +65,7 @@ Ai-Chat-DB/
 │   ├── llm_chat_api.py
 │   ├── db_chat_api.py
 │   ├── file_chat_api.py
-│   ├── aimodel_api.py
+│   ├── supplier_model_api.py
 │   └── ...
 │
 ├── services/                     # 业务服务层
@@ -164,7 +164,7 @@ Ai-Chat-DB/
 | `db_chat_api.py` | 数据问答接口（Text2SQL） |
 | `file_chat_api.py` | 文件问答接口 |
 | `datasource_api.py` | 数据源管理接口 |
-| `aimodel_api.py` | AI 模型管理接口 |
+| `supplier_model_api.py` | AI 模型管理接口 |
 | `skill_api.py` | 技能中心接口 |
 | `permission_api.py` | 权限管理接口 |
 

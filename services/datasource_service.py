@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from common.permission_util import is_admin
 from model.datasource_models import (Datasource, DatasourceTableField, DatasourceTable)
 from model.db_connection_pool import get_db_pool
-from model.db_models import TAiModel
+from model.db_models import SupplierModel
 
 # 延迟导入 langfuse，避免在模块加载时触发 OpenTelemetry 初始化问题
 # from langfuse.openai import OpenAI
@@ -256,11 +256,11 @@ class DatasourceService:
             db_pool = get_db_pool()
             with db_pool.get_session() as session:
                 # model_type: 2 -> Embedding
-                model = session.query(TAiModel).filter(TAiModel.model_type == 2, TAiModel.default_model == True).first()
+                model = session.query(SupplierModel).filter(SupplierModel.model_type == 2, SupplierModel.default_model == True).first()
 
                 if not model:
                     # 尝试查找任何 embedding 模型
-                    model = session.query(TAiModel).filter(TAiModel.model_type == 2).first()
+                    model = session.query(SupplierModel).filter(SupplierModel.model_type == 2).first()
 
                 if not model:
                     logger.info("未配置在线嵌入模型（model_type=2），将使用离线模型计算表 embedding")

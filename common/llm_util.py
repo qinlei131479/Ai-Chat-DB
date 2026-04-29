@@ -1,8 +1,9 @@
 import json
 import os
 
+from constants.code_enum import ModelTypeEnum
 from model.db_connection_pool import get_db_pool
-from model.db_models import TAiModel
+from model.db_models import SupplierModel, Supplier
 
 pool = get_db_pool()
 
@@ -21,28 +22,33 @@ def get_llm(temperature=0.75, timeout=None):
     """
     with pool.get_session() as session:
         # Fetch default model
-        model = (
-            session.query(TAiModel)
-            .filter(TAiModel.default_model == True, TAiModel.model_type == 1)
-            .first()
+        model, supplier = (
+            session.query(SupplierModel, Supplier).join(
+                Supplier, SupplierModel.supplier_id == Supplier.id
+            ).filter(
+                SupplierModel.default_flag == '1',
+                SupplierModel.del_flag == '0',
+                SupplierModel.model_type == ModelTypeEnum.CHAT.value[0]
+            ).first()
+
         )
         if not model:
             raise ValueError("No default AI model configured in database.")
 
         # Map supplier to model type string used in map
         # 1:OpenAI, 2:Azure, 3:Ollama, 4:vLLM, 5:DeepSeek, 6:Qwen, 7:Moonshot, 8:ZhipuAI, 9:Other
-        supplier = model.supplier
+        # supplier = model.supplier_id
 
         # 目前统一将 Qwen 也视为通过 OpenAI 协议接入，避免 ChatTongyi 及其 LangSmith/OpenTelemetry 依赖
-        if supplier == 3:
-            model_type = "ollama"
-        else:
+        # if supplier.id == 3:
+        #     model_type = "ollama"
+        # else:
             # Default to openai for others (OpenAI, Qwen, DeepSeek, Moonshot, Zhipu, vLLM, etc.)
-            model_type = "openai"
+        model_type = "openai"
 
         model_name = model.base_model
-        model_api_key = model.api_key
-        model_base_url = model.api_domain
+        model_api_key = supplier.api_key
+        model_base_url = supplier.api_domain
 
         try:
             temperature = float(temperature)

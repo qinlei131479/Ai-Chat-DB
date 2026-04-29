@@ -13,7 +13,7 @@ from constants.code_enum import SysCodeEnum
 from common.llm_util import get_llm
 from model import Datasource
 from model.db_connection_pool import get_db_pool
-from model.db_models import Terminology, TAiModel
+from model.db_models import Terminology, SupplierModel
 from model.serializers import model_to_dict
 from model.schemas import PaginatedResponse
 from services.embedding_service import get_default_embedding_model

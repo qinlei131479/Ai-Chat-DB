@@ -509,7 +509,7 @@ async def data_render_ant(state: AgentState):
                 with db_pool.get_session() as session:
                     ds = DatasourceService.get_datasource_by_id(session, datasource_id)
                     if ds:
-                        db_type = ds.type
+                        db_type = ds.ds_type
             except Exception as e:
                 logger.warning(f"获取数据源类型失败: {e}，使用默认值 mysql")
 

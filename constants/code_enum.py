@@ -69,6 +69,33 @@ class DataTypeEnum(Enum):
     STREAM_END = ("t99", "流式推流结束")
 
 
+class ModelTypeEnum(Enum):
+    """
+    模型类型枚举: 值=(数据库存储值, 显示名称)
+    """
+
+    CHAT = ('1', '聊天')
+    REASONING = ('2', '推理')
+    EMBEDDING = ('3', '向量')
+    RERANK = ('4', '排序')
+    IMAGE = ('5', '图片')
+    VISION = ('6', '视觉')
+
+    @classmethod
+    def get_label(cls, code) -> str:
+        """根据数字或字符串 code 获取显示名称"""
+        str_code = str(code)
+        for member in cls:
+            if member.value[0] == str_code:
+                return member.value[1]
+        return '未知'
+
+    @classmethod
+    def to_list(cls) -> list:
+        """返回所有类型的 [{'value': int, 'label': str}] 列表，供前端枚举接口使用"""
+        return [{'value': int(m.value[0]), 'label': m.value[1]} for m in cls]
+
+
 class DiFyCodeEnum(Enum):
     """
     DiFy 返回数据流定义

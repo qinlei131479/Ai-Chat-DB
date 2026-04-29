@@ -2,7 +2,7 @@
 import type { UploadFileInfo } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { fetch_datasource_list } from '@/api/datasource'
-import { fetch_model_list, set_default_model } from '@/api/aimodel'
+import { fetch_model_list, set_default_model } from '@/api/supplier-model'
 import { fetch_skill_list } from '@/api/skill'
 import FileUploadManager from '@/views/file/file-upload-manager.vue'
 
@@ -24,7 +24,7 @@ const loadingSkills = ref(false)
 
 // LLM 模型列表（下拉选择）
 const llmModels = ref<any[]>([])
-const selectedLLMModelId = ref<number | null>(null)
+const selectedLLMModelId = ref<string | null>(null)
 
 const llmModelOptions = computed(() =>
   llmModels.value.map((m) => ({
@@ -66,8 +66,8 @@ const loadLLMModels = async () => {
 }
 
 // 修改默认大模型（适配 Dropdown 的 select 事件，参数是 key）
-const handleLLMModelChange = async (key: number | string) => {
-  const modelId = typeof key === 'string' ? parseInt(key) : key
+const handleLLMModelChange = async (key:  string) => {
+  const modelId = key
   selectedLLMModelId.value = modelId
   try {
     await set_default_model(modelId)

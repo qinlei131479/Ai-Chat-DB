@@ -48,7 +48,6 @@ async def get_datasource_list(user: dict = Depends(get_current_user)):
                         "name": ds.name,
                         "description": ds.description,
                         "type": ds.ds_type,
-                        # "type_name": ds.type_name,
                         "status": ds.status,
                         "num": 0,
                         "host": ds.host,

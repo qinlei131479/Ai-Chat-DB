@@ -56,26 +56,53 @@ class UserQaRecord(Base):
     )
 
 
-class TAiModel(Base):
-    __tablename__ = "t_ai_model"
-    __table_args__ = {"comment": "AI模型表"}
+class Supplier(Base):
+    __tablename__ = "supplier"
+    __table_args__ = {"comment": "AI供应商表"}
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    supplier: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-        comment="供应商: 1:OpenAI, 2:Azure, 3:Ollama, 4:vLLM, 5:DeepSeek, 6:Qwen, 7:Moonshot, 8:ZhipuAI, 9:Other",
-    )
-    name: Mapped[str] = mapped_column(String(255), nullable=False, comment="模型名称")
-    model_type: Mapped[int] = mapped_column(Integer, nullable=False, comment="模型类型: 1:LLM, 2:Embedding, 3:Rerank")
-    base_model: Mapped[str] = mapped_column(String(255), nullable=False, comment="基础模型")
-    default_model: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, comment="是否默认")
+    name: Mapped[str] = mapped_column(String(50), nullable=False, comment="供应商名称")
+    description: Mapped[str] = mapped_column(String(255), nullable=False, comment="供应商描述")
+    logo: Mapped[str] = mapped_column(String(255), nullable=False, comment="供应商Logo")
     api_key: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, comment="API Key")
     api_domain: Mapped[str] = mapped_column(String(255), nullable=False, comment="API Domain")
-    protocol: Mapped[int] = mapped_column(Integer, default=1, nullable=False, comment="协议: 1:OpenAI, 2:Ollama")
-    config: Mapped[Optional[str]] = mapped_column(Text, comment="配置JSON")
-    status: Mapped[int] = mapped_column(Integer, default=1, nullable=False, comment="状态: 1:正常")
-    create_time: Mapped[int] = mapped_column(BigInteger, default=0, comment="创建时间")
+    api_apply_domain: Mapped[str] = mapped_column(String(255), nullable=False, comment="API key 申请Domain")
+
+    status: Mapped[str] = mapped_column(String(10), default='0', nullable=False, comment="状态: 0:正常，1停用")
+    del_flag: Mapped[str] = mapped_column(String(10), default='0', nullable=False, comment="删除标识，0：存在，1：删除")
+    create_by: Mapped[str] = mapped_column(String(32), nullable=False, comment="创建人")
+    update_by: Mapped[str] = mapped_column(String(32), nullable=False, comment="更新人")
+    create_time: Mapped[Optional[datetime.datetime]] = mapped_column(
+        TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"), comment="创建时间"
+    )
+    update_time: Mapped[Optional[datetime.datetime]] = mapped_column(
+        TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"), comment="更新时间"
+    )
+
+
+class SupplierModel(Base):
+    __tablename__ = "supplier_model"
+    __table_args__ = {"comment": "供应商模型表"}
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    supplier_id: Mapped[int] = mapped_column(BigInteger, nullable=False, comment="供应商表(supplier)的Id", )
+    name: Mapped[str] = mapped_column(String(255), nullable=False, comment="模型名称")
+    base_model: Mapped[str] = mapped_column(String(255), nullable=False, comment="模型名称（别名）")
+    model_type: Mapped[str] = mapped_column(String(2), default='1', nullable=False,
+                                            comment="模型类型: 1:聊天, 2:推理, 3:向量，4：排序，5：图片，6：视觉")
+    description: Mapped[str] = mapped_column(String(255), nullable=False, comment="模型描述")
+    context_length: Mapped[str] = mapped_column(String(50), nullable=False, comment="模型上下文长度")
+    default_flag: Mapped[str] = mapped_column(String(2), default='0', nullable=False, comment="默认模型，0：否，1：是")
+    ext_config: Mapped[Optional[str]] = mapped_column(Text, comment="模型扩展配置")
+    del_flag: Mapped[str] = mapped_column(String(10), default='0', nullable=False, comment="删除标识，0：存在，1：删除")
+    create_by: Mapped[str] = mapped_column(String(32), nullable=False, comment="创建人")
+    update_by: Mapped[str] = mapped_column(String(32), nullable=False, comment="更新人")
+    create_time: Mapped[Optional[datetime.datetime]] = mapped_column(
+        TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"), comment="创建时间"
+    )
+    update_time: Mapped[Optional[datetime.datetime]] = mapped_column(
+        TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"), comment="更新时间"
+    )
 
 
 class Terminology(Base):
@@ -83,7 +110,6 @@ class Terminology(Base):
     __table_args__ = {"comment": "术语配置表"}
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    # oid: Mapped[Optional[int]] = mapped_column(BigInteger, default=1, comment="组织ID")
     parent_id: Mapped[Optional[int]] = mapped_column(BigInteger, comment="父ID")
     word: Mapped[Optional[str]] = mapped_column(String(255), comment="术语名称")
     description: Mapped[Optional[str]] = mapped_column(Text, comment="描述")

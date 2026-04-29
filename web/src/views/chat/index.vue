@@ -1,11 +1,9 @@
 <script lang="tsx" setup>
-import type { InputInst, UploadFileInfo } from 'naive-ui'
-// Import Cookies to clear token on logout
-import { UAParser } from 'ua-parser-js'
+import type {InputInst, UploadFileInfo} from 'naive-ui'
 import * as GlobalAPI from '@/api'
-import { fetch_model_list, set_default_model } from '@/api/aimodel'
-import { fetch_datasource_list } from '@/api/datasource'
-import { isMockDevelopment } from '@/config'
+import {fetch_model_list, set_default_model} from '@/api/supplier-model'
+import {fetch_datasource_list} from '@/api/datasource'
+import {isMockDevelopment} from '@/config'
 import SideBar from '@/components/Navigation/SideBar.vue'
 import DefaultPage from './default-page.vue'
 import FileListItem from '@/views/file/file-list-item.vue'
@@ -39,12 +37,12 @@ const historyPage = ref(1)
 const historyTotalPages = ref(1)
 const historyPageSize = 20
 const hasMoreHistory = computed(
-  () => historyPage.value <= historyTotalPages.value,
+    () => historyPage.value <= historyTotalPages.value,
 )
 // 根据分页信息判断是否需要强制显示滚动条
 // 当总页数大于1时，即使内容不够高也要显示滚动条，以便触发滚动加载
 const shouldForceScrollbar = computed(
-  () => historyTotalPages.value > 1,
+    () => historyTotalPages.value > 1,
 )
 
 // 对话历史分页状态（点击某个对话记录时使用）
@@ -61,7 +59,7 @@ const loadedPages = ref<Set<number>>(new Set())
 // 已加载的最小页码（用于向前加载时判断）
 const conversationHistoryMinLoadedPage = ref(1)
 const hasMoreConversationHistory = computed(
-  () => conversationHistoryCurrentLoadedPage.value < conversationHistoryTotalPages.value,
+    () => conversationHistoryCurrentLoadedPage.value < conversationHistoryTotalPages.value,
 )
 
 // 新增：专门用于控制转场动画的Key，避免因 currentConversationChatId 变化（如追加消息时）导致组件重载
@@ -69,11 +67,12 @@ const chatTransitionKey = ref('chat-list')
 
 // 技能中心：跳转独立页面
 function handleSkillCenterClick() {
-  router.push({ name: 'SkillCenter' })
+  router.push({name: 'SkillCenter'})
 }
 
 // 管理对话
 const isModalOpen = ref(false)
+
 function openModal() {
   // 对话进行中时禁用
   if (stylizingLoading.value) {
@@ -81,6 +80,7 @@ function openModal() {
   }
   isModalOpen.value = true
 }
+
 // 模态框关闭
 function handleModalClose(value) {
   isModalOpen.value = value
@@ -88,7 +88,7 @@ function handleModalClose(value) {
   if (!value) {
     isInit.value = true
     // 重新加载对话记录
-    loadHistoryList({ reset: true })
+    loadHistoryList({reset: true})
     // 恢复到新对话页面
     if (!showDefaultPage.value) {
       newChat()
@@ -166,21 +166,21 @@ const defaultLLMTypeForStream = 'qwen2'
 
 // 大语言模型列表与当前选中模型（用于下拉选择）
 const llmModels = ref<any[]>([])
-const selectedLLMModelId = ref<number | null>(null)
+const selectedLLMModelId = ref<string | null>(null)
 
 const llmModelOptions = computed(() =>
-  llmModels.value.map((m) => ({
-    label: m.name,
-    value: m.id,
-  })),
+    llmModels.value.map((m) => ({
+      label: m.name,
+      value: m.id,
+    })),
 )
 
 // Dropdown 组件需要的选项格式
 const llmModelDropdownOptions = computed(() =>
-  llmModels.value.map((m) => ({
-    label: () => m.name,
-    key: m.id,
-  })),
+    llmModels.value.map((m) => ({
+      label: () => m.name,
+      key: m.id,
+    })),
 )
 
 // 当前选中模型的名称
@@ -216,8 +216,8 @@ const loadLLMModels = async () => {
 }
 
 // 修改默认大模型（适配 Dropdown 的 select 事件，参数是 key）
-const handleLLMModelChange = async (key: number | string) => {
-  const modelId = typeof key === 'string' ? parseInt(key) : key
+const handleLLMModelChange = async (key: string) => {
+  const modelId = key
   selectedLLMModelId.value = modelId
   const target = llmModels.value.find((m: any) => m.id === modelId)
   if (target?.name) {
@@ -370,32 +370,33 @@ interface TableItem {
   datasource_id?: number
   datasource_name?: string
 }
+
 const tableData = ref<TableItem[]>([])
 const tableRef = ref(null)
 const historyScrollRef = useTemplateRef('historyScrollRef')
 
 // 保存对话历史记录
 const conversationItems = ref<
-  Array<{
-    uuid: string
-    chat_id: string
-    qa_type: string
-    question: string
-    role: 'user' | 'assistant'
-    reader: ReadableStreamDefaultReader | null
-    file_key: {
-      source_file_key: string
-      parse_file_key: string
-      file_size: string
-    }[]
-    chartData?: { // 图表数据，用于多轮对话数据隔离
-      template_code?: string
-      columns?: string[]
-      data?: any[]
-      recommended_questions?: string[]
-    } | null
-    record_id?: number // 记录ID，用于查询SQL语句
-  }>
+    Array<{
+      uuid: string
+      chat_id: string
+      qa_type: string
+      question: string
+      role: 'user' | 'assistant'
+      reader: ReadableStreamDefaultReader | null
+      file_key: {
+        source_file_key: string
+        parse_file_key: string
+        file_size: string
+      }[]
+      chartData?: { // 图表数据，用于多轮对话数据隔离
+        template_code?: string
+        columns?: string[]
+        data?: any[]
+        recommended_questions?: string[]
+      } | null
+      record_id?: number // 记录ID，用于查询SQL语句
+    }>
 >([])
 
 // 这里子组件 chart渲染慢需要子组件渲染完毕后通知父组件
@@ -415,14 +416,14 @@ const contentLoadingStates = ref<boolean[]>([])
 
 // 确保 contentLoadingStates 数组长度与 visibleConversationItems 同步
 watch(
-  () => visibleConversationItems.value.length,
-  (newLength, oldLength) => {
-    // 当 visibleConversationItems 长度变化时，扩展 contentLoadingStates
-    while (contentLoadingStates.value.length < newLength) {
-      contentLoadingStates.value.push(false)
-    }
-  },
-  { immediate: true }
+    () => visibleConversationItems.value.length,
+    (newLength, oldLength) => {
+      // 当 visibleConversationItems 长度变化时，扩展 contentLoadingStates
+      while (contentLoadingStates.value.length < newLength) {
+        contentLoadingStates.value.push(false)
+      }
+    },
+    {immediate: true}
 )
 
 // 控制每个对话项的进度显示状态（用于隐藏 bars-scale）
@@ -450,18 +451,18 @@ const stepProgressStates = ref<Record<number, { stepName: string; status: string
 
 // 监控 contentLoadingStates 和 progressDisplayStates 的变化，用于调试
 watch(
-  () => visibleConversationItems.value.map((item, idx) => ({
-    index: idx,
-    uuid: item.uuid,
-    role: item.role,
-    contentLoading: contentLoadingStates.value[idx],
-    progressDisplay: progressDisplayStates.value[idx],
-    condition: contentLoadingStates.value[idx] && !progressDisplayStates.value[idx],
-  })),
-  (newStates) => {
-    // 监控状态变化（用于调试，已移除调试日志）
-  },
-  { deep: true }
+    () => visibleConversationItems.value.map((item, idx) => ({
+      index: idx,
+      uuid: item.uuid,
+      role: item.role,
+      contentLoading: contentLoadingStates.value[idx],
+      progressDisplay: progressDisplayStates.value[idx],
+      condition: contentLoadingStates.value[idx] && !progressDisplayStates.value[idx],
+    })),
+    (newStates) => {
+      // 监控状态变化（用于调试，已移除调试日志）
+    },
+    {deep: true}
 )
 
 // 计算属性：根据 visibleConversationItems 的索引获取对应的步骤进度信息
@@ -595,13 +596,13 @@ const checkAllFilesUploaded = () => {
 
 // 提交对话
 const handleCreateStylized = async (
-  send_text = '',
-  file_key: {
-    source_file_key: string
-    parse_file_key: string
-    file_size: string
-  }[] = [],
-  qa_type_arg: string | null = null,
+    send_text = '',
+    file_key: {
+      source_file_key: string
+      parse_file_key: string
+      file_size: string
+    }[] = [],
+    qa_type_arg: string | null = null,
 ) => {
   // Use passed qa_type or current reactive value
   const currentQaType = qa_type_arg || qa_type.value
@@ -705,8 +706,8 @@ const handleCreateStylized = async (
   // 调用大模型后台服务接口
   stylizingLoading.value = true
   const textContent = inputTextString.value
-    ? inputTextString.value
-    : send_text
+      ? inputTextString.value
+      : send_text
   inputTextString.value = ''
 
   if (!uuids.value[currentQaType]) {
@@ -747,8 +748,8 @@ const handleCreateStylized = async (
   }
 
   // 调用大模型
-  const { error, reader, needLogin, permissionDenied, errorMessage }
-    = await businessStore.createAssistantWriterStylized(
+  const {error, reader, needLogin, permissionDenied, errorMessage}
+      = await businessStore.createAssistantWriterStylized(
       uuid_str,
       uuids.value[currentQaType],
       currentChatId.value,
@@ -759,7 +760,7 @@ const handleCreateStylized = async (
         qa_type: currentQaType, // Pass qa_type explicitly
         datasource_id: selectedDatasource.value?.id,
       },
-    )
+  )
 
   if (needLogin) {
     message.error('登录已失效，请重新登录')
@@ -845,47 +846,47 @@ const handleCreateStylized = async (
     // 监听 writerList 变化，将数据保存到对应的对话项中
     // 注意：不要过早停止 watcher，因为推荐问题可能在图表数据之后到达
     const stopWatcher = watch(
-      () => businessStore.writerList,
-      (newWriterList) => {
-        if (newWriterList?.dataType === 't04' && newWriterList?.data) {
-          if (assistantIndex < conversationItems.value.length && conversationItems.value[assistantIndex].role === 'assistant') {
-            // 合并数据：如果已有 chartData，则合并推荐问题；否则直接赋值
-            const currentChartData = conversationItems.value[assistantIndex].chartData
-            if (currentChartData && newWriterList.data.recommended_questions) {
-              // 如果已有 chartData 且新数据包含推荐问题，则合并
-              conversationItems.value[assistantIndex].chartData = {
-                ...currentChartData,
-                recommended_questions: newWriterList.data.recommended_questions
+        () => businessStore.writerList,
+        (newWriterList) => {
+          if (newWriterList?.dataType === 't04' && newWriterList?.data) {
+            if (assistantIndex < conversationItems.value.length && conversationItems.value[assistantIndex].role === 'assistant') {
+              // 合并数据：如果已有 chartData，则合并推荐问题；否则直接赋值
+              const currentChartData = conversationItems.value[assistantIndex].chartData
+              if (currentChartData && newWriterList.data.recommended_questions) {
+                // 如果已有 chartData 且新数据包含推荐问题，则合并
+                conversationItems.value[assistantIndex].chartData = {
+                  ...currentChartData,
+                  recommended_questions: newWriterList.data.recommended_questions
+                }
+              } else {
+                // 否则直接赋值（第一次或没有推荐问题时）
+                conversationItems.value[assistantIndex].chartData = newWriterList.data
               }
-            } else {
-              // 否则直接赋值（第一次或没有推荐问题时）
-              conversationItems.value[assistantIndex].chartData = newWriterList.data
-            }
-            // 只有在数据完整（包含推荐问题或确定不会有推荐问题）时才停止监听
-            // 如果新数据包含推荐问题，说明数据已完整，可以停止监听
-            if (newWriterList.data.recommended_questions && newWriterList.data.recommended_questions.length > 0) {
-              stopWatcher()
+              // 只有在数据完整（包含推荐问题或确定不会有推荐问题）时才停止监听
+              // 如果新数据包含推荐问题，说明数据已完整，可以停止监听
+              if (newWriterList.data.recommended_questions && newWriterList.data.recommended_questions.length > 0) {
+                stopWatcher()
+              }
             }
           }
-        }
-      },
-      { deep: true, immediate: false },
+        },
+        {deep: true, immediate: false},
     )
 
     // 监听 record_id 变化，更新对应的 conversationItem
     const stopRecordIdWatcher = watch(
-      () => businessStore.record_id,
-      (newRecordId) => {
-        if (newRecordId && assistantIndex < conversationItems.value.length) {
-          // 更新对应的 conversationItem 的 record_id
-          if (conversationItems.value[assistantIndex].role === 'assistant') {
-            conversationItems.value[assistantIndex].record_id = newRecordId
+        () => businessStore.record_id,
+        (newRecordId) => {
+          if (newRecordId && assistantIndex < conversationItems.value.length) {
+            // 更新对应的 conversationItem 的 record_id
+            if (conversationItems.value[assistantIndex].role === 'assistant') {
+              conversationItems.value[assistantIndex].record_id = newRecordId
+            }
+            // 更新完成后停止监听
+            stopRecordIdWatcher()
           }
-          // 更新完成后停止监听
-          stopRecordIdWatcher()
-        }
-      },
-      { immediate: false },
+        },
+        {immediate: false},
     )
 
     // 清空文件上传列表
@@ -914,63 +915,51 @@ const enterCtrl = keys.Enter
 
 const activeElement = useActiveElement()
 const notUsingInput = computed(
-  () => activeElement.value?.tagName !== 'TEXTAREA',
+    () => activeElement.value?.tagName !== 'TEXTAREA',
 )
-
-const parser = new UAParser()
-const isMacos = parser.getOS().name.includes('Mac')
-
-const placeholder = computed(() => {
-  if (stylizingLoading.value) {
-    return `输入任意问题...`
-  }
-  return `输入任意问题, 按 ${
-    isMacos ? 'Command' : 'Ctrl'
-  } + Enter 键快捷开始...`
-})
 
 const generateRandomSuffix = function () {
   return Math.floor(Math.random() * 10000) // 生成0到9999之间的随机整数
 }
 
 watch(
-  () => enterCommand.value,
-  () => {
-    if (!isMacos || notUsingInput.value) {
-      return
-    }
+    () => enterCommand.value,
+    () => {
+      if (notUsingInput.value) {
+        return
+      }
 
-    if (stylizingLoading.value) {
-      return
-    }
+      if (stylizingLoading.value) {
+        return
+      }
 
-    if (!enterCommand.value) {
-      handleCreateStylized()
-    }
-  },
-  {
-    deep: true,
-  },
+      if (!enterCommand.value) {
+        handleCreateStylized()
+      }
+    },
+    {
+      deep: true,
+    },
 )
 
 watch(
-  () => enterCtrl.value,
-  () => {
-    if (isMacos || notUsingInput.value) {
-      return
-    }
+    () => enterCtrl.value,
+    () => {
+      if (notUsingInput.value) {
+        return
+      }
 
-    if (stylizingLoading.value) {
-      return
-    }
+      if (stylizingLoading.value) {
+        return
+      }
 
-    if (!enterCtrl.value) {
-      handleCreateStylized()
-    }
-  },
-  {
-    deep: true,
-  },
+      if (!enterCtrl.value) {
+        handleCreateStylized()
+      }
+    },
+    {
+      deep: true,
+    },
 )
 
 // 重置状态
@@ -1104,7 +1093,7 @@ const onFocusSearchChat = () => {
   if (isFocusSearchChat.value) {
     isFocusSearchChat.value = false
     searchText.value = ''
-    loadHistoryList({ reset: true, search: '' })
+    loadHistoryList({reset: true, search: ''})
     return
   }
   if (!showDefaultPage.value) {
@@ -1124,9 +1113,9 @@ const onBlurSearchChat = () => {
 
 // 加载对话历史（支持滚动分页）
 async function loadHistoryList(
-  options: { reset?: boolean, search?: string } = {},
+    options: { reset?: boolean, search?: string } = {},
 ) {
-  const { reset = false, search = searchText.value } = options
+  const {reset = false, search = searchText.value} = options
   if (isLoadingHistory.value || isLoadingMoreHistory.value) {
     return
   }
@@ -1146,15 +1135,15 @@ async function loadHistoryList(
 
   try {
     const meta = await fetchConversationHistory(
-      isInit,
-      conversationItems,
-      tableData,
-      currentRenderIndex,
-      null,
-      search,
-      pageToLoad,
-      historyPageSize,
-      append,
+        isInit,
+        conversationItems,
+        tableData,
+        currentRenderIndex,
+        null,
+        search,
+        pageToLoad,
+        historyPageSize,
+        append,
     )
     if (meta) {
       historyTotalPages.value = meta.totalPages
@@ -1173,7 +1162,7 @@ async function loadHistoryList(
 
 // 在script部分添加搜索处理函数
 const handleSearch = () => {
-  loadHistoryList({ reset: true })
+  loadHistoryList({reset: true})
 }
 
 const handleClear = () => {
@@ -1182,7 +1171,7 @@ const handleClear = () => {
   if (!showDefaultPage.value) {
     newChat()
   }
-  loadHistoryList({ reset: true, search: '' })
+  loadHistoryList({reset: true, search: ''})
 }
 
 // 对话历史滚动加载
@@ -1220,7 +1209,7 @@ const ensureScrollable = () => {
 
 // 首次进入加载历史列表
 onBeforeMount(() => {
-  loadHistoryList({ reset: true })
+  loadHistoryList({reset: true})
 })
 
 const collapsed = ref(false)
@@ -1251,7 +1240,7 @@ const clickScrollToBottom = () => {
 // ======新增：检查是否需要显示滚动到底部按钮==========//
 const checkScrollPosition = () => {
   if (messagesContainer.value) {
-    const { scrollTop, scrollHeight, clientHeight } = messagesContainer.value
+    const {scrollTop, scrollHeight, clientHeight} = messagesContainer.value
     const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10 // 10px的容差
     showScrollToBottom.value = !isAtBottom && scrollTop > scrollThreshold
   }
@@ -1277,8 +1266,7 @@ onMounted(async () => {
       const data = await res.json()
       datasourceList.value = data.data || []
     }
-  }
-  catch (e) {
+  } catch (e) {
     console.error(e)
   }
 
@@ -1302,6 +1290,7 @@ interface FileUploadRef {
   options?: any[]
   reset?: () => void
 }
+
 const fileUploadRef = ref<FileUploadRef | null>(null)
 
 // 用于绑定文件上传信息列表
@@ -1326,10 +1315,10 @@ const handleSubmitFromDefaultPage = (payload: { text: string, mode: string, data
   chatTransitionKey.value = `new-chat-${Date.now()}`
 
   if (payload.datasource_id) {
-     const ds = datasourceList.value.find((d) => d.id === payload.datasource_id)
-     if (ds) {
-         selectedDatasource.value = ds
-     }
+    const ds = datasourceList.value.find((d) => d.id === payload.datasource_id)
+    if (ds) {
+      selectedDatasource.value = ds
+    }
   } else {
     // 如果不是数据问答或深度问数，清空选中的数据源
     if (payload.mode !== 'DATABASE_QA' && payload.mode !== 'REPORT_QA') {
@@ -1344,10 +1333,10 @@ const handleSubmitFromDefaultPage = (payload: { text: string, mode: string, data
 
 // QA Options configuration (duplicated from DefaultPage for consistency in pill display)
 const qaOptions = [
-  { icon: 'i-hugeicons:ai-chat-02', label: '智能问答', value: 'COMMON_QA', color: '#7E6BF2' },
-  { icon: 'i-hugeicons:database-01', label: '数据问答', value: 'DATABASE_QA', color: '#10b981' },
-  { icon: 'i-hugeicons:table-01', label: '表格问答', value: 'FILEDATA_QA', color: '#f59e0b' },
-  { icon: 'i-hugeicons:search-02', label: '深度问数', value: 'REPORT_QA', color: '#8b5cf6' },
+  {icon: 'i-hugeicons:ai-chat-02', label: '智能问答', value: 'COMMON_QA', color: '#7E6BF2'},
+  {icon: 'i-hugeicons:database-01', label: '数据问答', value: 'DATABASE_QA', color: '#10b981'},
+  {icon: 'i-hugeicons:table-01', label: '表格问答', value: 'FILEDATA_QA', color: '#f59e0b'},
+  {icon: 'i-hugeicons:search-02', label: '深度问数', value: 'REPORT_QA', color: '#8b5cf6'},
 ]
 
 const currentQaOption = computed(() => {
@@ -1463,16 +1452,16 @@ const loadConversationHistory = async (item: any, reset: boolean = true, loadOld
 
   try {
     const meta = await fetchConversationHistory(
-    isInit,
-    conversationItems,
-    tableData,
-    currentRenderIndex,
-    item,
-    '',
-      pageToLoad,
-      conversationHistoryPageSize,
-      append,
-      loadOlder, // 传递loadOlder参数，用于从前面插入
+        isInit,
+        conversationItems,
+        tableData,
+        currentRenderIndex,
+        item,
+        '',
+        pageToLoad,
+        conversationHistoryPageSize,
+        append,
+        loadOlder, // 传递loadOlder参数，用于从前面插入
     )
     if (meta) {
       conversationHistoryTotalPages.value = meta.totalPages
@@ -1623,26 +1612,26 @@ const handleHistoryClick = async (item: any) => {
 
   if (item.qa_type === 'DATABASE_QA' || item.qa_type === 'REPORT_QA') {
     if (item.datasource_id) {
-       // 先尝试从数据源列表中找到
-       const ds = datasourceList.value.find((d) => d.id === item.datasource_id)
-       if (ds) {
-           selectedDatasource.value = ds
-       } else if (item.datasource_name) {
-           // 如果数据源列表中找不到，使用历史记录中的名称创建临时对象
-           // 确保对象有 name 属性，用于显示
-           selectedDatasource.value = {
-             id: item.datasource_id,
-             name: item.datasource_name,
-             type: item.datasource_type || 'Datasource'
-           }
-       } else {
-           // 如果既找不到数据源，也没有名称，尝试使用数据源ID创建临时对象
-           selectedDatasource.value = {
-             id: item.datasource_id,
-             name: `数据源 ${item.datasource_id}`,
-             type: 'Datasource'
-           }
-       }
+      // 先尝试从数据源列表中找到
+      const ds = datasourceList.value.find((d) => d.id === item.datasource_id)
+      if (ds) {
+        selectedDatasource.value = ds
+      } else if (item.datasource_name) {
+        // 如果数据源列表中找不到，使用历史记录中的名称创建临时对象
+        // 确保对象有 name 属性，用于显示
+        selectedDatasource.value = {
+          id: item.datasource_id,
+          name: item.datasource_name,
+          type: item.datasource_type || 'Datasource'
+        }
+      } else {
+        // 如果既找不到数据源，也没有名称，尝试使用数据源ID创建临时对象
+        selectedDatasource.value = {
+          id: item.datasource_id,
+          name: `数据源 ${item.datasource_id}`,
+          type: 'Datasource'
+        }
+      }
     } else {
       // 如果没有数据源ID，清空选中的数据源
       selectedDatasource.value = null
@@ -1671,37 +1660,37 @@ const handleHistoryClick = async (item: any) => {
 <template>
   <div class="flex h-full w-full bg-[#fff]">
     <n-layout
-      class="h-full w-full"
-      has-sider
+        class="h-full w-full"
+        has-sider
     >
       <n-layout-sider
-        v-model:collapsed="collapsed"
-        collapse-mode="width"
-        :collapsed-width="0"
-        :width="280"
-        :show-collapsed-content="false"
-        bordered
-        class="qianwen-sidebar"
+          v-model:collapsed="collapsed"
+          collapse-mode="width"
+          :collapsed-width="0"
+          :width="280"
+          :show-collapsed-content="false"
+          bordered
+          class="qianwen-sidebar"
       >
         <div class="sidebar-container flex flex-col h-full bg-[#fcfcfc]">
           <!-- Header: Logo & Icons -->
           <div class="sidebar-header px-6 py-6 flex justify-between items-center">
             <div
-              class="logo-area flex items-center gap-3 cursor-pointer"
-              @click="showDefaultPage = true"
+                class="logo-area flex items-center gap-3 cursor-pointer"
+                @click="showDefaultPage = true"
             >
               <div class="i-hugeicons:ai-chat-02 text-32 c-[#3B5CFF]"></div>
               <span class="text-24 font-bold text-[#111111] tracking-tight font-sans">助手</span>
             </div>
             <div class="header-actions flex items-center gap-5">
               <div
-                class="action-icon i-hugeicons:search-01 text-24 mr-4"
-                :class="stylizingLoading ? 'text-[#CCCCCC] cursor-not-allowed' : 'text-[#8A8A8A] hover:text-[#333] cursor-pointer'"
-                @click="onFocusSearchChat"
+                  class="action-icon i-hugeicons:search-01 text-24 mr-4"
+                  :class="stylizingLoading ? 'text-[#CCCCCC] cursor-not-allowed' : 'text-[#8A8A8A] hover:text-[#333] cursor-pointer'"
+                  @click="onFocusSearchChat"
               ></div>
               <div
-                class="action-icon i-hugeicons:sidebar-left-01 text-24 text-[#8A8A8A] hover:text-[#333] cursor-pointer"
-                @click="collapsed = true"
+                  class="action-icon i-hugeicons:sidebar-left-01 text-24 text-[#8A8A8A] hover:text-[#333] cursor-pointer"
+                  @click="collapsed = true"
               ></div>
             </div>
           </div>
@@ -1709,19 +1698,19 @@ const handleHistoryClick = async (item: any) => {
           <!-- New Chat Button -->
           <div class="px-6 pb-6">
             <div
-              v-if="isFocusSearchChat"
-              class="h-[40px] flex items-center"
+                v-if="isFocusSearchChat"
+                class="h-[40px] flex items-center"
             >
               <n-input
-                ref="searchChatRef"
-                v-model:value="searchText"
-                placeholder="搜索历史记录..."
-                class="w-full !rounded-[8px] search-input-custom"
-                size="medium"
-                clearable
-                @blur="onBlurSearchChat"
-                @input="handleSearch"
-                @clear="handleClear"
+                  ref="searchChatRef"
+                  v-model:value="searchText"
+                  placeholder="搜索历史记录..."
+                  class="w-full !rounded-[8px] search-input-custom"
+                  size="medium"
+                  clearable
+                  @blur="onBlurSearchChat"
+                  @input="handleSearch"
+                  @clear="handleClear"
               >
                 <template #prefix>
                   <div class="i-hugeicons:search-01 text-[#999] text-16"></div>
@@ -1729,10 +1718,10 @@ const handleHistoryClick = async (item: any) => {
               </n-input>
             </div>
             <button
-              v-else
-              class="new-chat-btn group w-full h-[40px] rounded-[8px] bg-white border border-[#E6E6E6] hover:border-[#7E6BF2] text-[#333] hover:text-[#7E6BF2] font-medium text-[14px] flex items-center justify-center gap-2 transition-all duration-300 shadow-sm hover:shadow-[0_2px_12px_rgba(126,107,242,0.1)]"
-              :disabled="stylizingLoading"
-              @click="newChat"
+                v-else
+                class="new-chat-btn group w-full h-[40px] rounded-[8px] bg-white border border-[#E6E6E6] hover:border-[#7E6BF2] text-[#333] hover:text-[#7E6BF2] font-medium text-[14px] flex items-center justify-center gap-2 transition-all duration-300 shadow-sm hover:shadow-[0_2px_12px_rgba(126,107,242,0.1)]"
+                :disabled="stylizingLoading"
+                @click="newChat"
             >
               <div class="i-hugeicons:comment-add-01 text-18"></div>
               <span>新对话</span>
@@ -1743,33 +1732,33 @@ const handleHistoryClick = async (item: any) => {
           <div class="px-6 py-4 flex justify-between items-center mt-10 ml-10 mb-5">
             <span class="text-[#7A7A7A] text-[13px] font-semibold tracking-wide history-label">最近对话</span>
             <div
-              class="i-hugeicons:settings-04 text-18"
-              :class="stylizingLoading ? 'text-[#CCCCCC] cursor-not-allowed' : 'text-[#7A7A7A] cursor-pointer hover:text-gray-600'"
-              @click="openModal"
+                class="i-hugeicons:settings-04 text-18"
+                :class="stylizingLoading ? 'text-[#CCCCCC] cursor-not-allowed' : 'text-[#7A7A7A] cursor-pointer hover:text-gray-600'"
+                @click="openModal"
             ></div>
           </div>
 
           <!-- History List -->
           <div
-            ref="historyScrollRef"
-            class="flex-1 custom-scrollbar history-list-scrollbar px-4 bg-[#fcfcfc]"
-            :class="shouldForceScrollbar ? 'overflow-y-scroll' : 'overflow-y-auto'"
-            @scroll.passive="handleHistoryScroll"
+              ref="historyScrollRef"
+              class="flex-1 custom-scrollbar history-list-scrollbar px-4 bg-[#fcfcfc]"
+              :class="shouldForceScrollbar ? 'overflow-y-scroll' : 'overflow-y-auto'"
+              @scroll.passive="handleHistoryScroll"
           >
             <div
-              v-if="isLoadingHistory && !tableData.length"
-              class="p-4 text-center text-gray-400 text-xs loading-text"
+                v-if="isLoadingHistory && !tableData.length"
+                class="p-4 text-center text-gray-400 text-xs loading-text"
             >
               加载中...
             </div>
 
             <TransitionGroup name="list" tag="div" class="relative">
               <div
-                v-for="(item, index) in tableData"
-                :key="item.uuid"
-                class="history-item px-2 py-3.5 mb-1 rounded-lg cursor-pointer flex items-center justify-between group transition-all duration-200"
-                :class="currentIndex === item.uuid ? 'bg-[#F2F0FF] text-[#7E6BF2] font-medium' : 'text-[#555] hover:bg-[#EAEBED] hover:text-[#333]'"
-                @click="handleHistoryClick(item)"
+                  v-for="(item, index) in tableData"
+                  :key="item.uuid"
+                  class="history-item px-2 py-3.5 mb-1 rounded-lg cursor-pointer flex items-center justify-between group transition-all duration-200"
+                  :class="currentIndex === item.uuid ? 'bg-[#F2F0FF] text-[#7E6BF2] font-medium' : 'text-[#555] hover:bg-[#EAEBED] hover:text-[#333]'"
+                  @click="handleHistoryClick(item)"
               >
                 <div class="flex items-center gap-2 overflow-hidden w-full">
                   <div class="truncate text-[14px] w-full leading-[1.45] ml-10 mt-10 history-item-text">
@@ -1778,37 +1767,37 @@ const handleHistoryClick = async (item: any) => {
                 </div>
                 <!-- Attachment Icon Placeholder -->
                 <div
-                  v-if="index % 4 === 0"
-                  class="i-hugeicons:attachment-01 text-[14px] text-[#9ca3af] shrink-0 ml-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    v-if="index % 4 === 0"
+                    class="i-hugeicons:attachment-01 text-[14px] text-[#9ca3af] shrink-0 ml-2 opacity-0 group-hover:opacity-100 transition-opacity"
                 ></div>
               </div>
             </TransitionGroup>
 
             <div
-              v-if="isLoadingMoreHistory"
-              class="py-2 text-center text-gray-400 text-xs loading-text"
+                v-if="isLoadingMoreHistory"
+                class="py-2 text-center text-gray-400 text-xs loading-text"
             >
               加载更多...
             </div>
             <!-- 占位元素：当有多页数据时，确保可以滚动触发加载 -->
             <!-- 当总页数大于1且有更多数据时，添加一个占位元素确保可以滚动 -->
             <div
-              v-if="shouldForceScrollbar && hasMoreHistory && !isLoadingMoreHistory"
-              class="scroll-trigger-placeholder"
-              style="height: 50px; min-height: 50px;"
+                v-if="shouldForceScrollbar && hasMoreHistory && !isLoadingMoreHistory"
+                class="scroll-trigger-placeholder"
+                style="height: 50px; min-height: 50px;"
             ></div>
           </div>
 
           <!-- Sidebar Footer -->
           <div class="sidebar-footer px-6 py-5 flex items-center justify-between bg-[#fcfcfc] mt-auto">
             <SideBar
-              mode="avatar"
-              theme="light"
+                mode="avatar"
+                theme="light"
             />
 
             <div
-              class="my-space flex items-center gap-2 text-[#6A6A6A] hover:text-[#7E6BF2] cursor-pointer text-[14px] font-normal transition-colors history-item-text"
-              @click="handleSkillCenterClick"
+                class="my-space flex items-center gap-2 text-[#6A6A6A] hover:text-[#7E6BF2] cursor-pointer text-[14px] font-normal transition-colors history-item-text"
+                @click="handleSkillCenterClick"
             >
               <div class="i-hugeicons:magic-wand-01 text-18"></div>
               <span>技能中心</span>
@@ -1820,38 +1809,38 @@ const handleHistoryClick = async (item: any) => {
       <n-layout-content class="content h-full bg-[#fff]">
         <!-- 内容区域 -->
         <div
-          flex="~ 1 col"
-          min-w-0
-          h-full
+            flex="~ 1 col"
+            min-w-0
+            h-full
         >
           <!-- Top Header -->
           <div
-            v-if="!showDefaultPage || collapsed"
-            class="top-header"
+              v-if="!showDefaultPage || collapsed"
+              class="top-header"
           >
             <div class="flex items-center gap-5">
               <!-- Collapsed State Icons -->
               <div
-                v-if="collapsed"
-                class="flex items-center gap-5"
+                  v-if="collapsed"
+                  class="flex items-center gap-5"
               >
                 <div
-                  class="i-hugeicons:sidebar-right-01 text-20 text-[#4A4A4A] cursor-pointer hover:text-[#111]"
-                  @click="collapsed = false"
+                    class="i-hugeicons:sidebar-right-01 text-20 text-[#4A4A4A] cursor-pointer hover:text-[#111]"
+                    @click="collapsed = false"
                 ></div>
                 <div
-                  class="i-hugeicons:comment-add-01 text-20"
-                  :class="stylizingLoading ? 'text-[#CCCCCC] cursor-not-allowed' : 'text-[#4A4A4A] cursor-pointer hover:text-[#111]'"
-                  @click="newChat"
+                    class="i-hugeicons:comment-add-01 text-20"
+                    :class="stylizingLoading ? 'text-[#CCCCCC] cursor-not-allowed' : 'text-[#4A4A4A] cursor-pointer hover:text-[#111]'"
+                    @click="newChat"
                 ></div>
               </div>
 
               <div class="model-info flex items-center gap-1.5">
                 <n-dropdown
-                  v-if="llmModelDropdownOptions.length"
-                  :options="llmModelDropdownOptions"
-                  placement="bottom-start"
-                  @select="handleLLMModelChange"
+                    v-if="llmModelDropdownOptions.length"
+                    :options="llmModelDropdownOptions"
+                    placement="bottom-start"
+                    @select="handleLLMModelChange"
                 >
                   <div class="model-dropdown-trigger">
                     <span class="model-dropdown-label">
@@ -1861,8 +1850,8 @@ const handleHistoryClick = async (item: any) => {
                   </div>
                 </n-dropdown>
                 <span
-                  v-if="!llmModelDropdownOptions.length"
-                  class="text-[16px] font-medium text-[#111] model-name"
+                    v-if="!llmModelDropdownOptions.length"
+                    class="text-[16px] font-medium text-[#111] model-name"
                 >
                   {{ defaultLLMTypeName }}
                 </span>
@@ -1877,43 +1866,43 @@ const handleHistoryClick = async (item: any) => {
 
           <!-- 这里循环渲染即可实现多轮对话 -->
           <div
-            ref="messagesContainer"
-            flex="1 ~ col"
-            min-h-0
-            pb-20
-            class="scrollable-container"
-            @scroll="handleScroll"
+              ref="messagesContainer"
+              flex="1 ~ col"
+              min-h-0
+              pb-20
+              class="scrollable-container"
+              @scroll="handleScroll"
           >
             <transition name="page-fade" mode="out-in">
               <div
-                v-if="showDefaultPage"
-                key="default-page"
-                class="h-full"
+                  v-if="showDefaultPage"
+                  key="default-page"
+                  class="h-full"
               >
                 <DefaultPage
-                  :collapsed="collapsed"
-                  @submit="handleSubmitFromDefaultPage"
+                    :collapsed="collapsed"
+                    @submit="handleSubmitFromDefaultPage"
                 />
               </div>
 
               <div
-                v-else
-                :key="chatTransitionKey"
-                class="min-h-full"
-              >
-              <div
-                v-for="(item, index) in visibleConversationItems"
-                :key="index"
-                :ref="(el) => setMarkdownPreview(item.uuid, item.role, el)"
-                class="mb-4"
+                  v-else
+                  :key="chatTransitionKey"
+                  class="min-h-full"
               >
                 <div
-                  v-if="item.role === 'user'"
-                  class="flex flex-col items-end space-y-2 w-full max-w-[890px] mx-auto"
+                    v-for="(item, index) in visibleConversationItems"
+                    :key="index"
+                    :ref="(el) => setMarkdownPreview(item.uuid, item.role, el)"
+                    class="mb-4"
                 >
-                  <!-- 用户消息 -->
                   <div
-                    :style="{
+                      v-if="item.role === 'user'"
+                      class="flex flex-col items-end space-y-2 w-full max-w-[890px] mx-auto"
+                  >
+                    <!-- 用户消息 -->
+                    <div
+                        :style="{
                       'margin-left': `0`,
                       'margin-right': `0`,
                       'padding': `15px 0`,
@@ -1921,10 +1910,10 @@ const handleHistoryClick = async (item: any) => {
                       'text-align': `center`,
                       'max-width': '100%',
                     }"
-                  >
-                    <n-space justify="center">
-                      <div
-                        :style="{
+                    >
+                      <n-space justify="center">
+                        <div
+                            :style="{
                           'fontSize': '16px',
                           'fontFamily': `'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, 'Noto Sans SC', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji'`,
                           'fontWeight': '400',
@@ -1942,283 +1931,283 @@ const handleHistoryClick = async (item: any) => {
                           '-webkit-font-smoothing': 'antialiased',
                           '-moz-osx-font-smoothing': 'grayscale',
                         }"
-                      >
-                        {{ item.question }}
-                      </div>
-                    </n-space>
+                        >
+                          {{ item.question }}
+                        </div>
+                      </n-space>
+                    </div>
+
+                    <!-- 用户上传的文件列表 -->
+                    <div
+                        v-if="item.file_key && item.file_key.length > 0"
+                        class="upload-wrapper-list flex flex-wrap gap-10 items-center pb-5"
+                        style="margin-left: 0; margin-right: 0; width: 100%; justify-content: flex-end;"
+                    >
+                      <FileListItem
+                          v-for="(file, fileIndex) in item.file_key"
+                          :key="fileIndex"
+                          :file="file"
+                      />
+                    </div>
                   </div>
 
-                  <!-- 用户上传的文件列表 -->
                   <div
-                    v-if="item.file_key && item.file_key.length > 0"
-                    class="upload-wrapper-list flex flex-wrap gap-10 items-center pb-5"
-                    style="margin-left: 0; margin-right: 0; width: 100%; justify-content: flex-end;"
+                      v-if="item.role === 'assistant'"
+                      class="max-w-[890px] w-full mx-auto"
                   >
-                    <FileListItem
-                      v-for="(file, fileIndex) in item.file_key"
-                      :key="fileIndex"
-                      :file="file"
+                    <!-- Assistant 消息的加载动画和步骤信息 -->
+                    <div
+                        v-if="contentLoadingStates[index] && !progressDisplayStates[index]"
+                        class="flex items-center gap-2 mb-2"
+                        :data-debug-svg="JSON.stringify({index,itemRole:item.role,itemUuid:item.uuid,contentLoadingState:contentLoadingStates[index],progressDisplayState:progressDisplayStates[index],conditionResult:contentLoadingStates[index] && !progressDisplayStates[index],contentLoadingStatesLength:contentLoadingStates.length})"
+                    >
+                      <!-- 星星动画 -->
+                      <div
+                          class="star-spinner"
+                          :style="{
+                        'width': `24px`,
+                        'height': `24px`,
+                      }"
+                      >
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <!-- 中心星星 -->
+                          <g class="star-group star-center">
+                            <path
+                                d="M12 2L14.09 8.26L20 9.27L15 13.14L16.18 19.02L12 15.77L7.82 19.02L9 13.14L4 9.27L9.91 8.26L12 2Z"
+                                fill="#b1adf3"
+                                class="star-path"
+                            />
+                          </g>
+                          <!-- 围绕中心旋转的星星1 (上方) -->
+                          <g class="star-group star-1" transform="translate(12, 12)">
+                            <path
+                                d="M12 2L14.09 8.26L20 9.27L15 13.14L16.18 19.02L12 15.77L7.82 19.02L9 13.14L4 9.27L9.91 8.26L12 2Z"
+                                fill="#b1adf3"
+                                class="star-path"
+                                transform="scale(0.5) translate(0, -16)"
+                            />
+                          </g>
+                          <!-- 围绕中心旋转的星星2 (右侧) -->
+                          <g class="star-group star-2" transform="translate(12, 12)">
+                            <path
+                                d="M12 2L14.09 8.26L20 9.27L15 13.14L16.18 19.02L12 15.77L7.82 19.02L9 13.14L4 9.27L9.91 8.26L12 2Z"
+                                fill="#b1adf3"
+                                class="star-path"
+                                transform="scale(0.5) translate(16, 0)"
+                            />
+                          </g>
+                          <!-- 围绕中心旋转的星星3 (下方) -->
+                          <g class="star-group star-3" transform="translate(12, 12)">
+                            <path
+                                d="M12 2L14.09 8.26L20 9.27L15 13.14L16.18 19.02L12 15.77L7.82 19.02L9 13.14L4 9.27L9.91 8.26L12 2Z"
+                                fill="#b1adf3"
+                                class="star-path"
+                                transform="scale(0.5) translate(0, 16)"
+                            />
+                          </g>
+                          <!-- 围绕中心旋转的星星4 (左侧) -->
+                          <g class="star-group star-4" transform="translate(12, 12)">
+                            <path
+                                d="M12 2L14.09 8.26L20 9.27L15 13.14L16.18 19.02L12 15.77L7.82 19.02L9 13.14L4 9.27L9.91 8.26L12 2Z"
+                                fill="#b1adf3"
+                                class="star-path"
+                                transform="scale(0.5) translate(-16, 0)"
+                            />
+                          </g>
+                        </svg>
+                      </div>
+                      <!-- 步骤信息显示 -->
+                      <transition name="step-fade" mode="out-in">
+                        <div
+                            v-if="getStepProgressForIndex(index)"
+                            :key="`step-${index}-${getStepProgressForIndex(index)?.progressId}`"
+                            class="step-progress-text"
+                        >
+                          {{ getStepProgressForIndex(index)?.stepName }}
+                        </div>
+                      </transition>
+                    </div>
+                    <!-- 单独显示步骤信息（当进度组件显示时，只显示步骤信息，不显示星星） -->
+                    <div
+                        v-else-if="getStepProgressForIndex(index) && progressDisplayStates[index]"
+                        class="flex items-center gap-2 mb-2"
+                    >
+                      <transition name="step-fade" mode="out-in">
+                        <div
+                            :key="`step-${index}-${getStepProgressForIndex(index)?.progressId}`"
+                            class="step-progress-text"
+                        >
+                          {{ getStepProgressForIndex(index)?.stepName }}
+                        </div>
+                      </transition>
+                    </div>
+                    <MarkdownPreview
+                        :reader="item.reader"
+                        :model="defaultLLMTypeForStream"
+                        :is-init="isInit"
+                        :is-view="isView"
+                        :qa-type="`${item.qa_type}`"
+                        :chart-id="`${index}devID${generateRandomSuffix()}`"
+                        :chart-data="item.chartData"
+                        :record-id="item.record_id"
+                        :parent-scoll-bottom-method="scrollToBottom"
+                        @failed="() => onFailedReader(index)"
+                        @completed="() => onCompletedReader(index)"
+                        @chartready="() => onChartReady(index + 1)"
+                        @recycle-qa="() => onRecycleQa(index)"
+                        @praise-fead-back="() => onPraiseFeadBack(index)"
+                        @progress-display-change="(hasProgress: boolean) => onProgressDisplayChange(index, hasProgress)"
+                        @step-progress="(progress: any) => onStepProgress(index, progress)"
+                        @belittle-feedback="
+                      () => onBelittleFeedback(index)
+                    "
+                        @begin-read="() => onBeginRead(index)"
+                        @suggested="(question) => handleCreateStylized(question)"
                     />
                   </div>
                 </div>
 
-                <div
-                  v-if="item.role === 'assistant'"
-                  class="max-w-[890px] w-full mx-auto"
-                >
-                  <!-- Assistant 消息的加载动画和步骤信息 -->
+                <!-- 底部加载更多提示（滚动到底部加载时显示） -->
+                <transition name="fade">
                   <div
-                    v-if="contentLoadingStates[index] && !progressDisplayStates[index]"
-                    class="flex items-center gap-2 mb-2"
-                    :data-debug-svg="JSON.stringify({index,itemRole:item.role,itemUuid:item.uuid,contentLoadingState:contentLoadingStates[index],progressDisplayState:progressDisplayStates[index],conditionResult:contentLoadingStates[index] && !progressDisplayStates[index],contentLoadingStatesLength:contentLoadingStates.length})"
+                      v-if="isView && isLoadingMoreConversationHistory"
+                      class="flex justify-center items-center py-2 conversation-loading-indicator conversation-loading-indicator--bottom"
                   >
-                    <!-- 星星动画 -->
-                    <div
-                      class="star-spinner"
-                      :style="{
-                        'width': `24px`,
-                        'height': `24px`,
-                      }"
-                    >
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <!-- 中心星星 -->
-                        <g class="star-group star-center">
-                          <path
-                            d="M12 2L14.09 8.26L20 9.27L15 13.14L16.18 19.02L12 15.77L7.82 19.02L9 13.14L4 9.27L9.91 8.26L12 2Z"
-                            fill="#b1adf3"
-                            class="star-path"
-                          />
-                        </g>
-                        <!-- 围绕中心旋转的星星1 (上方) -->
-                        <g class="star-group star-1" transform="translate(12, 12)">
-                          <path
-                            d="M12 2L14.09 8.26L20 9.27L15 13.14L16.18 19.02L12 15.77L7.82 19.02L9 13.14L4 9.27L9.91 8.26L12 2Z"
-                            fill="#b1adf3"
-                            class="star-path"
-                            transform="scale(0.5) translate(0, -16)"
-                          />
-                        </g>
-                        <!-- 围绕中心旋转的星星2 (右侧) -->
-                        <g class="star-group star-2" transform="translate(12, 12)">
-                          <path
-                            d="M12 2L14.09 8.26L20 9.27L15 13.14L16.18 19.02L12 15.77L7.82 19.02L9 13.14L4 9.27L9.91 8.26L12 2Z"
-                            fill="#b1adf3"
-                            class="star-path"
-                            transform="scale(0.5) translate(16, 0)"
-                          />
-                        </g>
-                        <!-- 围绕中心旋转的星星3 (下方) -->
-                        <g class="star-group star-3" transform="translate(12, 12)">
-                          <path
-                            d="M12 2L14.09 8.26L20 9.27L15 13.14L16.18 19.02L12 15.77L7.82 19.02L9 13.14L4 9.27L9.91 8.26L12 2Z"
-                            fill="#b1adf3"
-                            class="star-path"
-                            transform="scale(0.5) translate(0, 16)"
-                          />
-                        </g>
-                        <!-- 围绕中心旋转的星星4 (左侧) -->
-                        <g class="star-group star-4" transform="translate(12, 12)">
-                          <path
-                            d="M12 2L14.09 8.26L20 9.27L15 13.14L16.18 19.02L12 15.77L7.82 19.02L9 13.14L4 9.27L9.91 8.26L12 2Z"
-                            fill="#b1adf3"
-                            class="star-path"
-                            transform="scale(0.5) translate(-16, 0)"
-                          />
-                        </g>
-                      </svg>
+                    <div class="flex items-center gap-2 text-[#999] text-[13px]">
+                      <div class="i-svg-spinners:dots-scale-middle text-14 text-[#7E6BF2]"></div>
+                      <span>加载更多...</span>
                     </div>
-                    <!-- 步骤信息显示 -->
-                    <transition name="step-fade" mode="out-in">
-                      <div
-                        v-if="getStepProgressForIndex(index)"
-                        :key="`step-${index}-${getStepProgressForIndex(index)?.progressId}`"
-                        class="step-progress-text"
-                      >
-                        {{ getStepProgressForIndex(index)?.stepName }}
-                      </div>
-                    </transition>
                   </div>
-                  <!-- 单独显示步骤信息（当进度组件显示时，只显示步骤信息，不显示星星） -->
+                </transition>
+
+                <!-- 顶部加载更旧消息提示（滚动到顶部加载时显示） -->
+                <transition name="fade">
                   <div
-                    v-else-if="getStepProgressForIndex(index) && progressDisplayStates[index]"
-                    class="flex items-center gap-2 mb-2"
+                      v-if="isView && isLoadingConversationHistory && conversationHistoryMinLoadedPage > 1"
+                      class="flex justify-center items-center py-2 conversation-loading-indicator conversation-loading-indicator--top"
                   >
-                    <transition name="step-fade" mode="out-in">
-                      <div
-                        :key="`step-${index}-${getStepProgressForIndex(index)?.progressId}`"
-                        class="step-progress-text"
-                      >
-                        {{ getStepProgressForIndex(index)?.stepName }}
-                      </div>
-                    </transition>
+                    <div class="flex items-center gap-2 text-[#999] text-[13px]">
+                      <div class="i-svg-spinners:dots-scale-middle text-14 text-[#7E6BF2]"></div>
+                      <span>加载更早的消息...</span>
+                    </div>
                   </div>
-                  <MarkdownPreview
-                    :reader="item.reader"
-                    :model="defaultLLMTypeForStream"
-                    :is-init="isInit"
-                    :is-view="isView"
-                    :qa-type="`${item.qa_type}`"
-                    :chart-id="`${index}devID${generateRandomSuffix()}`"
-                    :chart-data="item.chartData"
-                    :record-id="item.record_id"
-                    :parent-scoll-bottom-method="scrollToBottom"
-                    @failed="() => onFailedReader(index)"
-                    @completed="() => onCompletedReader(index)"
-                    @chartready="() => onChartReady(index + 1)"
-                    @recycle-qa="() => onRecycleQa(index)"
-                    @praise-fead-back="() => onPraiseFeadBack(index)"
-                    @progress-display-change="(hasProgress: boolean) => onProgressDisplayChange(index, hasProgress)"
-                    @step-progress="(progress: any) => onStepProgress(index, progress)"
-                    @belittle-feedback="
-                      () => onBelittleFeedback(index)
-                    "
-                    @begin-read="() => onBeginRead(index)"
-                    @suggested="(question) => handleCreateStylized(question)"
+                </transition>
+
+                <div
+                    v-if="!isInit && !stylizingLoading"
+                    class="w-70% ml-11% mt-[-20] bg-#f6f7fb"
+                >
+                  <SuggestedView
+                      :labels="suggested_array"
+                      @suggested="onSuggested"
                   />
                 </div>
-              </div>
 
-            <!-- 底部加载更多提示（滚动到底部加载时显示） -->
-            <transition name="fade">
-              <div
-                v-if="isView && isLoadingMoreConversationHistory"
-                class="flex justify-center items-center py-2 conversation-loading-indicator conversation-loading-indicator--bottom"
-              >
-                <div class="flex items-center gap-2 text-[#999] text-[13px]">
-                  <div class="i-svg-spinners:dots-scale-middle text-14 text-[#7E6BF2]"></div>
-                  <span>加载更多...</span>
-                </div>
-              </div>
-            </transition>
-
-            <!-- 顶部加载更旧消息提示（滚动到顶部加载时显示） -->
-            <transition name="fade">
-              <div
-                v-if="isView && isLoadingConversationHistory && conversationHistoryMinLoadedPage > 1"
-                class="flex justify-center items-center py-2 conversation-loading-indicator conversation-loading-indicator--top"
-              >
-                <div class="flex items-center gap-2 text-[#999] text-[13px]">
-                  <div class="i-svg-spinners:dots-scale-middle text-14 text-[#7E6BF2]"></div>
-                  <span>加载更早的消息...</span>
-                </div>
-              </div>
-            </transition>
-
-            <div
-              v-if="!isInit && !stylizingLoading"
-              class="w-70% ml-11% mt-[-20] bg-#f6f7fb"
-            >
-              <SuggestedView
-                :labels="suggested_array"
-                @suggested="onSuggested"
-              />
-            </div>
-
-            <!-- 底部等待动画（智能问答和深度问数） -->
-            <transition name="fade">
-              <div
-                v-if="stylizingLoading && (qa_type === 'COMMON_QA' || qa_type === 'REPORT_QA') && !isView"
-                class="flex items-center justify-start pt-2 pb-2 bottom-loading-indicator max-w-[890px] w-full mx-auto"
-                style="padding-left: 15px;"
-              >
-                <div class="flex items-center gap-2">
-                  <div class="star-spinner" :style="{ width: '24px', height: '24px' }">
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <!-- 中心星星 -->
-                      <g class="star-group star-center">
-                        <path
-                          d="M12 2L14.09 8.26L20 9.27L15 13.14L16.18 19.02L12 15.77L7.82 19.02L9 13.14L4 9.27L9.91 8.26L12 2Z"
-                          fill="#b1adf3"
-                          class="star-path"
-                        />
-                      </g>
-                      <!-- 围绕中心旋转的星星1 (上方) -->
-                      <g class="star-group star-1" transform="translate(12, 12)">
-                        <path
-                          d="M12 2L14.09 8.26L20 9.27L15 13.14L16.18 19.02L12 15.77L7.82 19.02L9 13.14L4 9.27L9.91 8.26L12 2Z"
-                          fill="#b1adf3"
-                          class="star-path"
-                          transform="scale(0.5) translate(0, -16)"
-                        />
-                      </g>
-                      <!-- 围绕中心旋转的星星2 (右侧) -->
-                      <g class="star-group star-2" transform="translate(12, 12)">
-                        <path
-                          d="M12 2L14.09 8.26L20 9.27L15 13.14L16.18 19.02L12 15.77L7.82 19.02L9 13.14L4 9.27L9.91 8.26L12 2Z"
-                          fill="#b1adf3"
-                          class="star-path"
-                          transform="scale(0.5) translate(16, 0)"
-                        />
-                      </g>
-                      <!-- 围绕中心旋转的星星3 (下方) -->
-                      <g class="star-group star-3" transform="translate(12, 12)">
-                        <path
-                          d="M12 2L14.09 8.26L20 9.27L15 13.14L16.18 19.02L12 15.77L7.82 19.02L9 13.14L4 9.27L9.91 8.26L12 2Z"
-                          fill="#b1adf3"
-                          class="star-path"
-                          transform="scale(0.5) translate(0, 16)"
-                        />
-                      </g>
-                      <!-- 围绕中心旋转的星星4 (左侧) -->
-                      <g class="star-group star-4" transform="translate(12, 12)">
-                        <path
-                          d="M12 2L14.09 8.26L20 9.27L15 13.14L16.18 19.02L12 15.77L7.82 19.02L9 13.14L4 9.27L9.91 8.26L12 2Z"
-                          fill="#b1adf3"
-                          class="star-path"
-                          transform="scale(0.5) translate(-16, 0)"
-                        />
-                      </g>
-                    </svg>
+                <!-- 底部等待动画（智能问答和深度问数） -->
+                <transition name="fade">
+                  <div
+                      v-if="stylizingLoading && (qa_type === 'COMMON_QA' || qa_type === 'REPORT_QA') && !isView"
+                      class="flex items-center justify-start pt-2 pb-2 bottom-loading-indicator max-w-[890px] w-full mx-auto"
+                      style="padding-left: 15px;"
+                  >
+                    <div class="flex items-center gap-2">
+                      <div class="star-spinner" :style="{ width: '24px', height: '24px' }">
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <!-- 中心星星 -->
+                          <g class="star-group star-center">
+                            <path
+                                d="M12 2L14.09 8.26L20 9.27L15 13.14L16.18 19.02L12 15.77L7.82 19.02L9 13.14L4 9.27L9.91 8.26L12 2Z"
+                                fill="#b1adf3"
+                                class="star-path"
+                            />
+                          </g>
+                          <!-- 围绕中心旋转的星星1 (上方) -->
+                          <g class="star-group star-1" transform="translate(12, 12)">
+                            <path
+                                d="M12 2L14.09 8.26L20 9.27L15 13.14L16.18 19.02L12 15.77L7.82 19.02L9 13.14L4 9.27L9.91 8.26L12 2Z"
+                                fill="#b1adf3"
+                                class="star-path"
+                                transform="scale(0.5) translate(0, -16)"
+                            />
+                          </g>
+                          <!-- 围绕中心旋转的星星2 (右侧) -->
+                          <g class="star-group star-2" transform="translate(12, 12)">
+                            <path
+                                d="M12 2L14.09 8.26L20 9.27L15 13.14L16.18 19.02L12 15.77L7.82 19.02L9 13.14L4 9.27L9.91 8.26L12 2Z"
+                                fill="#b1adf3"
+                                class="star-path"
+                                transform="scale(0.5) translate(16, 0)"
+                            />
+                          </g>
+                          <!-- 围绕中心旋转的星星3 (下方) -->
+                          <g class="star-group star-3" transform="translate(12, 12)">
+                            <path
+                                d="M12 2L14.09 8.26L20 9.27L15 13.14L16.18 19.02L12 15.77L7.82 19.02L9 13.14L4 9.27L9.91 8.26L12 2Z"
+                                fill="#b1adf3"
+                                class="star-path"
+                                transform="scale(0.5) translate(0, 16)"
+                            />
+                          </g>
+                          <!-- 围绕中心旋转的星星4 (左侧) -->
+                          <g class="star-group star-4" transform="translate(12, 12)">
+                            <path
+                                d="M12 2L14.09 8.26L20 9.27L15 13.14L16.18 19.02L12 15.77L7.82 19.02L9 13.14L4 9.27L9.91 8.26L12 2Z"
+                                fill="#b1adf3"
+                                class="star-path"
+                                transform="scale(0.5) translate(-16, 0)"
+                            />
+                          </g>
+                        </svg>
+                      </div>
+                      <span class="text-[#999] text-[13px]">正在思考中...</span>
+                    </div>
                   </div>
-                  <span class="text-[#999] text-[13px]">正在思考中...</span>
-                </div>
-              </div>
-            </transition>
+                </transition>
               </div>
             </transition>
           </div>
 
           <div
-            v-show="showScrollToBottom"
-            class="scroll-to-bottom-btn"
-            @click="clickScrollToBottom"
+              v-show="showScrollToBottom"
+              class="scroll-to-bottom-btn"
+              @click="clickScrollToBottom"
           >
             <div class="i-mingcute:arrow-down-fill"></div>
           </div>
 
           <!-- Bottom Input Area (C Style) -->
           <div
-            v-if="!showDefaultPage"
-            class="bottom-input-container"
+              v-if="!showDefaultPage"
+              class="bottom-input-container"
           >
             <div class="input-card">
               <!-- Top: File Uploads -->
               <FileUploadManager
-                ref="fileUploadRef"
-                v-model="pendingUploadFileInfoList"
-                class="w-full"
+                  ref="fileUploadRef"
+                  v-model="pendingUploadFileInfoList"
+                  class="w-full"
               />
 
               <!-- Middle: Input -->
               <div class="input-wrapper w-full">
                 <n-input
-                  ref="refInputTextString"
-                  v-model:value="inputTextString"
-                  type="textarea"
-                  placeholder="先思考后回答，解决更有难度的问题"
-                  :autosize="{ minRows: 1, maxRows: 6 }"
-                  class="custom-chat-input"
-                  @keydown.enter.prevent="handleCreateStylized()"
+                    ref="refInputTextString"
+                    v-model:value="inputTextString"
+                    type="textarea"
+                    placeholder="先思考后回答，解决更有难度的问题"
+                    :autosize="{ minRows: 1, maxRows: 6 }"
+                    class="custom-chat-input"
+                    @keydown.enter.prevent="handleCreateStylized()"
                 />
               </div>
 
@@ -2227,40 +2216,40 @@ const handleHistoryClick = async (item: any) => {
                 <!-- Left: Mode Pill (Deep Thinking) -->
                 <div class="left-actions">
                   <div
-                    v-if="currentQaOption && !showModeSelector"
-                    class="mode-pill"
-                    :style="{
+                      v-if="currentQaOption && !showModeSelector"
+                      class="mode-pill"
+                      :style="{
                       color: currentQaOption.color,
                       borderColor: `${currentQaOption.color}30`,
                       backgroundColor: `${currentQaOption.color}10`,
                     }"
                   >
                     <div
-                      :class="currentQaOption.icon"
-                      class="text-16"
+                        :class="currentQaOption.icon"
+                        class="text-16"
                     ></div>
                     <span class="font-medium">{{ currentQaOption.label }}</span>
                     <span
-                      v-if="(currentQaOption.value === 'DATABASE_QA' || currentQaOption.value === 'REPORT_QA') && selectedDatasource"
-                      class="font-medium ml-1"
+                        v-if="(currentQaOption.value === 'DATABASE_QA' || currentQaOption.value === 'REPORT_QA') && selectedDatasource"
+                        class="font-medium ml-1"
                     >
                       | {{ selectedDatasource.name }}
                     </span>
                     <div
-                      class="i-hugeicons:cancel-01 text-14 ml-1 cursor-pointer opacity-60 hover:opacity-100"
-                      @click="clearMode"
+                        class="i-hugeicons:cancel-01 text-14 ml-1 cursor-pointer opacity-60 hover:opacity-100"
+                        @click="clearMode"
                     ></div>
                   </div>
                   <div
-                    v-else-if="showModeSelector || !currentQaOption"
-                    class="flex items-center gap-2"
+                      v-else-if="showModeSelector || !currentQaOption"
+                      class="flex items-center gap-2"
                   >
                     <template
-                      v-for="opt in qaOptions"
-                      :key="opt.value"
+                        v-for="opt in qaOptions"
+                        :key="opt.value"
                     >
-                        <!-- 数据问答弹窗 -->
-                        <n-popover
+                      <!-- 数据问答弹窗 -->
+                      <n-popover
                           v-if="opt.value === 'DATABASE_QA'"
                           trigger="manual"
                           v-model:show="showDatasourcePopover"
@@ -2269,9 +2258,9 @@ const handleHistoryClick = async (item: any) => {
                           class="!p-0"
                           style="padding: 0;"
                           @clickoutside="showDatasourcePopover = false"
-                        >
-                          <template #trigger>
-                            <div
+                      >
+                        <template #trigger>
+                          <div
                               class="mode-icon-btn"
                               :class="{ active: qa_type === opt.value || showDatasourcePopover }"
                               :style="{
@@ -2279,49 +2268,55 @@ const handleHistoryClick = async (item: any) => {
                                 '--active-bg': `${opt.color}15`,
                               }"
                               @click.stop="showDatasourcePopover = true; showReportQaDatasourcePopover = false"
-                            >
-                              <div
+                          >
+                            <div
                                 :class="opt.icon"
                                 class="text-14"
                                 :style="{ color: opt.color }"
-                              ></div>
-                              <span class="mode-icon-label">{{ opt.label }}</span>
-                              <div class="i-hugeicons:arrow-down-01 text-12 text-gray-400 ml-1"></div>
-                            </div>
-                          </template>
-                          <div class="flex flex-col min-w-[200px] max-w-[280px] bg-white rounded-xl shadow-2xl border border-gray-100 p-3">
-                            <div class="max-h-[360px] overflow-y-auto custom-scrollbar pr-1">
-                              <div
+                            ></div>
+                            <span class="mode-icon-label">{{ opt.label }}</span>
+                            <div class="i-hugeicons:arrow-down-01 text-12 text-gray-400 ml-1"></div>
+                          </div>
+                        </template>
+                        <div
+                            class="flex flex-col min-w-[200px] max-w-[280px] bg-white rounded-xl shadow-2xl border border-gray-100 p-3">
+                          <div class="max-h-[360px] overflow-y-auto custom-scrollbar pr-1">
+                            <div
                                 v-for="ds in datasourceList"
                                 :key="ds.id"
                                 class="group flex items-center gap-2.5 px-3 py-2.5 mb-1.5 last:mb-0 hover:bg-[#F5F3FF] cursor-pointer rounded-lg transition-all duration-200 border border-transparent hover:border-[#DDD6FE]"
                                 :class="{ 'bg-[#F5F3FF] border-[#DDD6FE]': selectedDatasource?.id === ds.id }"
                                 @click="handleDatasourceSelect(ds)"
-                              >
-                                <div
+                            >
+                              <div
                                   class="flex-shrink-0 w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-white transition-colors"
                                   :class="{ 'bg-white': selectedDatasource?.id === ds.id }"
-                                >
-                                  <div class="i-hugeicons:database-01 text-15 text-gray-400 group-hover:text-[#7E6BF2]" :class="{ 'text-[#7E6BF2]': selectedDatasource?.id === ds.id }"></div>
-                                </div>
-                                <span class="text-14 text-gray-700 font-medium group-hover:text-[#7E6BF2] truncate flex-1 min-w-0" :class="{ 'text-[#7E6BF2]': selectedDatasource?.id === ds.id }" :title="`${ds.name}-${ds.type || 'Datasource'}`">
-                                  {{ ds.name }}-{{ ds.type || 'Datasource' }}
-                                </span>
-                                <div v-if="selectedDatasource?.id === ds.id" class="flex-shrink-0">
-                                  <div class="i-hugeicons:tick-02 text-15 text-[#7E6BF2]"></div>
-                                </div>
+                              >
+                                <div class="i-hugeicons:database-01 text-15 text-gray-400 group-hover:text-[#7E6BF2]"
+                                     :class="{ 'text-[#7E6BF2]': selectedDatasource?.id === ds.id }"></div>
                               </div>
-
-                              <div v-if="!datasourceList.length" class="flex flex-col items-center justify-center py-10 text-gray-400 gap-2">
-                                <div class="i-hugeicons:database-01 text-24 opacity-20"></div>
-                                <span class="text-13">暂无可用数据源</span>
+                              <span
+                                  class="text-14 text-gray-700 font-medium group-hover:text-[#7E6BF2] truncate flex-1 min-w-0"
+                                  :class="{ 'text-[#7E6BF2]': selectedDatasource?.id === ds.id }"
+                                  :title="`${ds.name}-${ds.ds_type || 'Datasource'}`">
+                                  {{ ds.name }}-{{ ds.ds_type || 'Datasource' }}
+                                </span>
+                              <div v-if="selectedDatasource?.id === ds.id" class="flex-shrink-0">
+                                <div class="i-hugeicons:tick-02 text-15 text-[#7E6BF2]"></div>
                               </div>
                             </div>
-                          </div>
-                        </n-popover>
 
-                        <!-- 深度问数弹窗 -->
-                        <n-popover
+                            <div v-if="!datasourceList.length"
+                                 class="flex flex-col items-center justify-center py-10 text-gray-400 gap-2">
+                              <div class="i-hugeicons:database-01 text-24 opacity-20"></div>
+                              <span class="text-13">暂无可用数据源</span>
+                            </div>
+                          </div>
+                        </div>
+                      </n-popover>
+
+                      <!-- 深度问数弹窗 -->
+                      <n-popover
                           v-if="opt.value === 'REPORT_QA'"
                           trigger="manual"
                           v-model:show="showReportQaDatasourcePopover"
@@ -2330,9 +2325,9 @@ const handleHistoryClick = async (item: any) => {
                           class="!p-0"
                           style="padding: 0;"
                           @clickoutside="showReportQaDatasourcePopover = false"
-                        >
-                          <template #trigger>
-                            <div
+                      >
+                        <template #trigger>
+                          <div
                               class="mode-icon-btn"
                               :class="{ active: qa_type === opt.value || showReportQaDatasourcePopover }"
                               :style="{
@@ -2340,65 +2335,71 @@ const handleHistoryClick = async (item: any) => {
                                 '--active-bg': `${opt.color}15`,
                               }"
                               @click.stop="showReportQaDatasourcePopover = true; showDatasourcePopover = false"
-                            >
-                              <div
+                          >
+                            <div
                                 :class="opt.icon"
                                 class="text-14"
                                 :style="{ color: opt.color }"
-                              ></div>
-                              <span class="mode-icon-label">{{ opt.label }}</span>
-                              <div class="i-hugeicons:arrow-down-01 text-12 text-gray-400 ml-1"></div>
-                            </div>
-                          </template>
-                          <div class="flex flex-col min-w-[200px] max-w-[280px] bg-white rounded-xl shadow-2xl border border-gray-100 p-3">
-                            <div class="max-h-[360px] overflow-y-auto custom-scrollbar pr-1">
-                              <div
+                            ></div>
+                            <span class="mode-icon-label">{{ opt.label }}</span>
+                            <div class="i-hugeicons:arrow-down-01 text-12 text-gray-400 ml-1"></div>
+                          </div>
+                        </template>
+                        <div
+                            class="flex flex-col min-w-[200px] max-w-[280px] bg-white rounded-xl shadow-2xl border border-gray-100 p-3">
+                          <div class="max-h-[360px] overflow-y-auto custom-scrollbar pr-1">
+                            <div
                                 v-for="ds in datasourceList"
                                 :key="ds.id"
                                 class="group flex items-center gap-2.5 px-3 py-2.5 mb-1.5 last:mb-0 hover:bg-[#F5F3FF] cursor-pointer rounded-lg transition-all duration-200 border border-transparent hover:border-[#DDD6FE]"
                                 :class="{ 'bg-[#F5F3FF] border-[#DDD6FE]': selectedDatasource?.id === ds.id }"
                                 @click="handleDatasourceSelect(ds)"
-                              >
-                                <div
+                            >
+                              <div
                                   class="flex-shrink-0 w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-white transition-colors"
                                   :class="{ 'bg-white': selectedDatasource?.id === ds.id }"
-                                >
-                                  <div class="i-hugeicons:database-01 text-15 text-gray-400 group-hover:text-[#7E6BF2]" :class="{ 'text-[#7E6BF2]': selectedDatasource?.id === ds.id }"></div>
-                                </div>
-                                <span class="text-14 text-gray-700 font-medium group-hover:text-[#7E6BF2] truncate flex-1 min-w-0" :class="{ 'text-[#7E6BF2]': selectedDatasource?.id === ds.id }" :title="`${ds.name}-${ds.type || 'Datasource'}`">
-                                  {{ ds.name }}-{{ ds.type || 'Datasource' }}
-                                </span>
-                                <div v-if="selectedDatasource?.id === ds.id" class="flex-shrink-0">
-                                  <div class="i-hugeicons:tick-02 text-15 text-[#7E6BF2]"></div>
-                                </div>
+                              >
+                                <div class="i-hugeicons:database-01 text-15 text-gray-400 group-hover:text-[#7E6BF2]"
+                                     :class="{ 'text-[#7E6BF2]': selectedDatasource?.id === ds.id }"></div>
                               </div>
-
-                              <div v-if="!datasourceList.length" class="flex flex-col items-center justify-center py-10 text-gray-400 gap-2">
-                                <div class="i-hugeicons:database-01 text-24 opacity-20"></div>
-                                <span class="text-13">暂无可用数据源</span>
+                              <span
+                                  class="text-14 text-gray-700 font-medium group-hover:text-[#7E6BF2] truncate flex-1 min-w-0"
+                                  :class="{ 'text-[#7E6BF2]': selectedDatasource?.id === ds.id }"
+                                  :title="`${ds.name}-${ds.ds_type || 'Datasource'}`">
+                                  {{ ds.name }}-{{ ds.ds_type || 'Datasource' }}
+                                </span>
+                              <div v-if="selectedDatasource?.id === ds.id" class="flex-shrink-0">
+                                <div class="i-hugeicons:tick-02 text-15 text-[#7E6BF2]"></div>
                               </div>
                             </div>
+
+                            <div v-if="!datasourceList.length"
+                                 class="flex flex-col items-center justify-center py-10 text-gray-400 gap-2">
+                              <div class="i-hugeicons:database-01 text-24 opacity-20"></div>
+                              <span class="text-13">暂无可用数据源</span>
+                            </div>
                           </div>
-                        </n-popover>
+                        </div>
+                      </n-popover>
 
                       <n-tooltip
-                        v-if="opt.value !== 'DATABASE_QA' && opt.value !== 'REPORT_QA'"
-                        trigger="hover"
+                          v-if="opt.value !== 'DATABASE_QA' && opt.value !== 'REPORT_QA'"
+                          trigger="hover"
                       >
                         <template #trigger>
                           <div
-                            class="mode-icon-btn"
-                            :class="{ active: qa_type === opt.value }"
-                            :style="{
+                              class="mode-icon-btn"
+                              :class="{ active: qa_type === opt.value }"
+                              :style="{
                               '--active-color': opt.color,
                               '--active-bg': `${opt.color}15`,
                             }"
-                            @click.stop="selectMode(opt.value)"
+                              @click.stop="selectMode(opt.value)"
                           >
                             <div
-                              :class="opt.icon"
-                              class="text-14"
-                              :style="{ color: opt.color }"
+                                :class="opt.icon"
+                                class="text-14"
+                                :style="{ color: opt.color }"
                             ></div>
                             <span class="mode-icon-label">{{ opt.label }}</span>
                           </div>
@@ -2413,26 +2414,27 @@ const handleHistoryClick = async (item: any) => {
                 <div class="right-actions flex items-center gap-3">
                   <!-- Attachment (Paperclip) -->
                   <n-dropdown
-                    :options="fileUploadRef?.options || []"
-                    trigger="click"
-                    placement="top-end"
+                      :options="fileUploadRef?.options || []"
+                      trigger="click"
+                      placement="top-end"
                   >
-                    <div class="action-icon i-hugeicons:attachment-01 text-20 text-gray-400 hover:text-gray-600 cursor-pointer"></div>
+                    <div
+                        class="action-icon i-hugeicons:attachment-01 text-20 text-gray-400 hover:text-gray-600 cursor-pointer"></div>
                   </n-dropdown>
 
                   <!-- Send Button (Purple Circle) -->
                   <div
-                    class="send-btn-circle"
-                    :class="{ disabled: !inputTextString && !pendingUploadFileInfoList?.length }"
-                    @click="handleCreateStylized()"
+                      class="send-btn-circle"
+                      :class="{ disabled: !inputTextString && !pendingUploadFileInfoList?.length }"
+                      @click="handleCreateStylized()"
                   >
                     <div
-                      v-if="stylizingLoading"
-                      class="i-svg-spinners:pulse-2 text-white text-18"
+                        v-if="stylizingLoading"
+                        class="i-svg-spinners:pulse-2 text-white text-18"
                     ></div>
                     <div
-                      v-else
-                      class="i-hugeicons:arrow-up-01 text-white text-20 font-bold"
+                        v-else
+                        class="i-hugeicons:arrow-up-01 text-white text-20 font-bold"
                     ></div>
                   </div>
                 </div>
@@ -2446,8 +2448,8 @@ const handleHistoryClick = async (item: any) => {
       </n-layout-content>
     </n-layout>
     <TableModal
-      v-model:show="isModalOpen"
-      @update:show="handleModalClose"
+        v-model:show="isModalOpen"
+        @update:show="handleModalClose"
     />
   </div>
 </template>
@@ -3155,8 +3157,12 @@ $shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 // ============================================
@@ -3324,8 +3330,12 @@ $shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 // ============================================
@@ -3354,10 +3364,21 @@ $shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     animation: starOrbit 3s linear infinite, starTwinkle 1.5s ease-in-out infinite;
   }
 
-  .star-1 { animation-delay: 0s, 0s; }
-  .star-2 { animation-delay: 0s, 0.3s; }
-  .star-3 { animation-delay: 0s, 0.6s; }
-  .star-4 { animation-delay: 0s, 0.9s; }
+  .star-1 {
+    animation-delay: 0s, 0s;
+  }
+
+  .star-2 {
+    animation-delay: 0s, 0.3s;
+  }
+
+  .star-3 {
+    animation-delay: 0s, 0.6s;
+  }
+
+  .star-4 {
+    animation-delay: 0s, 0.9s;
+  }
 
   .star-path {
     transform-origin: center;
@@ -3366,13 +3387,21 @@ $shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
 @keyframes starOrbit {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes starTwinkle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 // ============================================
