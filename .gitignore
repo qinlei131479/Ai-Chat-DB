@@ -87,3 +87,4 @@ agent/common
 !/tests/
 
 graphify-out/
+package-lock.json
