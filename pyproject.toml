@@ -95,7 +95,7 @@ default = true
 # Black 代码格式化配置
 [tool.black]
 line-length = 88
-target-version = ['py311']
+target-version = ['py312']
 include = '\.pyi?$'
 extend-exclude = '''
 /(

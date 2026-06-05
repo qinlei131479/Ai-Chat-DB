@@ -38,7 +38,7 @@ RUN pnpm run build && \
 # 解决 Mac M1 上通过 QEMU 模拟 amd64 时 pipx install uv 获取错误架构的问题
 FROM ghcr.io/astral-sh/uv:0.8.0 AS uv-bin
 
-FROM python:3.11-slim-bookworm AS backend-builder
+FROM python:3.12-slim-bookworm AS backend-builder
 
 WORKDIR /aix-db
 
@@ -86,7 +86,7 @@ RUN find .venv -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null; \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /root/.cache /usr/local/bin/uv
 
 # ============ 阶段3: 基础运行镜像 ============
-FROM python:3.11-slim-bookworm
+FROM python:3.12-slim-bookworm
 
 # 使用构建参数支持多架构
 ARG TARGETARCH
@@ -215,7 +215,7 @@ RUN echo 'from __future__ import annotations' > /tmp/otel_fix.py && \
     echo '    return _RUNTIME_CONTEXT.detach(token)' >> /tmp/otel_fix.py && \
     echo '_SUPPRESS_INSTRUMENTATION_KEY = create_key("suppress_instrumentation")' >> /tmp/otel_fix.py && \
     echo '_SUPPRESS_HTTP_INSTRUMENTATION_KEY = create_key("suppress_http_instrumentation")' >> /tmp/otel_fix.py && \
-    cp /tmp/otel_fix.py /aix-db/.venv/lib/python3.11/site-packages/opentelemetry/context/__init__.py && \
+    cp /tmp/otel_fix.py /aix-db/.venv/lib/python3.12/site-packages/opentelemetry/context/__init__.py && \
     rm /tmp/otel_fix.py && \
     find /aix-db/.venv -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
     find /aix-db/.venv -name "*.pyc" -delete && \

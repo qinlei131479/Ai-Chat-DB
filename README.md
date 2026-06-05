@@ -306,13 +306,13 @@ docker-compose up -d
 
 编辑项目根目录下的 `.env.dev`，按需修改数据库连接、MinIO 地址等配置（默认配置可直接使用）
 
-**④ 安装 Python 依赖**（需要 Python 3.11）
+**④ 安装 Python 依赖**（需要 Python 3.12）
 ```bash
 # 方式一：pip
 pip install -r requirements.txt
 
 # 方式二：uv（推荐，更快）
-uv venv --python 3.11
+uv venv --python 3.12
 source .venv/bin/activate
 uv sync
 ```

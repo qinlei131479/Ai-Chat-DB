@@ -1,3 +1,10 @@
+"""
+Legacy COMMON_QA agent (LangChain + MCP).
+
+Superseded by agent.common.enhanced_common_agent.EnhancedCommonAgent.
+Kept for reference; not wired in services/llm_service.py.
+"""
+
 import asyncio
 import json
 import logging

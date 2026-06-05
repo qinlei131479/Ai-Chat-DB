@@ -7,7 +7,7 @@ import traceback
 import aiohttp
 import requests
 
-# ClaudeSDKAgent 已不再使用，改用 CommonReactAgent
+# ClaudeSDKAgent / CommonReactAgent 已不再使用，改用 EnhancedCommonAgent
 # from agent.claude_sdk_agent import ClaudeSDKAgent
 from agent.common.enhanced_common_agent import EnhancedCommonAgent
 from agent.deepagent.deep_research_agent import DeepAgent

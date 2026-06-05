@@ -27,7 +27,7 @@ make build       # build app image (~30s, requires base image)
 make build-base  # rebuild base image (only when deps change)
 
 # Code formatting
-black .          # line-length=88, target py311
+black .          # line-length=88, target py312
 
 # Tests (ad-hoc, organized by feature under tests/)
 python -m pytest tests/<subdir>/<test_file>.py
@@ -37,7 +37,7 @@ python -m pytest tests/<subdir>/<test_file>.py
 
 **Aix-DB** is an LLM-powered data analysis platform (ChatBI). Users ask questions in natural language; the system generates SQL, executes it, and returns visualized results.
 
-### Backend (Python 3.11, Sanic)
+### Backend (Python 3.12, Sanic)
 
 ```
 serv.py                          # Entry point - Sanic app, autodiscovers controllers
@@ -49,7 +49,9 @@ serv.py                          # Entry point - Sanic app, autodiscovers contro
 ├── services/
 │   └── llm_service.py          # Routes requests by qa_type to appropriate agent
 ├── agent/                       # Four independent agent systems
-│   ├── common_react_agent.py   # COMMON_QA - general chat (LangChain + MCP)
+│   ├── common/                 # COMMON_QA - EnhancedCommonAgent (DeepAgents + Skills + MCP)
+│   │   ├── enhanced_common_agent.py
+│   │   └── skills/             # SKILL.md instruction documents
 │   ├── text2sql/               # DATABASE_QA - Text-to-SQL (LangGraph StateGraph)
 │   ├── excel/                  # FILEDATA_QA - Excel analysis (DuckDB)
 │   └── deepagent/              # REPORT_QA - deep research (deepagents library)
@@ -67,7 +69,7 @@ serv.py                          # Entry point - Sanic app, autodiscovers contro
 POST /dify/get_answer { query, qa_type, chat_id, datasource_id, ... }
   → llm_service.LLMRequest.exec_query()
     → qa_type routing:
-      COMMON_QA   → CommonReactAgent.run_agent()
+      COMMON_QA   → EnhancedCommonAgent.run_agent()
       DATABASE_QA → Text2SqlAgent.run_agent()
       FILEDATA_QA → ExcelAgent.run_excel_agent()
       REPORT_QA   → DeepAgent.run_agent()
@@ -78,7 +80,7 @@ POST /dify/get_answer { query, qa_type, chat_id, datasource_id, ... }
 
 - **Text2SqlAgent**: LangGraph StateGraph pipeline (datasource_selector → schema_inspector → sql_generator → permission_filter → sql_executor → chart_generator → summarizer)
 - **DeepAgent**: `deepagents.create_deep_agent()` with skills, multi-phase tracking (PLANNING→EXECUTION→SUB_AGENT→REPORTING), `<details>` HTML for thinking visibility
-- **CommonReactAgent**: `langchain.agents.create_agent()` with MCP tools via `MultiServerMCPClient`
+- **EnhancedCommonAgent**: `deepagents.create_deep_agent()` with Skills + MCP + multi-turn memory, `<details>` HTML for thinking visibility
 - **ExcelAgent**: Parses Excel to DuckDB, then SQL analysis pipeline
 
 ### Frontend (Vue 3 + TypeScript + Vite)
@@ -95,7 +97,7 @@ web/src/
 ### Key Patterns
 
 - **SSE format**: All agents stream responses as `data:{"data":{"messageType":"continue","content":"..."},"dataType":"t02"}\n\n`
-- **dataType values**: `t02` (text answer), `t04` (business/chart data), `t09` (stream end)
+- **dataType values**: `t02` (text answer), `t04` (business/chart data), `t99` (stream end)
 - **Datasource support**: MySQL, PostgreSQL, Oracle, SQL Server, ClickHouse, DM, Doris, StarRocks (via SQLAlchemy or native drivers)
 - **MCP integration**: External mcp-hub service, configured via `MCP_HUB_COMMON_QA_GROUP_URL` env var
 - **Skills**: Markdown instruction documents (`SKILL.md` with YAML frontmatter) loaded as LLM context, not executable tools
