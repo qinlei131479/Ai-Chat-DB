@@ -108,10 +108,21 @@ docker compose up
 cp .env.example .env
 ```
 
-添加以下配置：
+本地开发默认配置见 `.env.example`，核心变量如下：
 
 ```bash
-# Langfuse 配置（可选）
+SERVER_PORT=8088
+SERVER_WORKERS=1
+SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://postgres:postgres@127.0.0.1:5432/aix_db
+MINIO_ENABLED=false
+MINIO_ENDPOINT=127.0.0.1:9000
+LANGFUSE_TRACING_ENABLED=false
+VITE_ENABLE_PAGE_AGENT=false
+```
+
+启用 Langfuse 追踪时，修改以下配置：
+
+```bash
 LANGFUSE_TRACING_ENABLED=true
 LANGFUSE_SECRET_KEY=your_secret_key
 LANGFUSE_PUBLIC_KEY=your_public_key

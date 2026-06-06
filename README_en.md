@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/apconw/Aix-DB">
+  <a href="https://github.com/qinlei131479/Ai-Chat-DB">
     <img src="./docs/docs/images/logo.svg" alt="Aix-DB" width="160"/>
   </a>
 </p>
@@ -67,57 +67,26 @@ Aix-DB is built on the **LangChain/LangGraph** framework, combined with **MCP Sk
 
 ## Quick Start
 
-### Deploy with Docker
-
-```bash
-docker run -d \
-  --name aix-db \
-  --restart unless-stopped \
-  -e TZ=Asia/Shanghai \
-  -e SERVER_HOST=0.0.0.0 \
-  -e SERVER_PORT=8088 \
-  -e SERVER_WORKERS=2 \
-  -e LANGFUSE_TRACING_ENABLED=false \
-  -e LANGFUSE_SECRET_KEY= \
-  -e LANGFUSE_PUBLIC_KEY= \
-  -e LANGFUSE_BASE_URL= \
-  -e VITE_ENABLE_PAGE_AGENT=false \
-  -e LLM_MAX_TOKENS=65536 \
-  -p 18080:80 \
-  -p 18088:8088 \
-  -p 15432:5432 \
-  -p 9000:9000 \
-  -p 9001:9001 \
-  -v ./volume/pg_data:/var/lib/postgresql/data \
-  -v ./volume/minio/data:/data \
-  -v ./volume/logs/supervisor:/var/log/supervisor \
-  -v ./volume/logs/nginx:/var/log/nginx \
-  -v ./volume/logs/aix-db:/var/log/aix-db \
-  -v ./volume/logs/minio:/var/log/minio \
-  -v ./volume/logs/postgresql:/var/log/postgresql \
-  --add-host host.docker.internal:host-gateway \
-  crpi-7xkxsdc0iki61l0q.cn-hangzhou.personal.cr.aliyuncs.com/apconw/aix-db:1.2.4
-```
-
-> **Note**: To enable Langfuse tracing, set `LANGFUSE_TRACING_ENABLED=true` and configure the corresponding keys and URL.
-
 ### Deploy with Docker Compose
 
 ```bash
-git clone https://github.com/apconw/Aix-DB.git
-cd Aix-DB/docker
+git clone https://github.com/qinlei131479/Ai-Chat-DB.git
+cd Ai-Chat-DB/docker
 cp .env.template .env
 docker-compose up -d
 ```
 
-### Access the System
+### Access the System (Docker)
 
 **Web Management Interface**
 - URL: http://localhost:18080
 - Username: `admin`
 - Password: `123456`
 
-**PostgreSQL Database**
+**Backend API**
+- URL: http://localhost:18088
+
+**PostgreSQL (Docker mapped port)**
 - Connection: `localhost:15432`
 - Database: `aix_db`
 - Username: `aix_db`
@@ -128,26 +97,36 @@ docker-compose up -d
 **① Clone the Repository**
 
 ```bash
-git clone https://github.com/apconw/Aix-DB.git
-cd Aix-DB
+git clone https://github.com/qinlei131479/Ai-Chat-DB.git
+cd Ai-Chat-DB
 ```
 
-**② Start Middleware Dependencies** (PostgreSQL, MinIO, etc.)
-
-```bash
-cd docker
-docker-compose up -d
-```
-
-**③ Configure Environment Variables**
+**② Configure Environment Variables**
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` in the project root to set database connection, MinIO address, etc.
+Default local development values (see `.env`):
 
-**④ Install Python Dependencies** (requires Python 3.12)
+| Variable | Default |
+| --- | --- |
+| `SERVER_PORT` | `8088` |
+| `SERVER_WORKERS` | `1` |
+| `SQLALCHEMY_DATABASE_URI` | `postgresql+psycopg2://postgres:postgres@127.0.0.1:5432/aix_db` |
+| `MINIO_ENABLED` | `false` |
+| `MINIO_ENDPOINT` | `127.0.0.1:9000` |
+| `LANGFUSE_TRACING_ENABLED` | `false` |
+| `VITE_ENABLE_PAGE_AGENT` | `false` |
+
+**③ Prepare PostgreSQL**
+
+Ensure PostgreSQL is running locally with database `aix_db` (matching `SQLALCHEMY_DATABASE_URI` in `.env`: `127.0.0.1:5432`, user `postgres`, password `postgres`).
+
+> If using Docker Compose for PostgreSQL (mapped port `15432`), update `.env` to:
+> `postgresql+psycopg2://aix_db:1@127.0.0.1:15432/aix_db`
+
+**④ Install Python Dependencies** (Python 3.12)
 
 ```bash
 # Option 1: pip
@@ -159,11 +138,13 @@ source .venv/bin/activate
 uv sync
 ```
 
-**⑤ Start Backend Service**
+**⑤ Start Backend Service** (loads `.env` from project root)
 
 ```bash
 python serv.py
 ```
+
+Backend URL: http://localhost:8088
 
 **⑥ Start Frontend Dev Server** (in another terminal)
 

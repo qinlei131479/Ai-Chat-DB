@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/apconw/Aix-DB">
+  <a href="https://github.com/qinlei131479/Ai-Chat-DB">
     <img src="./docs/docs/images/logo.svg" alt="Aix-DB" width="160"/>
   </a>
 </p>
@@ -67,55 +67,26 @@ Aix-DB 基于 **LangChain/LangGraph** 框架，结合 **MCP Skills** 多智能�
 
 ## 快速开始
 
-### 使用 Docker 部署
-
-```bash
-docker run -d \
-  --name aix-db \
-  --restart unless-stopped \
-  -e TZ=Asia/Shanghai \
-  -e SERVER_HOST=0.0.0.0 \
-  -e SERVER_PORT=8088 \
-  -e SERVER_WORKERS=2 \
-  -e LANGFUSE_TRACING_ENABLED=false \
-  -e LANGFUSE_SECRET_KEY= \
-  -e LANGFUSE_PUBLIC_KEY= \
-  -e LANGFUSE_BASE_URL= \
-  -e VITE_ENABLE_PAGE_AGENT=false \
-  -e LLM_MAX_TOKENS=65536 \
-  -p 18080:80 \
-  -p 18088:8088 \
-  -p 15432:5432 \
-  -p 9000:9000 \
-  -p 9001:9001 \
-  -v ./volume/pg_data:/var/lib/postgresql/data \
-  -v ./volume/minio/data:/data \
-  -v ./volume/logs/supervisor:/var/log/supervisor \
-  -v ./volume/logs/nginx:/var/log/nginx \
-  -v ./volume/logs/aix-db:/var/log/aix-db \
-  -v ./volume/logs/minio:/var/log/minio \
-  -v ./volume/logs/postgresql:/var/log/postgresql \
-  --add-host host.docker.internal:host-gateway \
-  crpi-7xkxsdc0iki61l0q.cn-hangzhou.personal.cr.aliyuncs.com/apconw/aix-db:1.2.4
-```
-
 ### 使用 Docker Compose
 
 ```bash
-git clone https://github.com/apconw/Aix-DB.git
-cd Aix-DB/docker
+git clone https://github.com/qinlei131479/Ai-Chat-DB.git
+cd Ai-Chat-DB/docker
 cp .env.template .env
 docker-compose up -d
 ```
 
-### 访问系统
+### 访问系统（Docker 部署）
 
 **Web 管理界面**
 - 访问地址：http://localhost:18080
 - 默认账号：`admin`
 - 默认密码：`123456`
 
-**PostgreSQL 数据库**
+**后端 API**
+- 访问地址：http://localhost:18088
+
+**PostgreSQL（Docker 容器映射）**
 - 连接地址：`localhost:15432`
 - 数据库名：`aix_db`
 - 用户名：`aix_db`
@@ -126,26 +97,36 @@ docker-compose up -d
 **① 克隆项目**
 
 ```bash
-git clone https://github.com/apconw/Aix-DB.git
-cd Aix-DB
+git clone https://github.com/qinlei131479/Ai-Chat-DB.git
+cd Ai-Chat-DB
 ```
 
-**② 启动依赖中间件**（PostgreSQL、MinIO 等）
-
-```bash
-cd docker
-docker-compose up -d
-```
-
-**③ 配置环境变量**
+**② 配置环境变量**
 
 ```bash
 cp .env.example .env
 ```
 
-编辑项目根目录下的 `.env`，按需修改数据库连接、MinIO 地址等配置。
+本地开发默认配置（见 `.env`）：
 
-**④ 安装 Python 依赖**（需要 Python 3.12）
+| 变量 | 默认值 |
+| --- | --- |
+| `SERVER_PORT` | `8088` |
+| `SERVER_WORKERS` | `1` |
+| `SQLALCHEMY_DATABASE_URI` | `postgresql+psycopg2://postgres:postgres@127.0.0.1:5432/aix_db` |
+| `MINIO_ENABLED` | `false` |
+| `MINIO_ENDPOINT` | `127.0.0.1:9000` |
+| `LANGFUSE_TRACING_ENABLED` | `false` |
+| `VITE_ENABLE_PAGE_AGENT` | `false` |
+
+**③ 准备 PostgreSQL**
+
+确保本机 PostgreSQL 已启动，并存在数据库 `aix_db`（连接信息与 `.env` 中 `SQLALCHEMY_DATABASE_URI` 一致：`127.0.0.1:5432`，用户 `postgres`，密码 `postgres`）。
+
+> 若改用 Docker Compose 提供 PostgreSQL（映射端口 `15432`），请将 `.env` 中连接串改为：
+> `postgresql+psycopg2://aix_db:1@127.0.0.1:15432/aix_db`
+
+**④ 安装 Python 依赖**（Python 3.12）
 
 ```bash
 # 方式一：pip
@@ -157,11 +138,13 @@ source .venv/bin/activate
 uv sync
 ```
 
-**⑤ 启动后端服务**
+**⑤ 启动后端服务**（读取项目根目录 `.env`）
 
 ```bash
 python serv.py
 ```
+
+后端默认地址：http://localhost:8088
 
 Windows PowerShell：
 

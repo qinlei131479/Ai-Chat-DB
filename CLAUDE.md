@@ -106,11 +106,12 @@ web/src/
 ### Environment
 
 Key env vars (see `.env.example` and `docker/docker-compose.yaml`):
-- `DATABASE_URL` - PostgreSQL connection for app metadata
-- `LLM_MODEL_NAME`, `LLM_API_KEY`, `LLM_API_BASE` - LLM configuration
-- `MINIO_*` - File storage
+- `SQLALCHEMY_DATABASE_URI` - PostgreSQL connection for app metadata
+- `SERVER_PORT`, `SERVER_WORKERS` - Backend server configuration
+- `MINIO_ENABLED`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY` - File storage
 - `MCP_HUB_COMMON_QA_GROUP_URL` - MCP tool hub endpoint
-- `LANGFUSE_TRACING_ENABLED` - Enable observability tracing
+- `LANGFUSE_TRACING_ENABLED`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_BASE_URL` - Observability tracing
+- `VITE_ENABLE_PAGE_AGENT` - Frontend PageAgent build flag
 
 ## graphify
 

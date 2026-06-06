@@ -23,13 +23,19 @@ services:
       # 开发模式：启用更详细的日志
       LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
 
+      SQLALCHEMY_DATABASE_URI: ${SQLALCHEMY_DATABASE_URI:-postgresql+psycopg2://aix_db:1@127.0.0.1:5432/aix_db}
+      MINIO_ENABLED: ${MINIO_ENABLED:-false}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-127.0.0.1:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-admin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-admin123}
+
       # Langfuse 配置（可选）
       LANGFUSE_TRACING_ENABLED: ${LANGFUSE_TRACING_ENABLED:-false}
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
       LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
-      LANGFUSE_BASE_URL: ${LANGFUSE_BASE_URL:-}
+      LANGFUSE_BASE_URL: ${LANGFUSE_BASE_URL:-http://localhost:3000}
       # 前端 PageAgent 开关（运行时注入）
-      VITE_ENABLE_PAGE_AGENT: ${VITE_ENABLE_PAGE_AGENT:-}
+      VITE_ENABLE_PAGE_AGENT: ${VITE_ENABLE_PAGE_AGENT:-false}
 
     ports:
       # 前端（通过 nginx）

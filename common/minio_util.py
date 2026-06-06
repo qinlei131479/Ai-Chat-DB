@@ -27,8 +27,8 @@ MINIO_DISABLED_MESSAGE = (
 
 
 def is_minio_enabled() -> bool:
-    """是否启用 MinIO（默认启用，兼容现有部署）"""
-    return os.getenv("MINIO_ENABLED", "true").strip().lower() in (
+    """是否启用 MinIO（默认关闭，与 .env 默认配置一致）"""
+    return os.getenv("MINIO_ENABLED", "false").strip().lower() in (
         "1",
         "true",
         "yes",

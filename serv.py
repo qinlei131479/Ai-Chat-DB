@@ -88,7 +88,7 @@ async def root():
 
 def get_uvicorn_config():
     """获取 Uvicorn 启动参数"""
-    workers = int(os.getenv("SERVER_WORKERS", 2))
+    workers = int(os.getenv("SERVER_WORKERS", 1))
     config = {
         "app": "serv:app",
         "host": os.getenv("SERVER_HOST", "0.0.0.0"),
