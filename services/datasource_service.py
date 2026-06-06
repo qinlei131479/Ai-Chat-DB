@@ -4,11 +4,9 @@
 
 import json
 import logging
-import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from py2neo import Graph
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
@@ -783,12 +781,6 @@ class DatasourceService:
         # 将关系数据保存为 JSON
         datasource.table_relation = relation_data
         session.commit()
-
-        # 同步到 Neo4j（不阻断主流程）
-        try:
-            sync_table_relation_to_neo4j(relation_data)
-        except Exception as e:
-            logger.warning(f"同步表关系到 Neo4j 失败: {e}")
         return True
 
     @staticmethod
@@ -799,45 +791,6 @@ class DatasourceService:
             return []
 
         return datasource.table_relation if datasource.table_relation else []
-
-    @staticmethod
-    def get_neo4j_relation(ds_id: int) -> List[Dict[str, Any]]:
-        """
-        从 Neo4j 获取数据源的表关系数据
-        返回格式: [{"from_table": str, "to_table": str, "field_relation": str}, ...]
-        """
-        try:
-            uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
-            user = os.getenv("NEO4J_USER", "neo4j")
-            password = os.getenv("NEO4J_PASSWORD", "neo4j123")
-
-            graph = Graph(uri, auth=(user, password))
-
-            # 首先获取该数据源的所有表名
-            db_pool = get_db_pool()
-            with db_pool.get_session() as session:
-                tables = DatasourceService.get_tables_by_ds_id(session, ds_id)
-                table_names = [table.table_name for table in tables]
-
-            if not table_names:
-                return []
-
-            # 查询 Neo4j 中这些表之间的关系
-            query = """
-            MATCH (t1:Table)-[r:REFERENCES]->(t2:Table)
-            WHERE t1.name IN $table_names AND t2.name IN $table_names
-            RETURN
-              t1.name AS from_table,
-              t2.name AS to_table,
-              r.field_relation AS field_relation
-            ORDER BY t1.name, t2.name
-            """
-
-            result = graph.run(query, table_names=table_names).data()
-            return result if result else []
-        except Exception as e:
-            logger.error(f"获取 Neo4j 关系失败: {e}", exc_info=True)
-            return []
 
     @staticmethod
     def get_authorized_users(session: Session, datasource_id: int) -> List[int]:
@@ -889,83 +842,3 @@ class DatasourceService:
 
         session.commit()
         return True
-
-
-def sync_table_relation_to_neo4j(relation_data: List[Dict[str, Any]]):
-    """
-    将前端保存的表关系同步到 Neo4j。
-    节点：Table(name)
-    关系：REFERENCES(field_relation=表.列=表.列)
-    支持多关系，重复 MERGE。
-    """
-    uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
-    user = os.getenv("NEO4J_USER", "neo4j")
-    password = os.getenv("NEO4J_PASSWORD", "neo4j123")
-
-    graph = Graph(uri, auth=(user, password))
-
-    nodes = [r for r in relation_data if r.get("shape") != "edge"]
-    edges = [r for r in relation_data if r.get("shape") == "edge"]
-
-    # table id -> name
-    table_map: Dict[str, str] = {}
-    # table id -> port id -> field name
-    port_map: Dict[str, Dict[str, str]] = {}
-
-    for node in nodes:
-        node_id = str(node.get("id"))
-        label = (
-            node.get("attrs", {}).get("label", {}).get("text")
-            or node.get("label")
-            or node.get("attrs", {}).get("text", {}).get("text")
-        )
-        if not label:
-            continue
-        table_map[node_id] = label
-
-        ports = node.get("ports", {}).get("items", [])
-        port_dict = {}
-        for p in ports:
-            pid = str(p.get("id"))
-            pname = p.get("attrs", {}).get("portNameLabel", {}).get("text")
-            if pid and pname:
-                port_dict[pid] = pname
-        port_map[node_id] = port_dict
-
-    # 全量重建：先清理所有 REFERENCES，再重建，确保删除的表/边被移除
-    graph.run("MATCH ()-[r:REFERENCES]->() DELETE r")
-
-    # 创建表节点（若存在则忽略）
-    for name in set(table_map.values()):
-        graph.run("MERGE (:Table {name: $name, label: $name})", name=name)
-
-    # 创建关系（多条 MERGE）
-    for edge in edges:
-        source_cell = str(edge.get("source", {}).get("cell"))
-        target_cell = str(edge.get("target", {}).get("cell"))
-        if not source_cell or not target_cell:
-            continue
-        source_table = table_map.get(source_cell)
-        target_table = table_map.get(target_cell)
-        if not source_table or not target_table:
-            continue
-
-        source_port = str(edge.get("source", {}).get("port"))
-        target_port = str(edge.get("target", {}).get("port"))
-        source_field = port_map.get(source_cell, {}).get(source_port, "")
-        target_field = port_map.get(target_cell, {}).get(target_port, "")
-
-        field_relation = ""
-        if source_field and target_field:
-            field_relation = f"{source_table}.{source_field}={target_table}.{target_field}"
-
-        graph.run(
-            """
-            MATCH (s:Table {name: $source_table})
-            MATCH (t:Table {name: $target_table})
-            MERGE (s)-[r:REFERENCES {field_relation: $field_relation}]->(t)
-            """,
-            source_table=source_table,
-            target_table=target_table,
-            field_relation=field_relation,
-        )

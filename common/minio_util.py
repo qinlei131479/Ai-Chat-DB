@@ -563,7 +563,7 @@ class MinioUtils:
         """
         try:
             # 🔧 配置 MinerU 服务地址（私有化部署）
-            mineru_api_url = os.getenv("MINERU_API_RUL")
+            mineru_api_url = os.getenv("MINERU_API_URL")
             headers = {
                 "Authorization": "Bearer your-secret-token",  # 可选认证
             }

@@ -13,7 +13,7 @@
 - [3. 四种问答模式与 Agent 路由](#3-四种问答模式与-agent-路由)
 - [4. Text2SQL Agent（DATABASE_QA）](#4-text2sql-agentdatabase_qa)
 - [5. RAG 检索引擎（真实实现）](#5-rag-检索引擎真实实现)
-- [6. 表关系：PostgreSQL vs Neo4j](#6-表关系postgresql-vs-neo4j)
+- [6. 表关系存储（PostgreSQL）](#6-表关系存储postgresql)
 - [7. 智能问答 Agent（COMMON_QA）](#7-智能问答-agentcommon_qa)
 - [8. 深度问数 Agent（REPORT_QA）](#8-深度问数-agentreport_qa)
 - [9. 表格问答 Agent（FILEDATA_QA）](#9-表格问答-agentfiledata_qa)
@@ -221,39 +221,20 @@ data_training = retrieve_training_examples(question=..., datasource_id=...)
 
 ---
 
-## 6. 表关系：PostgreSQL vs Neo4j
+## 6. 表关系存储（PostgreSQL）
 
-这是最容易混淆的部分。
-
-### 6.1 Text2SQL 实际使用的表关系
-
-**来源**：PostgreSQL `datasource.table_relation` 字段（前端 ER 图保存的 JSON）
+**来源**：PostgreSQL `t_datasource.table_relation` 字段（前端 ER 图保存的 JSONB）
 
 **使用位置**：
 
 | 场景 | 文件 | 方法 |
 | --- | --- | --- |
+| 保存/读取表关系 | `services/datasource_service.py` | `save_table_relation()` / `get_table_relation()` |
+| 前端 ER 图编辑 | `web/src/views/datasource/table-relationship.vue` | — |
 | Text2SQL 补充关联表 | `db_service.py` | `supplement_related_tables()` |
 | 深度问数 SQL 工具 | `deepagent/tools/native_sql_tools.py` | `_get_table_relationships_from_datasource()` |
 
-**不依赖 Neo4j。**
-
-### 6.2 Neo4j 的实际用途（可选）
-
-Neo4j 仅用于**数据源管理的可视化与离线工具**，不参与 Text2SQL 主流程：
-
-| 用途 | 文件 |
-| --- | --- |
-| 保存表关系时同步到 Neo4j | `services/datasource_service.py` → `sync_table_relation_to_neo4j()` |
-| 前端 Neo4j 关系图展示 | `web/src/views/datasource/neo4j-relationship.vue` |
-| API 查询 Neo4j 关系 | `controllers/datasource_api.py` → `getNeo4jRelation/{ds_id}` |
-| 离线导入工具 | `common/neo4j/`、`common/initialize_neo4j.py` |
-
-若未部署 Neo4j：表关系仍保存在 PostgreSQL，Text2SQL 和深度问数**正常工作**；仅 Neo4j 可视化页面无数据。
-
-### 6.3 已移除的过时实现
-
-`agent/text2sql/database/neo4j_search.py` 曾为 LangGraph 的 `table_relationship` 节点服务，该节点已从 `graph.py` 移除，对应代码已清理。
+表关系统一存储在 PostgreSQL，Text2SQL 和深度问数均从此字段读取。
 
 ---
 
@@ -300,7 +281,7 @@ if not mcp_url:
 
 - 基于 `create_deep_agent` + SQL 原生工具（`native_sql_tools.py`）
 - 工具：`sql_db_list_tables`、`sql_db_schema`、`sql_db_query`、`sql_db_table_relationship` 等
-- 表关系从 `Datasource.table_relation`（PostgreSQL）读取，非 Neo4j
+- 表关系从 `Datasource.table_relation`（PostgreSQL JSONB）读取
 - Skill：`agent/deepagent/skills/`（如 `report-generation`、`schema-exploration`）
 - 多阶段追踪：PLANNING → EXECUTION → SUB_AGENT → REPORTING
 
@@ -349,7 +330,6 @@ data:{"data":{"messageType":"continue","content":"..."},"dataType":"t02"}\n\n
 | `SERVER_PORT` / `SERVER_WORKERS` | 后端服务 |
 | `MINIO_ENABLED` | 文件存储开关 |
 | `MCP_HUB_COMMON_QA_GROUP_URL` | MCP 工具 Hub（COMMON_QA 专用） |
-| `NEO4J_URI` / `NEO4J_USER` / `NEO4J_PASSWORD` | 可选，仅数据源 Neo4j 可视化 |
 | `LANGFUSE_*` | 可选，链路追踪 |
 
 ### 11.2 各能力启用清单
@@ -362,8 +342,8 @@ data:{"data":{"messageType":"continue","content":"..."},"dataType":"t02"}\n\n
 | 术语/样本 RAG | 后台录入术语库和训练样本 |
 | MCP 工具 | 配置 `MCP_HUB_COMMON_QA_GROUP_URL` |
 | Skill 文件处理 | `MINIO_ENABLED=true` |
-| Neo4j 关系图 | 部署 Neo4j + 配置 `NEO4J_*` |
 | 表格问答 | MinIO + 上传 Excel 文件 |
+| 表关系 ER 图 | 数据源管理界面编辑，存 PostgreSQL |
 
 ---
 
@@ -384,7 +364,7 @@ data:{"data":{"messageType":"continue","content":"..."},"dataType":"t02"}\n\n
 | 路径 | 说明 |
 | --- | --- |
 | `controllers/llm_chat_api.py` | 聊天主接口 |
-| `controllers/datasource_api.py` | 数据源 CRUD、Neo4j 关系查询 |
+| `controllers/datasource_api.py` | 数据源 CRUD、表关系管理 |
 | `controllers/skill_api.py` | 技能管理 |
 | `services/llm_service.py` | Agent 分发中枢 |
 

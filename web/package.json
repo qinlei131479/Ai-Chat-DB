@@ -13,13 +13,12 @@
     "url": "https://github.com/pdsuwwz/chatgpt-vue3-light-mvp/issues"
   },
   "engines": {
-    "node": ">= 18.12.x",
-    "pnpm": ">= 9.x"
+    "node": ">= 18.12.x"
   },
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
-    "build:gh-pages": "cross-env VITE_ROUTER_MODE=hash pnpm build",
+    "build:gh-pages": "cross-env VITE_ROUTER_MODE=hash npm run build",
     "preview": "vite preview --host",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",

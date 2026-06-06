@@ -16,9 +16,12 @@
 
 ## Overview
 
-Aix-DB is built on the **LangChain/LangGraph** framework, combined with **MCP Skills** multi-agent collaboration architecture, enabling end-to-end transformation from natural language to data insights.
+Aix-DB uses **four independent agents**, routed by `qa_type` to different engines for end-to-end natural language to data insights:
 
-**Core Capabilities**: General Q&A · Data Q&A (Text2SQL) · Spreadsheet Q&A · Deep Research · Data Visualization · MCP Multi-Agent · Skill Mode
+- **Data Q&A / Spreadsheet Q&A**: LangGraph pipelines (Text2SQL / Excel+CSV+DuckDB)
+- **General Q&A / Deep Research**: DeepAgents + Skills (General Q&A additionally supports MCP external tools)
+
+**Core Capabilities**: General Q&A · Data Q&A (Text2SQL) · Spreadsheet Q&A · Deep Research · Data Visualization · Skill Mode · MCP Tools (General Q&A only)
 
 ## System Architecture
 
@@ -31,7 +34,7 @@ Aix-DB is built on the **LangChain/LangGraph** framework, combined with **MCP Sk
 - **Frontend Layer**: Web interface built with Vue 3 + TypeScript, integrated with ECharts and AntV visualization components
 - **API Gateway Layer**: Async API service based on FastAPI + Uvicorn, providing RESTful interfaces and JWT authentication
 - **Intelligent Service Layer**: Four agents (General Q&A / Data Q&A / Spreadsheet Q&A / Deep Research), routed by `qa_type`
-- **Data Storage Layer**: PostgreSQL metadata, multi-type business datasources, MinIO file storage; Neo4j optional (datasource relation visualization)
+- **Data Storage Layer**: PostgreSQL metadata (including table relations JSONB), multi-type business datasources; MinIO file storage (required for Spreadsheet Q&A)
 
 ## Supported Data Sources
 
@@ -51,6 +54,8 @@ Aix-DB is built on the **LangChain/LangGraph** framework, combined with **MCP Sk
   <img src="https://img.shields.io/badge/CSV-217346?style=for-the-badge&logo=files&logoColor=white" />
   <img src="https://img.shields.io/badge/Excel-217346?style=for-the-badge&logo=microsoft-excel&logoColor=white" />
 </p>
+
+> CSV / Excel are for **Spreadsheet Q&A** (file upload analysis), not SQL datasource types. The backend also supports Kingbase, AWS Redshift, and Elasticsearch (hidden in the UI by default).
 
 <p align="center">
   <img src="./docs/docs/images/architecture-flow.svg" alt="Data Q&A Workflow" width="100%" />
@@ -146,13 +151,15 @@ python serv.py
 
 Backend URL: http://localhost:8088
 
-**⑥ Start Frontend Dev Server** (in another terminal)
+**⑥ Start Frontend Dev Server** (in another terminal, requires Node.js >= 18.12)
 
 ```bash
 cd web
 npm install
 npm run dev
 ```
+
+> Spreadsheet Q&A and some Skill file features require MinIO: set `MINIO_ENABLED=true` in `.env` and run a MinIO service.
 
 ## CLI
 
@@ -171,17 +178,50 @@ See [aix-db-cli/README.md](./aix-db-cli/README.md) for details.
 
 ## Tech Stack
 
-**Backend**: FastAPI · Uvicorn · SQLAlchemy · LangChain/LangGraph · FAISS · MinIO
+**Backend**: FastAPI · Uvicorn · SQLAlchemy · LangChain/LangGraph · DeepAgents · FAISS · MinIO
 
-**Frontend**: Vue 3 · TypeScript · Vite 5 · Naive UI · ECharts · AntV
+**Frontend**: Vue 3 · TypeScript · Vite 6 · Naive UI · ECharts · AntV
 
 **AI Models**: OpenAI · Anthropic · DeepSeek · Qwen · Ollama
 
 ## Documentation
 
-- [Source Code Guide](./docs/docs/source-code-guide.md) (frontend-to-backend flow, Agent/RAG details)
-- [Configuration Guide](./docs/docs/index.md)
-- [API Documentation](http://localhost:8088/docs) (available after startup)
+Source files live in `docs/docs/` and are built with [MkDocs Material](https://squidfunk.github.io/mkdocs-material/) into a static site (`docs/site/`).
+
+| Document | Description |
+| --- | --- |
+| [Deployment & Development Guide](./docs/docs/deployment-guide.md) | Docker, local dev, env vars, FAQ |
+| [Source Code Guide](./docs/docs/source-code-guide.md) | Frontend-to-backend flow, Agent/RAG details |
+| [Configuration Guide](./docs/docs/index.md) | Post-deployment setup (models, datasources, MinIO, etc.) |
+| [API Documentation](http://localhost:8088/docs) | Backend Swagger (requires `python serv.py`) |
+
+### How to Read
+
+**① Read Markdown directly** (no build required)
+
+Open the `.md` files under `docs/docs/` in your IDE or on GitHub.
+
+**② Local preview** (recommended, with hot reload)
+
+```bash
+uv run mkdocs serve -f docs/mkdocs.yml
+```
+
+Open http://127.0.0.1:8000 in your browser.
+
+**③ Build static site**
+
+```bash
+uv run mkdocs build -f docs/mkdocs.yml
+```
+
+Output goes to `docs/site/`. Serve it with any static file server, for example:
+
+```bash
+cd docs/site && python3 -m http.server 8000
+```
+
+Then visit http://127.0.0.1:8000
 
 ## Contributing
 

@@ -149,23 +149,6 @@ export async function delete_datasource(id: number | string) {
 }
 
 /**
- * 获取 Neo4j 图数据库关系
- */
-export async function fetch_neo4j_relation(dsId: number | string) {
-  const userStore = useUserStore()
-  const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/getNeo4jRelation/${dsId}`)
-  const req = new Request(url, {
-    mode: 'cors',
-    method: 'post',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  })
-  return fetch(req)
-}
-
-/**
  * 检查数据源连接
  */
 export async function check_datasource_connection(data: any) {

@@ -286,12 +286,6 @@ class GetTableRelationResponse(BaseResponse):
     data: List[Dict[str, Any]] = Field(description="表关系列表")
 
 
-class GetNeo4jRelationResponse(BaseResponse):
-    """获取 Neo4j 关系响应"""
-
-    data: List[Dict[str, Any]] = Field(description="Neo4j 关系列表")
-
-
 class DatasourceAuthRequest(BaseModel):
     """数据源授权请求"""
 

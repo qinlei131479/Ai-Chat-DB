@@ -547,18 +547,6 @@ async def get_table_relation(request: Request, ds_id: int):
         raise MyException(SysCodeEnum.SYSTEM_ERROR, f"获取表关系失败: {str(e)}")
 
 
-@router.post("/getNeo4jRelation/{ds_id}")
-@async_json_resp
-async def get_neo4j_relation(request: Request, ds_id: int):
-    """获取 Neo4j 图数据库关系"""
-    try:
-        relation_data = DatasourceService.get_neo4j_relation(ds_id)
-        return relation_data or []
-    except Exception as e:
-        logger.error(f"获取 Neo4j 关系失败: {e}", exc_info=True)
-        raise MyException(SysCodeEnum.SYSTEM_ERROR, f"获取 Neo4j 关系失败: {str(e)}")
-
-
 @router.post("/getAuthorizedUsers/{datasource_id}")
 @async_json_resp
 async def get_authorized_users(request: Request, datasource_id: int):

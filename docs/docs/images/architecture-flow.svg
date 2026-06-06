@@ -80,7 +80,7 @@
   <g transform="translate(350, 180)" filter="url(#shadow)">
     <rect width="120" height="80" rx="12" fill="url(#ragGrad)"/>
     <text x="60" y="28" text-anchor="middle" font-family="system-ui" font-size="12" fill="#fff" font-weight="500">RAG 检索</text>
-    <text x="60" y="46" text-anchor="middle" font-family="system-ui" font-size="10" fill="rgba(255,255,255,0.9)">Embedding + BM25</text>
+    <text x="60" y="46" text-anchor="middle" font-family="system-ui" font-size="10" fill="rgba(255,255,255,0.9)">BM25 + FAISS</text>
     <text x="60" y="61" text-anchor="middle" font-family="system-ui" font-size="10" fill="rgba(255,255,255,0.9)">术语/样本库</text>
   </g>
 

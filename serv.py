@@ -59,6 +59,15 @@ async def lifespan(app: FastAPI):
             "ℹ️ [SERV] MinIO is disabled (MINIO_ENABLED=false), skipping initialization."
         )
 
+    from services.user_service import init_super_admin
+
+    try:
+        await init_super_admin()
+    except Exception as e:
+        logging.getLogger(__name__).warning(
+            "⚠️ [SERV] Super admin initialization skipped: %s", e
+        )
+
     yield
 
 

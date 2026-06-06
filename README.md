@@ -16,9 +16,12 @@
 
 ## 项目介绍
 
-Aix-DB 基于 **LangChain/LangGraph** 框架，结合 **MCP Skills** 多智能体协作架构，实现自然语言到数据洞察的端到端转换。
+Aix-DB 采用**四套独立 Agent** 架构，按 `qa_type` 路由到不同引擎，实现自然语言到数据洞察的端到端转换：
 
-**核心能力**：智能问答 · 数据问答（Text2SQL） · 表格问答 · 深度问数 · 数据可视化 · MCP 多智能体 · Skill 模式
+- **数据问答 / 表格问答**：LangGraph 流水线（Text2SQL / Excel+CSV+DuckDB）
+- **智能问答 / 深度问数**：DeepAgents + Skills（智能问答额外支持 MCP 外部工具）
+
+**核心能力**：智能问答 · 数据问答（Text2SQL） · 表格问答 · 深度问数 · 数据可视化 · Skill 模式 · MCP 工具（仅智能问答）
 
 ## 系统架构
 
@@ -31,7 +34,7 @@ Aix-DB 基于 **LangChain/LangGraph** 框架，结合 **MCP Skills** 多智能�
 - **前端层**：Vue 3 + TypeScript 构建的 Web 界面，集成 ECharts 和 AntV 可视化组件
 - **API 网关层**：基于 FastAPI + Uvicorn 的异步 API 服务，提供 RESTful 接口和 JWT 认证
 - **智能服务层**：四套 Agent（智能问答 / 数据问答 / 表格问答 / 深度问数），按 `qa_type` 路由
-- **数据存储层**：PostgreSQL 元数据、多类型业务数据源、MinIO 文件存储；Neo4j 可选（数据源关系可视化）
+- **数据存储层**：PostgreSQL 元数据（含表关系 JSONB）、多类型业务数据源；MinIO 文件存储（表格问答必需）
 
 ## 支持的数据源
 
@@ -51,6 +54,8 @@ Aix-DB 基于 **LangChain/LangGraph** 框架，结合 **MCP Skills** 多智能�
   <img src="https://img.shields.io/badge/CSV-217346?style=for-the-badge&logo=files&logoColor=white" />
   <img src="https://img.shields.io/badge/Excel-217346?style=for-the-badge&logo=microsoft-excel&logoColor=white" />
 </p>
+
+> CSV / Excel 用于**表格问答**（上传文件分析），不是 SQL 数据源类型。后端还支持 Kingbase、AWS Redshift、Elasticsearch（管理界面默认隐藏，可在代码中启用）。
 
 <p align="center">
   <img src="./docs/docs/images/architecture-flow.svg" alt="数据问答核心流程" width="100%" />
@@ -152,13 +157,15 @@ Windows PowerShell：
 $env:PYTHONUTF8=1; python serv.py
 ```
 
-**⑥ 启动前端开发服务器**（另开终端）
+**⑥ 启动前端开发服务器**（另开终端，需 Node.js >= 18.12）
 
 ```bash
 cd web
 npm install
 npm run dev
 ```
+
+> 表格问答、部分 Skill 文件能力需启用 MinIO：在 `.env` 中设置 `MINIO_ENABLED=true` 并启动 MinIO 服务。
 
 ## 命令行工具（CLI）
 
@@ -177,17 +184,50 @@ aix-db-cli chat "查询销售额趋势" --datasource 48 --stream
 
 ## 技术栈
 
-**后端**：FastAPI · Uvicorn · SQLAlchemy · LangChain/LangGraph · FAISS · MinIO
+**后端**：FastAPI · Uvicorn · SQLAlchemy · LangChain/LangGraph · DeepAgents · FAISS · MinIO
 
-**前端**：Vue 3 · TypeScript · Vite 5 · Naive UI · ECharts · AntV
+**前端**：Vue 3 · TypeScript · Vite 6 · Naive UI · ECharts · AntV
 
 **AI 模型**：OpenAI · Anthropic · DeepSeek · Qwen · Ollama
 
 ## 文档
 
-- [源码理解指南](./docs/docs/source-code-guide.md)（前后端链路与 Agent/RAG 说明）
-- [配置指南](./docs/docs/index.md)
-- [API 文档](http://localhost:8088/docs)（启动后可用）
+文档源文件位于 `docs/docs/`，使用 [MkDocs Material](https://squidfunk.github.io/mkdocs-material/) 构建为静态站点（输出目录 `docs/site/`）。
+
+| 文档 | 说明 |
+| --- | --- |
+| [部署与开发指南](./docs/docs/deployment-guide.md) | Docker 部署、本地开发、环境变量、FAQ |
+| [源码理解指南](./docs/docs/source-code-guide.md) | 前后端链路与 Agent/RAG 说明 |
+| [配置指南](./docs/docs/index.md) | 部署后系统配置（模型、数据源、MinIO 等） |
+| [API 文档](http://localhost:8088/docs) | 后端 Swagger（需先启动 `python serv.py`） |
+
+### 阅读方式
+
+**① 直接阅读 Markdown**（无需构建）
+
+在 IDE 或 GitHub 中打开 `docs/docs/` 下对应 `.md` 文件即可。
+
+**② 本地预览站点**（推荐，支持热更新）
+
+```bash
+uv run mkdocs serve -f docs/mkdocs.yml
+```
+
+浏览器访问 http://127.0.0.1:8000
+
+**③ 构建静态站点**
+
+```bash
+uv run mkdocs build -f docs/mkdocs.yml
+```
+
+构建产物在 `docs/site/`，可用任意静态服务器托管，例如：
+
+```bash
+cd docs/site && python3 -m http.server 8000
+```
+
+然后访问 http://127.0.0.1:8000
 
 ## 贡献指南
 

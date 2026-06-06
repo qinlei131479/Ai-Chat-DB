@@ -177,12 +177,12 @@
       <text x="80" y="58" text-anchor="middle" font-family="system-ui" font-size="9" fill="rgba(255,255,255,0.9)">pgvector</text>
     </g>
 
-    <!-- 图数据库 -->
+    <!-- 表关系元数据 -->
     <g transform="translate(440, 40)" filter="url(#shadow)">
       <rect width="160" height="75" rx="10" fill="url(#graphGrad)"/>
-      <text x="80" y="22" text-anchor="middle" font-family="system-ui" font-size="12" fill="#fff" font-weight="600">图数据库</text>
-      <text x="80" y="42" text-anchor="middle" font-family="system-ui" font-size="9" fill="rgba(255,255,255,0.9)">Neo4j</text>
-      <text x="80" y="58" text-anchor="middle" font-family="system-ui" font-size="9" fill="rgba(255,255,255,0.9)">实体关系图谱</text>
+      <text x="80" y="22" text-anchor="middle" font-family="system-ui" font-size="12" fill="#fff" font-weight="600">表关系元数据</text>
+      <text x="80" y="42" text-anchor="middle" font-family="system-ui" font-size="9" fill="rgba(255,255,255,0.9)">PostgreSQL JSONB</text>
+      <text x="80" y="58" text-anchor="middle" font-family="system-ui" font-size="9" fill="rgba(255,255,255,0.9)">ER 图 / 血缘关系</text>
     </g>
 
     <!-- 文件存储 -->

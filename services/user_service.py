@@ -619,10 +619,10 @@ async def add_user(username, password, mobile, role="user"):
 
 
 async def init_super_admin():
-    """初始化超级管理员"""
+    """初始化超级管理员（本地开发无 init_sql.sql 时创建默认账号）"""
     admin_name = "admin"
-    # 默认密码，实际应从配置读取或更安全的方式
-    admin_pass = "admin123" 
+    # 与 docker/init_sql.sql 及 README 默认密码保持一致
+    admin_pass = "123456" 
     try:
         with pool.get_session() as session:
             # 检查是否存在 admin 角色或名为 admin 的用户

@@ -9,10 +9,12 @@
 - [配置说明](#配置说明)
   - [目录](#目录)
   - [源码理解指南](./source-code-guide.md)
+  - [部署与开发指南](./deployment-guide.md)
   - [系统设置](#系统设置)
     - [第一步：配置大模型](#第一步配置大模型)
     - [第二步：配置数据源](#第二步配置数据源)
-    - [第三步：配置全链路监控（可选）](#第三步配置全链路监控可选)
+    - [第三步：配置文件存储（表格问答需要）](#第三步配置文件存储表格问答需要)
+    - [第四步：配置全链路监控（可选）](#第四步配置全链路监控可选)
       - [安装 Langfuse](#安装-langfuse)
       - [配置 Aix-DB](#配置-aix-db)
   - [下一步](#下一步)
@@ -68,6 +70,8 @@
 | Apache Doris | 实时分析数据库       |
 | 达梦 DM      | 国产数据库           |
 
+> 后端还支持 Kingbase、AWS Redshift、Elasticsearch（管理界面默认隐藏）。CSV / Excel 用于**表格问答**文件上传，不是 SQL 数据源。
+
 **配置步骤：**
 
 1. 点击右上角 **+ 新建数据源**
@@ -82,7 +86,22 @@
 
 
 
-### 第三步：配置全链路监控（可选）
+### 第三步：配置文件存储（表格问答需要）
+
+表格问答（`FILEDATA_QA`）和部分 Skill 文件能力依赖 MinIO。本地开发默认 `MINIO_ENABLED=false`，使用表格问答时需：
+
+```bash
+MINIO_ENABLED=true
+MINIO_ENDPOINT=127.0.0.1:9000
+MINIO_ACCESS_KEY=admin
+MINIO_SECRET_KEY=admin123
+```
+
+Docker 部署已内置 MinIO（API 端口 `9000`，控制台 `9001`）。
+
+> 数据源表关系在管理界面 ER 图中编辑，保存到 PostgreSQL `t_datasource.table_relation`（JSONB），供 Text2SQL 和深度问数使用。
+
+### 第四步：配置全链路监控（可选）
 
 Aix-DB 支持 [Langfuse](https://langfuse.com/) 进行 LLM 调用的全链路监控和追踪。
 
