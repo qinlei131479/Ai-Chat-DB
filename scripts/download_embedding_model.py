@@ -38,6 +38,54 @@ DOWNLOAD_IGNORE_PATTERNS = [
 ]
 
 
+def resolve_path(path_str: str) -> Path:
+    """相对路径一律基于项目根目录解析，避免从 scripts/ 执行时落到错误位置。"""
+    path = Path(path_str)
+    if not path.is_absolute():
+        path = ROOT / path
+    return path.resolve()
+
+
+def resolve_models_dir() -> Path:
+    return resolve_path(os.getenv("LOCAL_MODEL_PATH", "models"))
+
+
+def resolve_cache_dir(models_dir: Path) -> Path:
+    cache_env = os.getenv("HF_CACHE_DIR")
+    if cache_env:
+        return resolve_path(cache_env)
+    return (models_dir / "hf_cache").resolve()
+
+
+def migrate_misplaced_models(models_dir: Path) -> None:
+    """将误下载到 scripts/models 的缓存迁移到项目 models/ 目录。"""
+    misplaced = ROOT / "scripts" / "models"
+    if not misplaced.exists() or misplaced.resolve() == models_dir.resolve():
+        return
+
+    target_cache = models_dir / "hf_cache"
+    source_cache = misplaced / "hf_cache"
+
+    if source_cache.exists():
+        models_dir.mkdir(parents=True, exist_ok=True)
+        if target_cache.exists():
+            print(f"Merging misplaced cache: {source_cache} -> {target_cache}")
+            for item in source_cache.iterdir():
+                dest = target_cache / item.name
+                if dest.exists():
+                    if dest.is_dir():
+                        shutil.rmtree(dest)
+                    else:
+                        dest.unlink()
+                shutil.move(str(item), str(dest))
+        else:
+            shutil.move(str(source_cache), str(target_cache))
+            print(f"Moved cache: {source_cache} -> {target_cache}")
+
+    shutil.rmtree(misplaced)
+    print(f"Removed misplaced directory: {misplaced}")
+
+
 def _model_paths(model_id: str, models_dir: Path, cache_dir: Path) -> tuple[str, Path, Path]:
     hf_name = f"models--{model_id.replace('/', '--')}"
     return hf_name, cache_dir / hf_name, models_dir / hf_name
@@ -146,9 +194,10 @@ def download_model(model_id: str, cache_dir: Path) -> str:
 
 def run_cleanup(model_id: str, models_dir: Path, cache_dir: Path) -> None:
     print("=== Cleanup embedding model files ===")
+    migrate_misplaced_models(models_dir)
     remove_legacy_hf_caches()
-    remove_bundled_lfs_placeholders(models_dir.resolve(), model_id)
-    prune_hf_cache(cache_dir.resolve(), model_id)
+    remove_bundled_lfs_placeholders(models_dir, model_id)
+    prune_hf_cache(cache_dir, model_id)
 
 
 def main() -> int:
@@ -166,8 +215,10 @@ def main() -> int:
     args = parser.parse_args()
 
     model_id = os.getenv("DEFAULT_EMBEDDING_MODEL", "shibing624/text2vec-base-chinese")
-    models_dir = Path(os.getenv("LOCAL_MODEL_PATH", "./models"))
-    cache_dir = Path(os.getenv("HF_CACHE_DIR", models_dir / "hf_cache"))
+    models_dir = resolve_models_dir()
+    cache_dir = resolve_cache_dir(models_dir)
+    print(f"Models directory: {models_dir}")
+    print(f"Cache directory:  {cache_dir}")
 
     run_cleanup(model_id, models_dir, cache_dir)
 
@@ -175,7 +226,7 @@ def main() -> int:
         return 0
 
     download_model(model_id, cache_dir)
-    prune_hf_cache(cache_dir.resolve(), model_id)
+    prune_hf_cache(cache_dir, model_id)
     return 0
 
 

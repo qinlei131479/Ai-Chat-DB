@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import threading
+from pathlib import Path
 from typing import List, Optional
 
 logger = logging.getLogger(__name__)
@@ -15,20 +16,32 @@ logger = logging.getLogger(__name__)
 _lock = threading.Lock()
 _embedding_model: Optional[object] = None
 
-# 默认模型配置
-DEFAULT_LOCAL_MODEL_PATH = os.getenv("LOCAL_MODEL_PATH", "./models")
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_EMBEDDING_MODEL_ID = os.getenv(
     "DEFAULT_EMBEDDING_MODEL", "shibing624/text2vec-base-chinese"
 )
 LFS_POINTER_PREFIX = "version https://git-lfs.github.com/spec/v1"
 
 
+def _resolve_project_path(path_str: str) -> str:
+    """相对路径基于项目根目录解析，与 download_embedding_model.py 保持一致。"""
+    path = Path(path_str)
+    if not path.is_absolute():
+        path = _PROJECT_ROOT / path
+    return str(path.resolve())
+
+
+def _get_local_model_path_root() -> str:
+    return _resolve_project_path(os.getenv("LOCAL_MODEL_PATH", "models"))
+
+
 def _get_hf_cache_dir() -> str:
     """HuggingFace 可写缓存目录（本地开发 / 容器均适用）"""
-    cache_dir = os.getenv(
-        "HF_CACHE_DIR",
-        os.path.join(DEFAULT_LOCAL_MODEL_PATH, "hf_cache"),
-    )
+    cache_env = os.getenv("HF_CACHE_DIR")
+    if cache_env:
+        cache_dir = _resolve_project_path(cache_env)
+    else:
+        cache_dir = os.path.join(_get_local_model_path_root(), "hf_cache")
     os.makedirs(cache_dir, exist_ok=True)
     return cache_dir
 
@@ -108,7 +121,7 @@ def _get_local_model_path():
 
     # 2. 检查自定义路径: models/embedding/shibing624_text2vec-base-chinese/
     custom_name = model_id.replace("/", "_")
-    custom_path = os.path.join(DEFAULT_LOCAL_MODEL_PATH, "embedding", custom_name)
+    custom_path = os.path.join(_get_local_model_path_root(), "embedding", custom_name)
     if os.path.exists(custom_path):
         return custom_path
 
