@@ -9,7 +9,7 @@ When in plan mode, always write plan files to the project directory `.claude/pla
 ## Build & Run Commands
 
 ```bash
-# Backend - start dev server (Sanic on port 8088)
+# Backend - start dev server (FastAPI + Uvicorn on port 8088)
 python serv.py
 
 # Backend - install dependencies
@@ -37,10 +37,10 @@ python -m pytest tests/<subdir>/<test_file>.py
 
 **Aix-DB** is an LLM-powered data analysis platform (ChatBI). Users ask questions in natural language; the system generates SQL, executes it, and returns visualized results.
 
-### Backend (Python 3.12, Sanic)
+### Backend (Python 3.12, FastAPI + Uvicorn)
 
 ```
-serv.py                          # Entry point - Sanic app, autodiscovers controllers
+serv.py                          # Entry point - FastAPI app, autodiscovers APIRouter
 ├── controllers/                 # REST API blueprints (auto-registered via autodiscover)
 │   ├── llm_chat_api.py         # Main chat endpoint: POST /dify/get_answer (SSE streaming)
 │   ├── db_chat_api.py          # Database Q&A endpoints

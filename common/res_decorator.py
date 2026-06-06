@@ -7,81 +7,62 @@ from functools import wraps
 
 import numpy as np
 from pydantic import BaseModel
-from sanic import response
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from common.exception import MyException
 from constants.code_enum import SysCodeEnum
 
 
 class CustomJSONEncoder(json.JSONEncoder):
-    """
-    自定义的 JSON 编码器，用于处理日期类型、numpy 数组等
-    """
+    """自定义 JSON 编码器，处理日期、numpy 等特殊类型"""
 
     def default(self, obj):
-        """
-
-        :param obj:
-        :return:
-        """
         if isinstance(obj, date):
-            # 处理 date 类型
             return obj.strftime("%Y-%m-%d")
-        elif isinstance(obj, Decimal):
-            # 将 Decimal 转换为 float 或字符串
-            return float(obj)  # 或者 str(obj) 保留精度
-        elif isinstance(obj, datetime):
-            # 处理 datetime 类型
+        if isinstance(obj, Decimal):
+            return float(obj)
+        if isinstance(obj, datetime):
             return obj.strftime("%Y-%m-%d %H:%M:%S")
-        elif isinstance(obj, bytes):
-            # 处理 bytes 类型（SQL Server 等数据库可能返回 bytes）
+        if isinstance(obj, bytes):
             try:
-                return obj.decode('utf-8')
+                return obj.decode("utf-8")
             except UnicodeDecodeError:
-                # 如果 UTF-8 解码失败，尝试其他编码或返回空字符串
                 try:
-                    return obj.decode('latin-1')
-                except:
+                    return obj.decode("latin-1")
+                except Exception:
                     return ""
-        elif isinstance(obj, BaseModel):
-            # 处理 Pydantic 模型
+        if isinstance(obj, BaseModel):
             return obj.model_dump()
-        elif isinstance(obj, (np.ndarray, np.generic)):
-            # 处理 numpy 数组和标量
-            # 对于 embedding 字段，通常不需要返回给前端，返回 None
-            # 如果需要返回，可以转换为列表：return obj.tolist()
+        if isinstance(obj, (np.ndarray, np.generic)):
             return None
-        elif hasattr(obj, 'tolist'):
-            # 处理其他可以转换为列表的对象（如 numpy 数组）
+        if hasattr(obj, "tolist"):
             return obj.tolist()
         return super().default(obj)
 
 
+def _json_response(body: dict) -> JSONResponse:
+    return JSONResponse(
+        content=json.loads(CustomJSONEncoder().encode(body)),
+    )
+
+
 def async_json_resp(func):
-    """
-    Decorator for asynchronous json response
-    """
+    """异步 JSON 响应装饰器，统一 {code, msg, data} 信封"""
 
     @wraps(func)
-    async def http_res_wrapper(request, *args, **kwargs):
-        """
-        :param request:
-        :param args:
-        :param kwargs:
-        :return:
-        """
-     
+    async def http_res_wrapper(request: Request, *args, **kwargs):
         data = None
-        # 获取请求方法和参数
         method = request.method
-        path = request.path
-        params = request.args
-        content_type = request.content_type
-        content_types = ["application/json"]
-        if content_type in content_types:
-            json_body = request.json if request.json else {}
-        else:
-            json_body = ""
+        path = request.url.path
+        params = dict(request.query_params)
+        content_type = request.headers.get("content-type", "")
+        json_body = ""
+        if "application/json" in content_type:
+            try:
+                json_body = await request.json()
+            except Exception:
+                json_body = {}
 
         try:
             data = await func(request, *args, **kwargs)
@@ -90,16 +71,15 @@ def async_json_resp(func):
                 "msg": SysCodeEnum.c_200.value[1],
                 "data": data,
             }
-            res = response.json(body, dumps=CustomJSONEncoder().encode)
-
-            # 验证日志配置
-            root_logger = logging.getLogger()
             logging.info(
-                "Request Path: %s, Method: %s, Params: %s, JSON Body: %s, Response: %s [root logger level: %s, handlers: %d]",
-                path, method, params, json_body, body, root_logger.level, len(root_logger.handlers)
+                "Request Path: %s, Method: %s, Params: %s, JSON Body: %s, Response: %s",
+                path,
+                method,
+                params,
+                json_body,
+                body,
             )
-
-            return res
+            return _json_response(body)
 
         except MyException as e:
             body = {
@@ -107,16 +87,15 @@ def async_json_resp(func):
                 "msg": e.message,
                 "data": data,
             }
-
-            res = response.json(body, dumps=CustomJSONEncoder().encode)
-
-            # 验证日志配置
-            root_logger = logging.getLogger()
             logging.info(
-                "Request Path: %s, Method: %s, Params: %s, JSON Body: %s, Response: %s [root logger level: %s, handlers: %d]",
-                path, method, params, json_body, body, root_logger.level, len(root_logger.handlers)
+                "Request Path: %s, Method: %s, Params: %s, JSON Body: %s, Response: %s",
+                path,
+                method,
+                params,
+                json_body,
+                body,
             )
-            return res
+            return _json_response(body)
 
         except Exception as e:
             body = {
@@ -124,16 +103,15 @@ def async_json_resp(func):
                 "msg": SysCodeEnum.c_9999.value[1],
                 "data": data,
             }
-            res = response.json(body, dumps=CustomJSONEncoder().encode)
-
-            # 验证日志配置
-            root_logger = logging.getLogger()
             logging.info(
-                "Request Path: %s, Method: %s, Params: %s, JSON Body: %s, Response: %s [root logger level: %s, handlers: %d]",
-                path, method, params, json_body, body, root_logger.level, len(root_logger.handlers)
+                "Request Path: %s, Method: %s, Params: %s, JSON Body: %s, Response: %s",
+                path,
+                method,
+                params,
+                json_body,
+                body,
             )
-
             traceback.print_exception(e)
-            return res
+            return _json_response(body)
 
     return http_res_wrapper

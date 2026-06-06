@@ -14,7 +14,6 @@ import pymupdf4llm
 import requests
 from docx import Document
 from minio import Minio, S3Error
-from sanic import Request
 
 from common.exception import MyException
 from constants.code_enum import SysCodeEnum as SysCode
@@ -82,28 +81,23 @@ class MinioUtils:
             logger.error(f"Error checking or creating bucket {bucket_name}: {err}")
             raise MyException(SysCode.c_9999)
 
-    def upload_file_from_request(
-        self, request: Request, bucket_name: str = "filedata", object_name: str = None
+    def upload_bytes(
+        self,
+        body: bytes,
+        filename: str,
+        content_type: str,
+        bucket_name: str = "filedata",
+        object_name: str | None = None,
     ) -> dict:
-        """
-        从请求中读取文件数据并上传到MinIO服务器，返回预签名URL。
-
-        参数:
-        - request: Sanic请求对象
-        - bucket_name: 存储桶名称
-        返回:
-        - 包含object_key的字典
-        """
+        """上传字节数据到 MinIO"""
         try:
-            file_data = request.files.get("file")
-            if not file_data:
+            if not body:
                 raise MyException(SysCode.c_9999, "未找到文件数据")
 
-            file_stream = io.BytesIO(file_data.body)
-            file_length = len(file_data.body)
+            file_stream = io.BytesIO(body)
+            file_length = len(body)
             if object_name is None:
-                # uuid可以避免不同用户上传同名文件 导致minio的文件被覆盖
-                object_name = f"{uuid4()}__{file_data.name}"
+                object_name = f"{uuid4()}__{filename}"
 
             self.ensure_bucket(bucket_name)
             self.client.put_object(
@@ -111,15 +105,29 @@ class MinioUtils:
                 object_name=object_name,
                 data=file_stream,
                 length=file_length,
-                content_type=file_data.type,
+                content_type=content_type or "application/octet-stream",
             )
             logger.info(f"File successfully uploaded as {object_name}.")
-
             return {"object_key": object_name}
+        except MyException:
+            raise
         except Exception as err:
-            logger.error(f"Error uploading file from request: {err}")
+            logger.error(f"Error uploading file bytes: {err}")
             traceback.print_exception(err)
             raise MyException(SysCode.c_9999)
+
+    async def upload_file_from_upload(
+        self, upload_file, bucket_name: str = "filedata", object_name: str | None = None
+    ) -> dict:
+        """从 FastAPI UploadFile 上传到 MinIO"""
+        body = await upload_file.read()
+        return self.upload_bytes(
+            body,
+            upload_file.filename or "file",
+            upload_file.content_type or "application/octet-stream",
+            bucket_name,
+            object_name,
+        )
 
     def upload_to_minio_form_stream(
         self,
@@ -186,35 +194,29 @@ class MinioUtils:
             traceback.print_exception(err)
             raise MyException(SysCode.c_9999)
 
-    def upload_file_and_parse_from_request(
-        self, request: Request, bucket_name: str = "filedata"
+    async def upload_file_and_parse_from_upload(
+        self, upload_file, bucket_name: str = "filedata"
     ) -> dict:
-        """
-        上传文件并解析文件内容，返回文件内容key。
-
-        参数:
-        - request: Sanic请求对象
-        - bucket_name: 存储桶名称
-        返回:
-        - 文件内容key
-        """
+        """从 FastAPI UploadFile 上传并解析文件内容"""
 
         try:
-            file_data = request.files.get("file")
-            if not file_data:
+            body = await upload_file.read()
+            if not body:
                 raise MyException(SysCode.c_9999, "未找到文件数据")
 
-            content = io.BytesIO(file_data.body)
-            # uuid可以避免不同用户上传同名文件 导致minio的文件被覆盖
-            object_name = f"{uuid4()}__{file_data.name}"
-            mime_type = file_data.type
+            content = io.BytesIO(body)
+            object_name = f"{uuid4()}__{upload_file.filename or 'file'}"
+            mime_type = upload_file.content_type or "application/octet-stream"
             file_suffix = ".txt"
-            # 可选：添加文件大小限制（例如 50MB）
-            if len(file_data.body) > 50 * 1024 * 1024:
+            if len(body) > 50 * 1024 * 1024:
                 raise MyException(SysCode.c_9999, "文件大小超出限制")
 
-            source_file_key = self.upload_file_from_request(
-                request, bucket_name, object_name
+            source_file_key = self.upload_bytes(
+                body,
+                upload_file.filename or "file",
+                mime_type,
+                bucket_name,
+                object_name,
             )
 
             # 校验 MIME 类型是否支持（增强安全性）
@@ -231,7 +233,7 @@ class MinioUtils:
             }
 
             # 获取文件大小
-            file_size = len(file_data.body)
+            file_size = len(body)
 
             if mime_type not in allowed_mimes:
                 raise ValueError("不支持的文件格式")

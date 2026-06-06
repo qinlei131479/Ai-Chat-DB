@@ -74,7 +74,7 @@ RUN set -eux; \
     uv sync --frozen --no-cache --no-install-project \
         --index-url https://mirrors.aliyun.com/pypi/simple && \
     # 验证关键依赖安装成功
-    python -c "import sanic; print(f'sanic {sanic.__version__} installed')"
+    python -c "import fastapi; print(f'fastapi {fastapi.__version__} installed')"
 
 # 清理缓存和构建工具
 RUN find .venv -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null; \

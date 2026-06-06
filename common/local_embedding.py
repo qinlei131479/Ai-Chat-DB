@@ -3,6 +3,7 @@
 当没有配置在线 embedding 模型时，使用本地 CPU 模式模型作为回退
 """
 
+import json
 import logging
 import os
 import threading
@@ -19,41 +20,149 @@ DEFAULT_LOCAL_MODEL_PATH = os.getenv("LOCAL_MODEL_PATH", "./models")
 DEFAULT_EMBEDDING_MODEL_ID = os.getenv(
     "DEFAULT_EMBEDDING_MODEL", "shibing624/text2vec-base-chinese"
 )
+LFS_POINTER_PREFIX = "version https://git-lfs.github.com/spec/v1"
+
+
+def _get_hf_cache_dir() -> str:
+    """HuggingFace 可写缓存目录（本地开发 / 容器均适用）"""
+    cache_dir = os.getenv(
+        "HF_CACHE_DIR",
+        os.path.join(DEFAULT_LOCAL_MODEL_PATH, "hf_cache"),
+    )
+    os.makedirs(cache_dir, exist_ok=True)
+    return cache_dir
+
+
+def _configure_hf_env(cache_dir: str, offline: bool) -> None:
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
+    os.environ["HF_HOME"] = cache_dir
+    os.environ["HF_HUB_CACHE"] = cache_dir
+    os.environ["TRANSFORMERS_CACHE"] = cache_dir
+    os.environ["SENTENCE_TRANSFORMERS_HOME"] = cache_dir
+    if offline:
+        os.environ["HF_HUB_OFFLINE"] = "1"
+    else:
+        os.environ.pop("HF_HUB_OFFLINE", None)
+
+
+def _is_lfs_pointer(file_path: str) -> bool:
+    try:
+        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            return f.readline().strip() == LFS_POINTER_PREFIX
+    except OSError:
+        return True
+
+
+def _is_valid_local_model_dir(path: str) -> bool:
+    """校验目录是否为可加载的完整模型（非 Git LFS 指针占位）"""
+    if not path or not os.path.isdir(path):
+        return False
+
+    modules_json = os.path.join(path, "modules.json")
+    config_json = os.path.join(path, "config.json")
+    marker = modules_json if os.path.exists(modules_json) else config_json
+    if not os.path.exists(marker):
+        return False
+    if _is_lfs_pointer(marker):
+        return False
+    try:
+        with open(marker, encoding="utf-8") as f:
+            json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return False
+
+    for weight in ("model.safetensors", "pytorch_model.bin"):
+        wpath = os.path.join(path, weight)
+        if os.path.exists(wpath) and _is_lfs_pointer(wpath):
+            return False
+    return True
 
 
 # 模型会下载到: {LOCAL_MODEL_PATH}/embedding/{model_name}/ 或标准 HuggingFace 缓存目录
+def _get_snapshot_path(cache_root: str, model_id: str) -> Optional[str]:
+    """从 HuggingFace 缓存根目录解析 snapshot 路径"""
+    hf_cache_name = model_id.replace("/", "--")
+    hf_cache_path = os.path.join(cache_root, f"models--{hf_cache_name}")
+    if not os.path.exists(hf_cache_path):
+        return None
+    snapshots_dir = os.path.join(hf_cache_path, "snapshots")
+    if os.path.exists(snapshots_dir):
+        snapshots = [
+            d
+            for d in os.listdir(snapshots_dir)
+            if os.path.isdir(os.path.join(snapshots_dir, d))
+        ]
+        if snapshots:
+            return os.path.join(snapshots_dir, snapshots[0])
+    return hf_cache_path
+
+
 def _get_local_model_path():
     """获取本地模型路径，支持多种路径格式"""
     model_id = DEFAULT_EMBEDDING_MODEL_ID
 
-    # 1. 检查 HuggingFace 标准缓存目录结构: models/models--namespace--name/
-    hf_cache_name = model_id.replace(
-        "/", "--"
-    )  # shibing624/text2vec-base-chinese -> shibing624--text2vec-base-chinese
-    hf_cache_path = os.path.join(DEFAULT_LOCAL_MODEL_PATH, f"models--{hf_cache_name}")
-    if os.path.exists(hf_cache_path):
-        # 查找 snapshots 目录下的实际模型路径
-        snapshots_dir = os.path.join(hf_cache_path, "snapshots")
-        if os.path.exists(snapshots_dir):
-            # 获取第一个快照目录
-            snapshots = [
-                d
-                for d in os.listdir(snapshots_dir)
-                if os.path.isdir(os.path.join(snapshots_dir, d))
-            ]
-            if snapshots:
-                return os.path.join(snapshots_dir, snapshots[0])
-        return hf_cache_path
+    # 1. 优先检查可写缓存目录（download 脚本写入位置）
+    hf_cache_snapshot = _get_snapshot_path(_get_hf_cache_dir(), model_id)
+    if hf_cache_snapshot:
+        return hf_cache_snapshot
 
-    # 2. 检查自定义路径: models/embedding/shibing624_text2vec-base-chinese/
-    custom_name = model_id.replace(
-        "/", "_"
-    )  # shibing624/text2vec-base-chinese -> shibing624_text2vec-base-chinese
+    # 2. 检查仓库内预置目录: models/models--namespace--name/
+    bundled_snapshot = _get_snapshot_path(DEFAULT_LOCAL_MODEL_PATH, model_id)
+    if bundled_snapshot:
+        return bundled_snapshot
+
+    # 3. 检查自定义路径: models/embedding/shibing624_text2vec-base-chinese/
+    custom_name = model_id.replace("/", "_")
     custom_path = os.path.join(DEFAULT_LOCAL_MODEL_PATH, "embedding", custom_name)
     if os.path.exists(custom_path):
         return custom_path
 
-    # 3. 如果都找不到，返回 None（让 HuggingFace 使用模型 ID）
+    return None
+
+
+def _download_embedding_model(model_id: str, cache_dir: str) -> Optional[str]:
+    """从 HuggingFace Hub 下载完整模型到可写缓存目录"""
+    try:
+        from huggingface_hub import snapshot_download
+
+        logger.info(
+            "Downloading embedding model '%s' to cache dir: %s", model_id, cache_dir
+        )
+        return snapshot_download(
+            repo_id=model_id,
+            cache_dir=cache_dir,
+            local_files_only=False,
+        )
+    except Exception as e:
+        logger.error(
+            "Failed to download embedding model '%s': %s. "
+            "If the repo uses Git LFS placeholders, run: "
+            "uv run python scripts/download_embedding_model.py",
+            model_id,
+            e,
+        )
+        return None
+
+
+def _resolve_model_name(model_id: str, cache_dir: str) -> Optional[str]:
+    """解析最终可用的模型路径或模型 ID"""
+    local_model_path = _get_local_model_path()
+    if local_model_path and _is_valid_local_model_dir(local_model_path):
+        logger.info("Using local model path: %s", local_model_path)
+        return local_model_path
+
+    if local_model_path:
+        logger.warning(
+            "Local embedding model at '%s' is incomplete (Git LFS pointer files detected). "
+            "Will download the full model from HuggingFace Hub.",
+            local_model_path,
+        )
+
+    downloaded_path = _download_embedding_model(model_id, cache_dir)
+    if downloaded_path and _is_valid_local_model_dir(downloaded_path):
+        logger.info("Using downloaded model path: %s", downloaded_path)
+        return downloaded_path
+
     return None
 
 
@@ -70,53 +179,19 @@ def _get_local_embedding_model():
         return _embedding_model
 
     with _lock:
-        # 双重检查锁定
         if _embedding_model is not None:
             return _embedding_model
 
         try:
-            # 设置环境变量，避免 tokenizers 并行警告
-            os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
-            # 禁用 HuggingFace Hub 连接，避免网络不可达时的连接错误
-            # 使用离线模式，仅使用本地缓存的模型
-            os.environ["HF_HUB_OFFLINE"] = "1"
-            logger.debug("Set HF_HUB_OFFLINE=1 to disable HuggingFace Hub connections")
-
-            # 设置 HuggingFace 缓存目录到可写位置，避免在只读文件系统中写入错误
-            # 固定使用 /tmp/huggingface_cache 作为缓存目录（容器内可写）
-            cache_dir = "/tmp/huggingface_cache"
-            os.environ["HF_HOME"] = cache_dir
-            os.environ["HF_HUB_CACHE"] = cache_dir  # 设置 Hub 缓存目录
-            os.environ["TRANSFORMERS_CACHE"] = cache_dir
-            os.environ["SENTENCE_TRANSFORMERS_HOME"] = (
-                cache_dir  # Sentence Transformers 缓存目录
-            )
-            # 确保缓存目录存在
-            os.makedirs(cache_dir, exist_ok=True)
-            logger.debug(f"Set HuggingFace cache directory to: {cache_dir}")
-
-            # 优先使用本地路径，如果不存在则使用模型 ID（会自动下载）
-            local_model_path = _get_local_model_path()
-            # 将 cache_folder 设置为可写目录，避免在只读模型目录中写入缓存文件
-            cache_folder = cache_dir
+            cache_dir = _get_hf_cache_dir()
             model_id = DEFAULT_EMBEDDING_MODEL_ID
+            model_name = _resolve_model_name(model_id, cache_dir)
+            if not model_name:
+                return None
 
-            # 检查本地路径是否存在
-            if local_model_path and os.path.exists(local_model_path):
-                model_name = local_model_path
-                logger.info(f"Using local model path: {model_name}")
-            else:
-                # 使用模型 ID，会自动下载到 cache_folder
-                # 注意：由于设置了 HF_HUB_OFFLINE=1，如果模型不存在会失败
-                model_name = model_id
-                logger.warning(
-                    f"Model not found locally at {local_model_path or 'any path'}, "
-                    f"will try to use model ID: {model_id} (offline mode enabled, download will fail if model not cached)"
-                )
+            offline = os.path.isdir(model_name)
+            _configure_hf_env(cache_dir, offline=offline)
 
-            # 尝试导入 HuggingFaceEmbeddings
-            # 优先使用 langchain_huggingface（推荐，避免弃用警告）
             HuggingFaceEmbeddings = None
             try:
                 from langchain_huggingface import HuggingFaceEmbeddings
@@ -124,62 +199,44 @@ def _get_local_embedding_model():
                 logger.debug("Using langchain_huggingface for local embedding model")
             except ImportError as e1:
                 logger.warning(
-                    f"langchain_huggingface not available: {e1}. "
-                    "Falling back to langchain_community (deprecated). "
-                    "Please install: pip install langchain-huggingface sentence-transformers"
+                    "langchain_huggingface not available: %s. "
+                    "Falling back to langchain_community (deprecated).",
+                    e1,
                 )
-                # 回退到 langchain_community（已弃用，但作为备选）
                 try:
                     from langchain_community.embeddings import HuggingFaceEmbeddings
-
-                    logger.warning(
-                        "Using deprecated langchain_community.embeddings.HuggingFaceEmbeddings"
-                    )
                 except ImportError as e2:
                     logger.error(
-                        f"HuggingFaceEmbeddings not available. "
-                        f"langchain_huggingface error: {e1}, "
-                        f"langchain_community error: {e2}. "
-                        "Please install: pip install langchain-huggingface sentence-transformers"
+                        "HuggingFaceEmbeddings not available. "
+                        "langchain_huggingface error: %s, langchain_community error: %s. "
+                        "Please install: pip install langchain-huggingface sentence-transformers",
+                        e1,
+                        e2,
                     )
                     return None
 
-            if HuggingFaceEmbeddings is None:
-                return None
-
-            # 创建模型实例（CPU 模式）
-            # HuggingFaceEmbeddings 会自动处理：
-            # - 如果 model_name 是本地路径，直接使用
-            # - 如果 model_name 是模型 ID，会自动下载到 cache_folder
             try:
                 _embedding_model = HuggingFaceEmbeddings(
                     model_name=model_name,
-                    cache_folder=cache_folder,
+                    cache_folder=cache_dir,
                     model_kwargs={"device": "cpu"},
                     encode_kwargs={"normalize_embeddings": True},
                 )
-
                 logger.info("✅ Local embedding model loaded successfully")
                 return _embedding_model
             except ImportError as import_err:
-                # 捕获缺少依赖的错误（如 sentence-transformers）
                 error_msg = str(import_err)
-                if (
-                    "sentence_transformers" in error_msg
-                    or "sentence-transformers" in error_msg
-                ):
+                if "sentence_transformers" in error_msg or "sentence-transformers" in error_msg:
                     logger.error(
-                        f"Missing required dependency: sentence-transformers. "
-                        f"Please install it with: pip install sentence-transformers"
+                        "Missing required dependency: sentence-transformers. "
+                        "Please install: pip install sentence-transformers"
                     )
                 else:
-                    logger.error(
-                        f"Import error when loading embedding model: {import_err}"
-                    )
+                    logger.error("Import error when loading embedding model: %s", import_err)
                 return None
 
         except Exception as e:
-            logger.error(f"Failed to load local embedding model: {e}", exc_info=True)
+            logger.error("Failed to load local embedding model: %s", e, exc_info=True)
             return None
 
 
@@ -202,7 +259,6 @@ async def generate_embedding_local(text: str) -> Optional[List[float]]:
         return None
 
     try:
-        # embed_query 是同步方法，在异步环境中需要在线程池中执行
         import asyncio
 
         loop = asyncio.get_event_loop()
@@ -210,7 +266,7 @@ async def generate_embedding_local(text: str) -> Optional[List[float]]:
         return embedding
     except Exception as e:
         logger.error(
-            f"Failed to generate embedding with local model: {e}", exc_info=True
+            "Failed to generate embedding with local model: %s", e, exc_info=True
         )
         return None
 
@@ -234,11 +290,9 @@ def generate_embedding_local_sync(text: str) -> Optional[List[float]]:
         return None
 
     try:
-        embedding = model.embed_query(text)
-        return embedding
+        return model.embed_query(text)
     except Exception as e:
         logger.error(
-            f"Failed to generate embedding with local model: {e}", exc_info=True
+            "Failed to generate embedding with local model: %s", e, exc_info=True
         )
-        return None
         return None

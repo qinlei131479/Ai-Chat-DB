@@ -192,7 +192,7 @@ Aix-DB 基于 **LangChain/LangGraph** 框架，结合 **MCP Skills** 多智能�
 **分层架构设计：**
 
 - **前端层**：Vue 3 + TypeScript 构建的现代化 Web 界面，集成 ECharts 和 AntV 可视化组件
-- **API 网关层**：基于 Sanic 的高性能异步 API 服务，提供 RESTful 接口和 JWT 认证
+- **API 网关层**：基于 FastAPI + Uvicorn 的高性能异步 API 服务，提供 RESTful 接口和 JWT 认证
 - **智能服务层**：LLM 服务、Text2SQL Agent、RAG 检索引擎、MCP 多智能体协作
 - **数据存储层**：支持多种数据库类型，包括关系型数据库、向量数据库、图数据库和文件存储
 
@@ -356,7 +356,7 @@ aix-db-cli chat "查询销售额趋势" --datasource 48 --stream
 
 ## 技术栈
 
-**后端**：Sanic · SQLAlchemy · LangChain/LangGraph · Neo4j · FAISS/Chroma · MinIO
+**后端**：FastAPI · Uvicorn · SQLAlchemy · LangChain/LangGraph · Neo4j · FAISS/Chroma · MinIO
 
 **前端**：Vue 3 · TypeScript · Vite 5 · Naive UI · ECharts · AntV
 
