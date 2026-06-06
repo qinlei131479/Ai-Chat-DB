@@ -1,6 +1,7 @@
 site_name: 大模型数据助手
 nav:
     - 🏠 首页: index.md
+    - 📖 源码理解: source-code-guide.md
     - ⚙️ 环境配置: environment.md
     - 🚀 快速体验: quick-start.md
     - 🛠️ 本地开发: local-development.md

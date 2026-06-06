@@ -99,7 +99,9 @@ web/src/
 - **SSE format**: All agents stream responses as `data:{"data":{"messageType":"continue","content":"..."},"dataType":"t02"}\n\n`
 - **dataType values**: `t02` (text answer), `t04` (business/chart data), `t99` (stream end)
 - **Datasource support**: MySQL, PostgreSQL, Oracle, SQL Server, ClickHouse, DM, Doris, StarRocks (via SQLAlchemy or native drivers)
-- **MCP integration**: External mcp-hub service, configured via `MCP_HUB_COMMON_QA_GROUP_URL` env var
+- **RAG (Text2SQL)**: BM25 + FAISS table retrieval in `db_service.py`; terminology/training RAG in `agent/text2sql/rag/`; table relations from PostgreSQL `datasource.table_relation` (not Neo4j)
+- **Neo4j (optional)**: Datasource relation visualization only (`datasource_service.sync_table_relation_to_neo4j`); not used in Text2SQL LangGraph pipeline
+- **MCP integration**: External mcp-hub service for COMMON_QA only, configured via `MCP_HUB_COMMON_QA_GROUP_URL` env var
 - **Skills**: Markdown instruction documents (`SKILL.md` with YAML frontmatter) loaded as LLM context, not executable tools
 - **Auth**: JWT tokens in `Authorization: Bearer <token>` header, decoded via `services/user_service.decode_jwt_token()`
 

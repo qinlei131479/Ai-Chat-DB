@@ -30,8 +30,8 @@ Aix-DB 基于 **LangChain/LangGraph** 框架，结合 **MCP Skills** 多智能�
 
 - **前端层**：Vue 3 + TypeScript 构建的 Web 界面，集成 ECharts 和 AntV 可视化组件
 - **API 网关层**：基于 FastAPI + Uvicorn 的异步 API 服务，提供 RESTful 接口和 JWT 认证
-- **智能服务层**：LLM 服务、Text2SQL Agent、RAG 检索引擎、MCP 多智能体协作
-- **数据存储层**：支持多种数据库类型，包括关系型数据库、向量数据库、图数据库和文件存储
+- **智能服务层**：四套 Agent（智能问答 / 数据问答 / 表格问答 / 深度问数），按 `qa_type` 路由
+- **数据存储层**：PostgreSQL 元数据、多类型业务数据源、MinIO 文件存储；Neo4j 可选（数据源关系可视化）
 
 ## 支持的数据源
 
@@ -60,7 +60,7 @@ Aix-DB 基于 **LangChain/LangGraph** 框架，结合 **MCP Skills** 多智能�
 | :---: | ---------------- | ------------------------------------------------------------------ |
 |   1   | **用户输入**     | 用户以自然语言提出数据查询问题                                     |
 |   2   | **LLM 意图理解** | 大模型解析问题意图，抽取关键实体和查询条件                         |
-|   3   | **RAG 知识检索** | Embedding + BM25 混合检索，结合 Neo4j 图谱获取相关表结构和业务知识 |
+|   3   | **RAG 知识检索** | BM25 + FAISS 混合检索表结构；术语库/训练样本向量检索（表关系来自 PostgreSQL 元数据） |
 |   4   | **SQL 生成**     | Text2SQL 引擎生成 SQL 语句，并进行语法校验和优化                   |
 |   5   | **数据库执行**   | 在目标数据源执行 SQL，支持多种数据库类型                           |
 |   6   | **可视化展示**   | 自动生成 ECharts/AntV 图表，直观呈现分析结果                       |
@@ -177,7 +177,7 @@ aix-db-cli chat "查询销售额趋势" --datasource 48 --stream
 
 ## 技术栈
 
-**后端**：FastAPI · Uvicorn · SQLAlchemy · LangChain/LangGraph · Neo4j · FAISS/Chroma · MinIO
+**后端**：FastAPI · Uvicorn · SQLAlchemy · LangChain/LangGraph · FAISS · MinIO
 
 **前端**：Vue 3 · TypeScript · Vite 5 · Naive UI · ECharts · AntV
 
@@ -185,6 +185,7 @@ aix-db-cli chat "查询销售额趋势" --datasource 48 --stream
 
 ## 文档
 
+- [源码理解指南](./docs/docs/source-code-guide.md)（前后端链路与 Agent/RAG 说明）
 - [配置指南](./docs/docs/index.md)
 - [API 文档](http://localhost:8088/docs)（启动后可用）
 

@@ -30,8 +30,8 @@ Aix-DB is built on the **LangChain/LangGraph** framework, combined with **MCP Sk
 
 - **Frontend Layer**: Web interface built with Vue 3 + TypeScript, integrated with ECharts and AntV visualization components
 - **API Gateway Layer**: Async API service based on FastAPI + Uvicorn, providing RESTful interfaces and JWT authentication
-- **Intelligent Service Layer**: LLM services, Text2SQL Agent, RAG retrieval engine, MCP multi-agent collaboration
-- **Data Storage Layer**: Support for relational databases, vector databases, graph databases, and file storage
+- **Intelligent Service Layer**: Four agents (General Q&A / Data Q&A / Spreadsheet Q&A / Deep Research), routed by `qa_type`
+- **Data Storage Layer**: PostgreSQL metadata, multi-type business datasources, MinIO file storage; Neo4j optional (datasource relation visualization)
 
 ## Supported Data Sources
 
@@ -60,7 +60,7 @@ Aix-DB is built on the **LangChain/LangGraph** framework, combined with **MCP Sk
 |:---:|--------|-------------|
 | 1 | **User Input** | User asks data query questions in natural language |
 | 2 | **LLM Intent Understanding** | LLM parses question intent, extracts key entities and query conditions |
-| 3 | **RAG Knowledge Retrieval** | Embedding + BM25 hybrid retrieval, combined with Neo4j graph to obtain relevant table structures and business knowledge |
+| 3 | **RAG Knowledge Retrieval** | BM25 + FAISS hybrid table retrieval; terminology/training-sample vector search (table relations from PostgreSQL metadata) |
 | 4 | **SQL Generation** | Text2SQL engine generates SQL statements with syntax validation and optimization |
 | 5 | **Database Execution** | Execute SQL on target data source, supporting multiple database types |
 | 6 | **Visualization** | Automatically generate ECharts/AntV charts to present analysis results |
@@ -171,7 +171,7 @@ See [aix-db-cli/README.md](./aix-db-cli/README.md) for details.
 
 ## Tech Stack
 
-**Backend**: FastAPI · Uvicorn · SQLAlchemy · LangChain/LangGraph · Neo4j · FAISS/Chroma · MinIO
+**Backend**: FastAPI · Uvicorn · SQLAlchemy · LangChain/LangGraph · FAISS · MinIO
 
 **Frontend**: Vue 3 · TypeScript · Vite 5 · Naive UI · ECharts · AntV
 
@@ -179,6 +179,7 @@ See [aix-db-cli/README.md](./aix-db-cli/README.md) for details.
 
 ## Documentation
 
+- [Source Code Guide](./docs/docs/source-code-guide.md) (frontend-to-backend flow, Agent/RAG details)
 - [Configuration Guide](./docs/docs/index.md)
 - [API Documentation](http://localhost:8088/docs) (available after startup)
 
