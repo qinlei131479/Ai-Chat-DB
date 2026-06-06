@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 # 步骤名称映射（中文）
 STEP_NAME_MAP = {
     "schema_inspector": "表结构检索...",
-    "table_relationship": "表关系分析...",
     "early_recommender": "推荐问题生成...",
     "sql_generator": "SQL生成...",
     "permission_filter": "权限过滤...",
@@ -348,9 +347,6 @@ class Text2SqlAgent:
                 "当前没有可用的数据源，请联系管理员。",
             ),
             "schema_inspector": lambda: self._format_db_info_with_bm25(step_value),
-            "table_relationship": lambda: json.dumps(
-                step_value["table_relationship"], ensure_ascii=False
-            ),
             "sql_generator": lambda: step_value["generated_sql"],
             # 权限过滤节点：输出注入权限后的 SQL，如果没有则回退到原始 SQL
             "permission_filter": lambda: step_value.get("filtered_sql")
