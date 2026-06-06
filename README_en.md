@@ -201,7 +201,11 @@ docker-compose up -d
 
 **③ Configure Environment Variables**
 
-Edit `.env.dev` in the project root to set database connection, MinIO address, etc. (default config works out of the box)
+```bash
+cp .env.example .env  # Copy env template, modify as needed
+```
+
+Edit `.env` in the project root to set database connection, MinIO address, etc. (default config works out of the box)
 
 **④ Install Python Dependencies** (requires Python 3.12)
 ```bash

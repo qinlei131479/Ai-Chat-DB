@@ -54,14 +54,8 @@ function parseSimpleEnv(content: string) {
   return parsed
 }
 
-function readRootPageAgentBuildFlag(mode: string) {
-  const rootModeMap: Record<string, string> = {
-    development: 'dev',
-    production: 'pro',
-    test: 'test',
-  }
-  const rootMode = rootModeMap[mode] || mode
-  const envFilePath = path.resolve(__dirname, '..', `.env.${rootMode}`)
+function readRootPageAgentBuildFlag(_mode: string) {
+  const envFilePath = path.resolve(__dirname, '..', '.env')
 
   if (!fs.existsSync(envFilePath)) {
     return ''

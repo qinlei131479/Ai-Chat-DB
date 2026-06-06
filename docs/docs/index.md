@@ -102,7 +102,13 @@ docker compose up
 
 **本地开发环境**
 
-编辑项目根目录下的 `.env.dev` 文件，添加以下配置：
+复制环境变量模板并编辑项目根目录下的 `.env` 文件：
+
+```bash
+cp .env.example .env
+```
+
+添加以下配置：
 
 ```bash
 # Langfuse 配置（可选）

@@ -130,7 +130,12 @@ def load_env():
         )
         logging.warning(f"Failed to load logging.conf: {e}, using basicConfig instead")
 
-    # 根据环境变量 ENV 的值选择加载哪个 .env 文件
-    dotenv_path = f'.env.{os.getenv("ENV","dev")}'
-    logging.info(f"""====当前配置文件是:{dotenv_path}====""")
-    load_dotenv(dotenv_path)
+    dotenv_path = ".env"
+    if os.path.exists(dotenv_path):
+        logging.info(f"====当前配置文件是:{dotenv_path}====")
+        load_dotenv(dotenv_path)
+    else:
+        logging.warning(
+            f"环境变量文件 {dotenv_path} 不存在，"
+            "请执行 cp .env.example .env 后按需修改"
+        )

@@ -33,6 +33,9 @@ aix-db-cli/node_modules/
 .venv/
 logs/
 # 环境变量文件
+.env
+.env.*
+!.env.example
 .pytest_cache/
 /vector_index/
 

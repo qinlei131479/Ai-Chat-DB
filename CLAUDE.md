@@ -105,7 +105,7 @@ web/src/
 
 ### Environment
 
-Key env vars (see `.env.dev` and `docker/docker-compose.yaml`):
+Key env vars (see `.env.example` and `docker/docker-compose.yaml`):
 - `DATABASE_URL` - PostgreSQL connection for app metadata
 - `LLM_MODEL_NAME`, `LLM_API_KEY`, `LLM_API_BASE` - LLM configuration
 - `MINIO_*` - File storage

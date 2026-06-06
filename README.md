@@ -304,7 +304,11 @@ docker-compose up -d
 
 **③ 配置环境变量**
 
-编辑项目根目录下的 `.env.dev`，按需修改数据库连接、MinIO 地址等配置（默认配置可直接使用）
+```bash
+cp .env.example .env  # 复制环境变量模板，按需修改
+```
+
+编辑项目根目录下的 `.env`，按需修改数据库连接、MinIO 地址等配置（默认配置可直接使用）
 
 **④ 安装 Python 依赖**（需要 Python 3.12）
 ```bash
