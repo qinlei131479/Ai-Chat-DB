@@ -106,12 +106,7 @@ def _get_local_model_path():
     if hf_cache_snapshot:
         return hf_cache_snapshot
 
-    # 2. 检查仓库内预置目录: models/models--namespace--name/
-    bundled_snapshot = _get_snapshot_path(DEFAULT_LOCAL_MODEL_PATH, model_id)
-    if bundled_snapshot:
-        return bundled_snapshot
-
-    # 3. 检查自定义路径: models/embedding/shibing624_text2vec-base-chinese/
+    # 2. 检查自定义路径: models/embedding/shibing624_text2vec-base-chinese/
     custom_name = model_id.replace("/", "_")
     custom_path = os.path.join(DEFAULT_LOCAL_MODEL_PATH, "embedding", custom_name)
     if os.path.exists(custom_path):
@@ -132,6 +127,7 @@ def _download_embedding_model(model_id: str, cache_dir: str) -> Optional[str]:
             repo_id=model_id,
             cache_dir=cache_dir,
             local_files_only=False,
+            ignore_patterns=["onnx/*", "openvino/*", "pytorch_model.bin", "logs.txt"],
         )
     except Exception as e:
         logger.error(
