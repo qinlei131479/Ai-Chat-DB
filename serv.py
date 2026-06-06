@@ -40,18 +40,23 @@ async def lifespan(app: FastAPI):
             root.level,
         )
 
-    default_bucket = os.getenv("MINIO_DEFAULT_BUCKET", "filedata")
-    try:
-        from common.minio_util import MinioUtils
+    from common.minio_util import MinioUtils, is_minio_enabled
 
-        MinioUtils().ensure_bucket(default_bucket)
+    if is_minio_enabled():
+        default_bucket = os.getenv("MINIO_DEFAULT_BUCKET", "filedata")
+        try:
+            MinioUtils().ensure_bucket(default_bucket)
+            logging.getLogger(__name__).info(
+                "✅ [SERV] MinIO bucket '%s' initialized successfully", default_bucket
+            )
+        except Exception as e:
+            logging.getLogger(__name__).warning(
+                "⚠️ [SERV] MinIO initialization failed: %s. File upload may not work.",
+                e,
+            )
+    else:
         logging.getLogger(__name__).info(
-            "✅ [SERV] MinIO bucket '%s' initialized successfully", default_bucket
-        )
-    except Exception as e:
-        logging.getLogger(__name__).warning(
-            "⚠️ [SERV] MinIO initialization failed: %s. File upload may not work.",
-            e,
+            "ℹ️ [SERV] MinIO is disabled (MINIO_ENABLED=false), skipping initialization."
         )
 
     yield

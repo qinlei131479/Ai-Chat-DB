@@ -20,6 +20,21 @@ from constants.code_enum import SysCodeEnum as SysCode
 
 logger = logging.getLogger(__name__)
 
+MINIO_DISABLED_MESSAGE = (
+    "文件存储服务（MinIO）未启用，无法使用文件上传/下载功能。"
+    "请设置 MINIO_ENABLED=true 并启动 MinIO 服务后重试。"
+)
+
+
+def is_minio_enabled() -> bool:
+    """是否启用 MinIO（默认启用，兼容现有部署）"""
+    return os.getenv("MINIO_ENABLED", "true").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+
 
 class MinioUtils:
     """
@@ -27,8 +42,15 @@ class MinioUtils:
     """
 
     def __init__(self):
-        self.client = self._build_client()
-        # self.executor = ThreadPoolExecutor(max_workers=5)  # 多线程上传控制最大并发数
+        self._client: Minio | None = None
+
+    @property
+    def client(self) -> Minio:
+        if not is_minio_enabled():
+            raise MyException(SysCode.c_9999, MINIO_DISABLED_MESSAGE)
+        if self._client is None:
+            self._client = self._build_client()
+        return self._client
 
     @staticmethod
     def _build_client():
@@ -171,6 +193,8 @@ class MinioUtils:
             )
             logger.info(f"File uploaded successfully with key: {file_name}")
             return file_name
+        except MyException:
+            raise
         except Exception as e:
             logger.error(f"An error occurred while uploading to MinIO: {e}")
             return None
@@ -189,10 +213,12 @@ class MinioUtils:
                 object_name=object_key,
                 expires=timedelta(days=7),
             )
+        except MyException:
+            raise
         except Exception as err:
             logger.error(f"Error getting file URL by key: {err}")
             traceback.print_exception(err)
-            raise MyException(SysCode.c_9999)
+            raise MyException(SysCode.c_9999) from err
 
     async def upload_file_and_parse_from_upload(
         self, upload_file, bucket_name: str = "filedata"
@@ -281,6 +307,8 @@ class MinioUtils:
                 "parse_file_key": parse_file_key,
                 "file_size": self._format_file_size(file_size),
             }
+        except MyException:
+            raise
         except Exception as err:
             logger.error(f"Error uploading file and parsing from request: {err}")
             traceback.print_exception(type(err), err, err.__traceback__)
@@ -465,6 +493,8 @@ class MinioUtils:
             response.release_conn()
             logger.info(f"文件下载成功: {object_key} -> {local_path}")
             return True
+        except MyException:
+            raise
         except Exception as e:
             logger.error(f"下载文件失败 {object_key}: {e}")
             return False
@@ -507,6 +537,8 @@ class MinioUtils:
                 file_part = f"- 文件名称: {source_file_key}\n- 文件格式: {ext}\n- 文件内容: {content}"
                 result_parts.append(file_part)
 
+            except MyException:
+                raise
             except Exception as e:
                 logger.error(f"读取文件 {parse_file_key} 内容时出错: {e}")
                 # 即使某个文件读取出错也继续处理其他文件
@@ -557,5 +589,4 @@ class MinioUtils:
             ) from e
         except Exception as e:
             logger.error(f"解析MinerU返回结果失败: {e}")
-            raise MyException(SysCode.c_9999, "OCR解析结果异常") from e
             raise MyException(SysCode.c_9999, "OCR解析结果异常") from e
