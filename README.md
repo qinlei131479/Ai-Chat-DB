@@ -192,7 +192,7 @@ aix-db-cli chat "查询销售额趋势" --datasource 48 --stream
 
 ## 文档
 
-文档源文件位于 `docs/docs/`，使用 [MkDocs Material](https://squidfunk.github.io/mkdocs-material/) 构建为静态站点（输出目录 `docs/site/`）。
+文档源文件位于 `docs/docs/`，使用 [MkDocs Material](https://squidfunk.github.io/mkdocs-material/) 构建为静态站点（输出目录 `docs/site/`，**不纳入 Git**，需用时本地构建）。
 
 | 文档 | 说明 |
 | --- | --- |
@@ -215,13 +215,13 @@ uv run mkdocs serve -f docs/mkdocs.yml
 
 浏览器访问 http://127.0.0.1:8000
 
-**③ 构建静态站点**
+**③ 构建静态站点**（首次或文档更新后执行）
 
 ```bash
 uv run mkdocs build -f docs/mkdocs.yml
 ```
 
-构建产物在 `docs/site/`，可用任意静态服务器托管，例如：
+构建产物输出到 `docs/site/`（已在 `.gitignore` 中忽略），可用任意静态服务器托管，例如：
 
 ```bash
 cd docs/site && python3 -m http.server 8000

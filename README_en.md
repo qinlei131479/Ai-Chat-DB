@@ -186,7 +186,7 @@ See [aix-db-cli/README.md](./aix-db-cli/README.md) for details.
 
 ## Documentation
 
-Source files live in `docs/docs/` and are built with [MkDocs Material](https://squidfunk.github.io/mkdocs-material/) into a static site (`docs/site/`).
+Source files live in `docs/docs/` and are built with [MkDocs Material](https://squidfunk.github.io/mkdocs-material/) into a static site (`docs/site/`, **not committed to Git** — build locally when needed).
 
 | Document | Description |
 | --- | --- |
@@ -209,13 +209,13 @@ uv run mkdocs serve -f docs/mkdocs.yml
 
 Open http://127.0.0.1:8000 in your browser.
 
-**③ Build static site**
+**③ Build static site** (run after first clone or when docs change)
 
 ```bash
 uv run mkdocs build -f docs/mkdocs.yml
 ```
 
-Output goes to `docs/site/`. Serve it with any static file server, for example:
+Output goes to `docs/site/` (listed in `.gitignore`). Serve it with any static file server, for example:
 
 ```bash
 cd docs/site && python3 -m http.server 8000
