@@ -1,6 +1,6 @@
 import { createServer } from 'node:http'
 import { saveConfig } from './config.js'
-import { loginApi } from './api.js'
+import { getDatasources, loginApi } from './api.js'
 import open from 'open'
 
 const LOGIN_HTML = (baseUrl) => `<!DOCTYPE html>
@@ -103,7 +103,7 @@ export async function loginCommand(baseUrl) {
             const { username, password } = JSON.parse(body)
             const token = await loginApi(baseUrl, username, password)
             const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-            saveConfig({ baseUrl, token, tokenExpiry })
+            saveConfig({ baseUrl, token, authType: 'jwt', tokenExpiry })
             res.writeHead(200, { 'Content-Type': 'application/json' })
             res.end(JSON.stringify({ ok: true }))
             server.close()
@@ -129,5 +129,19 @@ export async function loginCommand(baseUrl) {
     })
 
     server.on('error', reject)
+  })
+}
+
+export async function loginWithTokenCommand(baseUrl, token) {
+  const trimmed = (token || '').trim()
+  if (!trimmed) {
+    throw new Error('API Token 不能为空')
+  }
+  await getDatasources(baseUrl, trimmed)
+  saveConfig({
+    baseUrl,
+    token: trimmed,
+    authType: 'api_token',
+    tokenExpiry: null,
   })
 }

@@ -441,6 +441,28 @@ class DeleteUserRequest(BaseModel):
     id: int = Field(description="用户ID")
 
 
+# ==================== API Token 相关模型 ====================
+class AddApiTokenRequest(BaseModel):
+    """创建 API Token 请求"""
+
+    name: str = Field(description="Token 备注名")
+    user_id: Optional[int] = Field(None, description="绑定管理员用户ID，默认当前用户")
+
+
+class QueryApiTokenListRequest(PaginationParams):
+    """查询 API Token 列表"""
+
+    name: Optional[str] = Field(None, description="名称模糊搜索")
+    user_id: Optional[int] = Field(None, description="绑定用户ID")
+    status: Optional[int] = Field(None, description="状态：1=启用 0=禁用")
+
+
+class ApiTokenIdRequest(BaseModel):
+    """API Token ID 请求"""
+
+    id: int = Field(description="Token ID")
+
+
 # ==================== Dify 服务相关模型 ====================
 class LLMGetAnswerRequest(BaseModel):
     """获取LLM答案请求"""

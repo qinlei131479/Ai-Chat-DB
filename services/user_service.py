@@ -128,23 +128,13 @@ async def generate_jwt_token(user_id, username, role="user"):
 
 
 async def decode_jwt_token(token):
-    """解析 JWT token 并返回 payload"""
-    try:
-        # 使用与生成 token 时相同的密钥和算法来解码 token
-        payload = jwt.decode(token, key=os.getenv("JWT_SECRET_KEY", "550e8400-e29b-41d4-a716-446655440000"), algorithms=["HS256"])
-        # 检查 token 是否过期
-        if "exp" in payload and datetime.utcfromtimestamp(payload["exp"]) < datetime.utcnow():
-            raise jwt.ExpiredSignatureError("Token has expired")
-        return payload
-    except jwt.ExpiredSignatureError as e:
-        # 处理过期的 token
-        return None, 401, str(e)
-    except jwt.InvalidTokenError as e:
-        # 处理无效的 token
-        return None, 400, str(e)
-    except Exception as e:
-        # 处理其他可能的错误
-        return None, 500, str(e)
+    """解析 Bearer token（JWT 或 API Token）并返回 payload"""
+    from services.auth_service import resolve_token, strip_bearer_token
+
+    payload = resolve_token(strip_bearer_token(token))
+    if payload is None:
+        return None, 401, "Invalid or expired token"
+    return payload
 
 
 async def get_user_info(request) -> dict:
@@ -169,11 +159,9 @@ async def get_user_info(request) -> dict:
         logging.error("Token is empty or whitespace")
         raise MyException(SysCodeEnum.c_400)
 
-    try:
-        # 解码 JWT token
-        user_info = await decode_jwt_token(token)
-    except Exception as e:
-        logging.error(f"Failed to decode JWT token: {e}")
+    user_info = await decode_jwt_token(token)
+    if not user_info or isinstance(user_info, tuple):
+        logging.error("Failed to decode token")
         raise MyException(SysCodeEnum.c_401)
 
     return user_info

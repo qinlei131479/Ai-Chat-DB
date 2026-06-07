@@ -40,6 +40,10 @@ test('isTokenExpired returns true for missing tokenExpiry', () => {
   assert.equal(isTokenExpired(null), true)
 })
 
+test('isTokenExpired returns false for api_token authType', () => {
+  assert.equal(isTokenExpired({ authType: 'api_token', token: 'aix_abc' }), false)
+})
+
 after(() => {
   rmSync(tmpDir, { recursive: true, force: true })
 })

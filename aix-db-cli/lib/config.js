@@ -19,6 +19,7 @@ export function saveConfig(config) {
 }
 
 export function isTokenExpired(config) {
+  if (config?.authType === 'api_token') return false
   if (!config?.tokenExpiry) return true
   return new Date(config.tokenExpiry) <= new Date()
 }
@@ -35,7 +36,7 @@ export function clearConfig() {
 export function requireAuth() {
   const config = loadConfig()
   if (!config?.token) {
-    console.error('Error: 未登录，请运行 aix-db-cli login')
+    console.error('Error: 未登录，请运行 aix-db-cli login 或 aix-db-cli login --token <API_TOKEN>')
     process.exit(1)
   }
   if (isTokenExpired(config)) {

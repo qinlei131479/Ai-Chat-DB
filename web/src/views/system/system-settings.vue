@@ -14,11 +14,13 @@ const PermissionConfig = defineAsyncComponent(() => import('@/views/system/permi
 const TerminologyConfig = defineAsyncComponent(() => import('@/views/system/config/terminology-config.vue'))
 const SqlExampleLibrary = defineAsyncComponent(() => import('@/views/system/config/sql-example-library.vue'))
 const EmbeddingMigration = defineAsyncComponent(() => import('@/views/system/config/embedding-migration.vue'))
+const ApiTokenConfig = defineAsyncComponent(() => import('@/views/system/config/api-token-config.vue'))
 
 const menuItems = [
   { key: 'datasource', label: '库表配置', icon: 'i-material-symbols:database-outline' },
   { key: 'llm', label: '模型配置', icon: 'i-material-symbols:settings-outline' },
   { key: 'user', label: '用户管理', icon: 'i-material-symbols:person-outline' },
+  { key: 'api-token', label: 'API Token', icon: 'i-material-symbols:key-outline' },
   { key: 'permission', label: '权限配置', icon: 'i-material-symbols:lock-outline' },
   { key: 'terminology', label: '术语配置', icon: 'i-material-symbols:book-outline' },
   { key: 'sql', label: 'SQL示例', icon: 'i-material-symbols:code' },
@@ -119,6 +121,13 @@ const handleBack = () => {
         class="h-full"
       >
         <UserManager />
+      </div>
+
+      <div
+        v-else-if="activeTab === 'api-token'"
+        class="h-full"
+      >
+        <ApiTokenConfig />
       </div>
 
       <div
@@ -304,6 +313,7 @@ const handleBack = () => {
 
   :deep(.datasource-manager .header .title-section .back-btn),
   :deep(.user-manager .header .title-section .back-btn),
+  :deep(.api-token-manager .header .title-section .back-btn),
   :deep(.llm-config .header .title-section .back-btn) {
     display: none !important;
   }
@@ -312,6 +322,7 @@ const handleBack = () => {
 
   :deep(.datasource-manager),
   :deep(.user-manager),
+  :deep(.api-token-manager),
   :deep(.llm-config) {
     height: 100%;
     padding: 24px 32px;

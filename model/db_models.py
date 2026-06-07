@@ -35,6 +35,35 @@ class TUser(Base):
     updateTime: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP, comment="修改时间")
 
 
+class TApiToken(Base):
+    __tablename__ = "t_api_token"
+    __table_args__ = {"comment": "API 永久访问令牌"}
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, comment="主键ID")
+    user_id: Mapped[int] = mapped_column(
+        Integer, nullable=False, comment="绑定用户ID（须为 admin 角色）"
+    )
+    name: Mapped[str] = mapped_column(String(100), nullable=False, comment="Token 备注名")
+    token_hash: Mapped[str] = mapped_column(
+        String(64), nullable=False, comment="SHA-256(明文token)，不存明文"
+    )
+    token_prefix: Mapped[str] = mapped_column(
+        String(12), nullable=False, comment="明文前12位，用于列表展示"
+    )
+    status: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, comment="状态：1=启用 0=禁用"
+    )
+    expires_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+        TIMESTAMP, nullable=True, comment="过期时间，NULL 表示永久有效"
+    )
+    last_used_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+        TIMESTAMP, nullable=True, comment="最近使用时间"
+    )
+    created_by: Mapped[int] = mapped_column(Integer, nullable=False, comment="创建人用户ID")
+    created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP, comment="创建时间")
+    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP, comment="更新时间")
+
+
 class TUserQaRecord(Base):
     __tablename__ = "t_user_qa_record"
     __table_args__ = {"comment": "问答记录表"}

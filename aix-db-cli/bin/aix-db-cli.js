@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
-import { loginCommand } from '../lib/auth.js'
+import { loginCommand, loginWithTokenCommand } from '../lib/auth.js'
 import { clearConfig, loadConfig } from '../lib/config.js'
 import { datasourcesCommand } from '../lib/datasources.js'
 import { chatCommand } from '../lib/chat.js'
@@ -15,10 +15,16 @@ program
 
 program
   .command('login')
-  .description('浏览器登录并保存 token（有效期 7 天）')
+  .description('浏览器登录或 API Token 登录')
   .option('--url <baseUrl>', '服务地址', 'http://localhost:18080')
+  .option('--token <apiToken>', '使用永久 API Token 登录（不过期）')
   .action(async (opts) => {
     try {
+      if (opts.token) {
+        await loginWithTokenCommand(opts.url, opts.token)
+        console.log('✓ API Token 登录成功（永久有效）')
+        return
+      }
       await loginCommand(opts.url)
       console.log('✓ 登录成功，token 有效期 7 天')
     } catch (err) {

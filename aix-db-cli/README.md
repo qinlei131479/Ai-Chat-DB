@@ -20,6 +20,9 @@ npm install -g @apconw/aix-db-cli
 # 1. 登录（浏览器完成认证，token 有效期 7 天）
 aix-db-cli login
 
+# 使用永久 API Token 登录（在系统设置 → API Token 中创建）
+aix-db-cli login --token aix_xxxxxxxx --url http://your-server:18080
+
 # 自定义服务地址
 aix-db-cli login --url http://your-server:18080
 
@@ -46,11 +49,12 @@ aix-db-cli logout
 
 ### `login`
 
-打开浏览器完成登录，将 JWT token 保存到本地（有效期 7 天）。
+打开浏览器完成登录，将 JWT token 保存到本地（有效期 7 天）。也可通过 `--token` 使用管理后台创建的永久 API Token。
 
 | 选项 | 默认值 | 说明 |
 |------|--------|------|
 | `--url <baseUrl>` | `http://localhost:18080` | Aix-DB 服务地址 |
+| `--token <apiToken>` | - | 永久 API Token（`aix_` 前缀），不过期 |
 
 ### `logout`
 
