@@ -42,7 +42,7 @@ python -m pytest tests/<subdir>/<test_file>.py
 ```
 serv.py                          # 入口 - FastAPI 应用，自动发现并注册 APIRouter
 ├── controllers/                 # REST API（autodiscover 自动注册）
-│   ├── llm_chat_api.py         # 主聊天接口：POST /dify/get_answer（SSE 流式）
+│   ├── llm_chat_api.py         # 主聊天接口：POST /chat/answer（SSE 流式）
 │   ├── db_chat_api.py          # 数据库问答相关接口
 │   ├── skill_api.py            # GET /system/skill/list
 │   ├── datasource_api.py       # 数据源 CRUD、表关系管理
@@ -73,7 +73,7 @@ serv.py                          # 入口 - FastAPI 应用，自动发现并注�
 ### 请求流程（聊天）
 
 ```
-POST /dify/get_answer { query, qa_type, chat_id, datasource_id, ... }
+POST /chat/answer { query, qa_type, chat_id, datasource_id, ... }
   → llm_service.LLMRequest.exec_query()
     → 按 qa_type 路由：
       COMMON_QA   → EnhancedCommonAgent.run_agent()
@@ -83,7 +83,7 @@ POST /dify/get_answer { query, qa_type, chat_id, datasource_id, ... }
   → SSE 流式响应：data:{"data":{"messageType","content"},"dataType"}\n\n
 ```
 
-> 前端通过 `/sanic/` 前缀访问 API（Vite/nginx 代理重写为后端路径），后端实际路由不含 `/sanic`。
+> 前端通过 `/api/` 前缀访问 API（Vite/nginx 代理重写为后端路径），后端实际路由不含 `/api`。
 
 ### Agent 系统（四套独立实现，不要假设共享代码）
 
@@ -120,7 +120,7 @@ POST /dify/get_answer { query, qa_type, chat_id, datasource_id, ... }
 web/src/
 ├── views/chat/index.vue        # 主聊天界面
 ├── views/skill-center.vue      # 技能中心
-├── api/index.ts                # 聊天 API（SSE 请求 /sanic/dify/get_answer）
+├── api/index.ts                # 聊天 API（SSE 请求 /api/chat/answer）
 ├── store/business/index.ts     # Pinia 状态（qa_type、file_list、task_id）
 └── components/MarkdownPreview/ # 渲染 Markdown + HTML（含 <details>）
 ```
