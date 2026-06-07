@@ -21,7 +21,7 @@ Aix-DB 采用**四套独立 Agent** 架构，按 `qa_type` 路由到不同引擎
 - **数据问答 / 表格问答**：LangGraph 流水线（Text2SQL / Excel+CSV+DuckDB）
 - **智能问答 / 深度问数**：DeepAgents + Skills（智能问答额外支持 MCP 外部工具）
 
-**核心能力**：智能问答 · 数据问答（Text2SQL） · 表格问答 · 深度问数 · 数据可视化 · Skill 模式 · MCP 工具（仅智能问答）
+**核心能力**：智能问答 · 数据问答（Text2SQL） · 表格问答 · 深度问数 · 数据可视化 · Skill 模式 · MCP 工具（仅智能问答） · API Token（OpenAPI 集成）
 
 ## 系统架构
 
@@ -32,7 +32,7 @@ Aix-DB 采用**四套独立 Agent** 架构，按 `qa_type` 路由到不同引擎
 **分层架构设计：**
 
 - **前端层**：Vue 3 + TypeScript 构建的 Web 界面，集成 ECharts 和 AntV 可视化组件
-- **API 网关层**：基于 FastAPI + Uvicorn 的异步 API 服务，提供 RESTful 接口和 JWT 认证
+- **API 网关层**：基于 FastAPI + Uvicorn 的异步 API 服务，提供 RESTful 接口；支持登录 JWT（7 天）与永久 API Token（`aix_*`）鉴权
 - **智能服务层**：四套 Agent（智能问答 / 数据问答 / 表格问答 / 深度问数），按 `qa_type` 路由
 - **数据存储层**：PostgreSQL 元数据（含表关系 JSONB）、多类型业务数据源；MinIO 文件存储（表格问答必需）
 
@@ -175,6 +175,7 @@ npm run dev
 npm install -g @apconw/aix-db-cli
 
 aix-db-cli login
+aix-db-cli login --token aix_xxx --url http://localhost:18080   # 永久 API Token
 aix-db-cli datasources
 aix-db-cli chat "有哪些数据表？" --datasource 48
 aix-db-cli chat "查询销售额趋势" --datasource 48 --stream
@@ -198,6 +199,7 @@ aix-db-cli chat "查询销售额趋势" --datasource 48 --stream
 | --- | --- |
 | [部署与开发指南](./docs/docs/deployment-guide.md) | Docker 部署、本地开发、环境变量、FAQ |
 | [源码理解指南](./docs/docs/source-code-guide.md) | 前后端链路与 Agent/RAG 说明 |
+| [API Token 使用指南](./docs/docs/api-token-guide.md) | 永久 Token 管理、curl/CLI 调用示例 |
 | [配置指南](./docs/docs/index.md) | 部署后系统配置（模型、数据源、MinIO 等） |
 | [API 文档](http://localhost:8088/docs) | 后端 Swagger（需先启动 `python serv.py`） |
 

@@ -133,6 +133,22 @@ npm run dev
 
 > **表格问答**（`FILEDATA_QA`）和部分 Skill 文件能力依赖 MinIO。本地开发默认关闭，启用时需设为 `MINIO_ENABLED=true` 并启动 MinIO。
 
+### 认证
+
+| 变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `JWT_SECRET_KEY` | 见 `.env.example` | 登录 JWT 签名密钥 |
+| `API_TOKEN_MAX_PER_USER` | `10` | 每个管理员可创建的 API Token 上限 |
+
+API Token 用于脚本、CLI、OpenAPI 集成，永久有效。管理入口：**系统设置 → API Token**。详见 [API Token 使用指南](./api-token-guide.md)。
+
+存量环境若缺少 `t_api_token` 表：
+
+```bash
+psql "$SQLALCHEMY_DATABASE_URI" -f scripts/migrations/001_add_t_api_token.sql
+psql "$SQLALCHEMY_DATABASE_URI" -f scripts/migrations/002_t_api_token_comments.sql
+```
+
 ### MCP 工具（仅智能问答）
 
 | 变量 | 说明 |
@@ -213,6 +229,18 @@ MCP_HUB_COMMON_QA_GROUP_URL=<your-mcp-hub-url>
 后端 `common/datasource_util.py` 还支持 Kingbase、AWS Redshift、Elasticsearch（前端表单默认注释隐藏，可按需启用）。
 
 CSV / Excel 仅用于表格问答文件上传，不是 SQL 数据源类型。
+
+### 如何用 curl / 脚本调用聊天接口？
+
+1. 在 **系统设置 → API Token** 创建永久 Token（或使用 JWT 调 `POST /user/api_token/add`）
+2. 请求头：`Authorization: Bearer aix_...`（完整明文，不是数据库中的 `token_hash`）
+3. `POST /dify/get_answer` 发起 SSE 聊天
+
+完整示例见 [API Token 使用指南](./api-token-guide.md)。
+
+### API Token 明文丢失了怎么办？
+
+数据库只存哈希，无法从 `token_hash` 或 `token_prefix` 恢复。请在管理页禁用/删除旧 Token 后重新创建。
 
 ### 四种问答模式分别用什么技术？
 

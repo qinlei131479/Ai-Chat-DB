@@ -3,6 +3,7 @@ nav:
     - 🏠 配置说明: index.md
     - 📖 源码理解: source-code-guide.md
     - 🚀 部署与开发: deployment-guide.md
+    - 🔑 API Token: api-token-guide.md
 
 # 代码仓库信息
 repo_name: qinlei131479/Ai-Chat-DB

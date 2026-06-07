@@ -142,7 +142,7 @@ web/src/
 - **RAG（Text2SQL）**：BM25 + FAISS 表检索在 `db_service.py`；术语/训练样本 RAG 在 `agent/text2sql/rag/`；表关系来自 PostgreSQL `t_datasource.table_relation`（JSONB）
 - **MCP 集成**：仅 `COMMON_QA` 使用，通过环境变量 `MCP_HUB_COMMON_QA_GROUP_URL` 连接外部 mcp-hub
 - **Skills**：`SKILL.md`（含 YAML frontmatter）作为 LLM 上下文加载，非可执行工具
-- **认证**：`Authorization: Bearer <token>`，由 `services/user_service.decode_jwt_token()` 解码
+- **认证**：`Authorization: Bearer <token>`；`resolve_token()`（`services/auth_service.py`）统一解析登录 JWT（7 天）与永久 API Token（`aix_*`，表 `t_api_token`）；`decode_jwt_token()` 为薄封装。Token 管理接口仅 JWT（`@check_jwt_token`）。详见 `docs/docs/api-token-guide.md`
 - **LLM 配置**：所有 Agent 通过 `common/llm_util.py` 读取数据库表 `t_ai_model`，不是 `.env` 中的 API Key
 
 ### 环境变量
@@ -155,6 +155,7 @@ web/src/
 - `MCP_HUB_COMMON_QA_GROUP_URL` - MCP 工具 Hub（仅 COMMON_QA）
 - `LANGFUSE_TRACING_ENABLED`、`LANGFUSE_SECRET_KEY`、`LANGFUSE_PUBLIC_KEY`、`LANGFUSE_BASE_URL` - 链路追踪
 - `VITE_ENABLE_PAGE_AGENT` - 前端 PageAgent 构建开关
+- `API_TOKEN_MAX_PER_USER` - 每个管理员可创建的 API Token 数量上限（默认 10）
 
 ## graphify（可选）
 

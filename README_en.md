@@ -21,7 +21,7 @@ Aix-DB uses **four independent agents**, routed by `qa_type` to different engine
 - **Data Q&A / Spreadsheet Q&A**: LangGraph pipelines (Text2SQL / Excel+CSV+DuckDB)
 - **General Q&A / Deep Research**: DeepAgents + Skills (General Q&A additionally supports MCP external tools)
 
-**Core Capabilities**: General Q&A · Data Q&A (Text2SQL) · Spreadsheet Q&A · Deep Research · Data Visualization · Skill Mode · MCP Tools (General Q&A only)
+**Core Capabilities**: General Q&A · Data Q&A (Text2SQL) · Spreadsheet Q&A · Deep Research · Data Visualization · Skill Mode · MCP Tools (General Q&A only) · API Token (OpenAPI integration)
 
 ## System Architecture
 
@@ -32,7 +32,7 @@ Aix-DB uses **four independent agents**, routed by `qa_type` to different engine
 **Layered Architecture Design:**
 
 - **Frontend Layer**: Web interface built with Vue 3 + TypeScript, integrated with ECharts and AntV visualization components
-- **API Gateway Layer**: Async API service based on FastAPI + Uvicorn, providing RESTful interfaces and JWT authentication
+- **API Gateway Layer**: Async API service based on FastAPI + Uvicorn; supports login JWT (7-day) and permanent API Token (`aix_*`) authentication
 - **Intelligent Service Layer**: Four agents (General Q&A / Data Q&A / Spreadsheet Q&A / Deep Research), routed by `qa_type`
 - **Data Storage Layer**: PostgreSQL metadata (including table relations JSONB), multi-type business datasources; MinIO file storage (required for Spreadsheet Q&A)
 
@@ -169,6 +169,7 @@ Query data from the terminal with natural language and chart output.
 npm install -g @apconw/aix-db-cli
 
 aix-db-cli login
+aix-db-cli login --token aix_xxx --url http://localhost:18080   # permanent API Token
 aix-db-cli datasources
 aix-db-cli chat "What tables are available?" --datasource 48
 aix-db-cli chat "Show sales trend" --datasource 48 --stream
@@ -192,6 +193,7 @@ Source files live in `docs/docs/` and are built with [MkDocs Material](https://s
 | --- | --- |
 | [Deployment & Development Guide](./docs/docs/deployment-guide.md) | Docker, local dev, env vars, FAQ |
 | [Source Code Guide](./docs/docs/source-code-guide.md) | Frontend-to-backend flow, Agent/RAG details |
+| [API Token Guide](./docs/docs/api-token-guide.md) | Permanent token management, curl/CLI examples |
 | [Configuration Guide](./docs/docs/index.md) | Post-deployment setup (models, datasources, MinIO, etc.) |
 | [API Documentation](http://localhost:8088/docs) | Backend Swagger (requires `python serv.py`) |
 

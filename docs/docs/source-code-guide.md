@@ -20,6 +20,7 @@
 - [10. SSE 流式协议](#10-sse-流式协议)
 - [11. 配置与前置依赖](#11-配置与前置依赖)
 - [12. 关键文件索引](#12-关键文件索引)
+- [13. 认证与 API Token](#13-认证与-api-token)
 
 ---
 
@@ -96,10 +97,12 @@ sequenceDiagram
 | 文件 | 作用 |
 | --- | --- |
 | `serv.py` | 启动 FastAPI，`autodiscover(controllers)` 自动注册路由 |
-| `controllers/llm_chat_api.py` | `POST /dify/get_answer`，JWT 校验，SSE 包装 |
+| `controllers/llm_chat_api.py` | `POST /dify/get_answer`，Token 校验，SSE 包装 |
 | `services/llm_service.py` | **`exec_query()` 核心路由**，按 `qa_type` 分发 Agent |
 | `common/sse_stream.py` | SSE 响应封装 |
-| `common/token_decorator.py` | `@check_token` JWT 鉴权 |
+| `common/token_decorator.py` | `@check_token` 统一鉴权（JWT + API Token） |
+| `services/auth_service.py` | `resolve_token()` 解析 Bearer Token |
+| `controllers/api_token_api.py` | API Token 管理接口（仅 JWT） |
 
 ### 2.3 LLM 配置来源（易忽略）
 
@@ -358,6 +361,8 @@ data:{"data":{"messageType":"continue","content":"..."},"dataType":"t02"}\n\n
 | `web/src/views/chat/default-page.vue` | 模式切换 UI |
 | `web/src/views/skill-center.vue` | 技能中心 |
 | `web/src/views/datasource/` | 数据源管理（含表关系 ER 图） |
+| `web/src/views/system/config/api-token-config.vue` | API Token 管理页 |
+| `web/src/api/api-token.ts` | API Token 前端 API |
 
 ### 后端路由
 
@@ -366,7 +371,10 @@ data:{"data":{"messageType":"continue","content":"..."},"dataType":"t02"}\n\n
 | `controllers/llm_chat_api.py` | 聊天主接口 |
 | `controllers/datasource_api.py` | 数据源 CRUD、表关系管理 |
 | `controllers/skill_api.py` | 技能管理 |
+| `controllers/api_token_api.py` | API Token 管理（`/user/api_token/*`） |
 | `services/llm_service.py` | Agent 分发中枢 |
+| `services/auth_service.py` | 统一 Token 解析 |
+| `services/api_token_service.py` | API Token CRUD |
 
 ### Agent 核心
 
@@ -388,6 +396,41 @@ data:{"data":{"messageType":"continue","content":"..."},"dataType":"t02"}\n\n
 | `services/embedding_service.py` | Embedding 生成 |
 | `services/datasource_service.py` | 数据源服务（含表关系同步） |
 | `config/load_env.py` | 加载 `.env` |
+
+---
+
+## 13. 认证与 API Token
+
+### 13.1 两种凭证
+
+| 类型 | 格式 | 有效期 | 用途 |
+| --- | --- | --- | --- |
+| 登录 JWT | `eyJ...` | 7 天 | Web 登录、Token 管理 |
+| API Token | `aix_...` | 永久 | 脚本 / CLI / 第三方集成 |
+
+请求头统一为：`Authorization: Bearer <token>`
+
+### 13.2 鉴权链路
+
+```mermaid
+flowchart LR
+    A[Bearer Token] --> B{resolve_token}
+    B -->|aix_*| C[查 t_api_token 哈希]
+    B -->|eyJ*| D[jwt.decode + exp]
+    C --> E[user_payload]
+    D --> E
+    E --> F[@check_token 接口]
+```
+
+- `@check_token`（`common/token_decorator.py`）调用 `services/auth_service.resolve_token()`
+- 业务层通过 `decode_jwt_token()` / `get_user_info()` 获取用户身份，无需区分凭证类型
+- Token 管理接口额外使用 `@check_jwt_token`，拒绝 `auth_type=api_token` 的请求
+
+### 13.3 数据表
+
+`t_api_token`：仅存 `token_hash`（SHA-256），明文仅在 `POST /user/api_token/add` 响应中返回一次。
+
+使用说明与 curl 示例见 [API Token 使用指南](./api-token-guide.md)。
 
 ---
 
