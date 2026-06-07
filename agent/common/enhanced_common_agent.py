@@ -24,7 +24,7 @@ from langgraph.types import Command
 from common.llm_util import get_llm
 from common.minio_util import MinioUtils
 from constants.code_enum import DataTypeEnum, IntentEnum
-from common.auth_service import resolve_token
+from common.agent_util import get_user_id
 from services.user_service import add_user_record
 logger = logging.getLogger(__name__)
 
@@ -542,7 +542,7 @@ class EnhancedCommonAgent:
         response,
         session_id: Optional[str] = None,
         uuid_str: str = None,
-        user_token=None,
+        user_payload=None,
         file_list: dict = None,
         selected_skills: list = None,
     ):
@@ -557,9 +557,8 @@ class EnhancedCommonAgent:
             # 同时保留文本内容
             file_as_markdown = minio_utils.get_files_content_as_markdown(file_list) # type: ignore
 
-        # 获取用户信息
-        user_dict = resolve_token(user_token) or {}
-        task_id = user_dict.get("id", 1)
+        user_id = get_user_id(user_payload)
+        task_id = user_id
         task_context = {"cancelled": False}
         self.running_tasks[task_id] = task_context
 
@@ -653,7 +652,7 @@ class EnhancedCommonAgent:
                         t02_answer_data,
                         {},
                         IntentEnum.COMMON_QA.value[0],
-                        user_token,
+                        user_id,
                         file_list,
                     )
                     logger.info(f"add_user_record 返回 record_id={record_id}, uuid_str={uuid_str}, session_id={session_id}")
@@ -726,12 +725,10 @@ class EnhancedCommonAgent:
         response,
         thread_id: str,
         user_input: str,
-        user_token: str = None,
+        user_payload: dict = None,
     ):
         """恢复暂停的 Agent，将用户回答注入并继续执行"""
-        # 获取用户信息
-        user_dict = resolve_token(user_token) or {}
-        task_id = user_dict.get("id", 1)
+        task_id = get_user_id(user_payload)
         task_context = {"cancelled": False}
         self.running_tasks[task_id] = task_context
 

@@ -11,7 +11,7 @@ from langgraph.graph.state import CompiledStateGraph
 from agent.text2sql.analysis.graph import create_graph
 from agent.text2sql.state.agent_state import AgentState
 from constants.code_enum import DataTypeEnum, IntentEnum
-from common.auth_service import resolve_token
+from common.agent_util import get_user_id
 from services.user_service import add_user_record
 
 # Langfuse 延迟导入，仅在启用 tracing 时导入
@@ -59,7 +59,7 @@ class Text2SqlAgent:
         response=None,
         chat_id: str = None,
         uuid_str: str = None,
-        user_token=None,
+        user_payload=None,
         datasource_id: int = None,
     ) -> None:
         """
@@ -68,7 +68,7 @@ class Text2SqlAgent:
         :param response: 响应对象
         :param chat_id: 会话ID，用于区分同一轮对话
         :param uuid_str: 自定义ID，用于唯一标识一次问答
-        :param user_token: 用户登录的token
+        :param user_payload: Controller @check_token 解析的用户信息
         :param datasource_id: 数据源ID
         :return: None
         """
@@ -78,10 +78,8 @@ class Text2SqlAgent:
         final_filtered_sql = ""  # 用于保存最终的SQL语句
 
         try:
-            # 获取用户信息（只调用一次）
-            user_dict = resolve_token(user_token) or {}
-            user_id = user_dict.get("id", 1)  # 默认为管理员
-            task_id = user_dict.get("id", 1)
+            user_id = get_user_id(user_payload)
+            task_id = user_id
 
             initial_state = AgentState(
                 user_query=query,
@@ -210,7 +208,7 @@ class Text2SqlAgent:
                     t02_answer_data,
                     t04_answer_data,
                     IntentEnum.DATABASE_QA.value[0],
-                    user_token,
+                    user_id,
                     {},
                     datasource_id,
                     final_filtered_sql,  # 传递SQL语句

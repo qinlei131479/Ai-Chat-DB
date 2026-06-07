@@ -4,6 +4,7 @@ from fastapi import APIRouter, Request
 from sqlalchemy import and_
 from starlette.responses import JSONResponse
 
+from common.agent_util import get_user_id
 from common.exception import MyException
 from common.permission_util import is_admin
 from common.res_decorator import async_json_resp
@@ -25,15 +26,11 @@ llm = LLMRequest()
 async def get_answer(request: Request, body: LLMGetAnswerRequest):
     """SSE 流式聊天接口"""
     try:
-        token = request.headers.get("Authorization")
-        if token and token.startswith("Bearer "):
-            token = token.split(" ")[1]
-
         user_payload = request.state.user_payload
         req_dict = body.model_dump()
 
         if req_dict.get("qa_type") == "DATABASE_QA" and req_dict.get("datasource_id"):
-            user_id = user_payload.get("id", 1)
+            user_id = get_user_id(user_payload)
             datasource_id = req_dict.get("datasource_id")
 
             if not is_admin(user_id):
@@ -61,7 +58,9 @@ async def get_answer(request: Request, body: LLMGetAnswerRequest):
                         )
 
         async def stream_handler(response):
-            await llm.exec_query(response, req_obj=req_dict, token=token)
+            await llm.exec_query(
+                response, req_obj=req_dict, user_payload=user_payload
+            )
 
         return create_sse_response(request, stream_handler)
     except MyException:
@@ -75,16 +74,14 @@ async def get_answer(request: Request, body: LLMGetAnswerRequest):
 @check_token
 async def resume_chat(request: Request, body: ResumeChatRequest):
     """恢复暂停的 Agent 对话"""
-    token = request.headers.get("Authorization")
-    if token and token.startswith("Bearer "):
-        token = token.split(" ")[1]
+    user_payload = request.state.user_payload
 
     async def stream_handler(response):
         await common_agent.resume_agent(
             response,
             thread_id=body.thread_id,
             user_input=body.user_input,
-            user_token=token,
+            user_payload=user_payload,
         )
 
     return create_sse_response(request, stream_handler)

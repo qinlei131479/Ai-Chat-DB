@@ -3,6 +3,7 @@ import logging
 from fastapi import APIRouter, Request
 
 from common.exception import MyException
+from common.permission_util import check_admin_permission
 from common.res_decorator import async_json_resp
 from common.token_decorator import check_token
 from constants.code_enum import SysCodeEnum
@@ -20,6 +21,7 @@ router = APIRouter(prefix="/ds_permission", tags=["权限管理"])
 @async_json_resp
 async def get_permission_list(request: Request):
     """获取权限规则列表"""
+    await check_admin_permission(request)
     try:
         db_pool = get_db_pool()
         with db_pool.get_session() as session:
@@ -34,6 +36,7 @@ async def get_permission_list(request: Request):
 @async_json_resp
 async def save_permission(request: Request, body: SavePermissionRequest):
     """保存权限规则"""
+    await check_admin_permission(request)
     try:
         data = body.model_dump()
         db_pool = get_db_pool()
@@ -54,6 +57,7 @@ async def save_permission(request: Request, body: SavePermissionRequest):
 @async_json_resp
 async def delete_permission(request: Request, rule_id: int):
     """删除权限规则"""
+    await check_admin_permission(request)
     try:
         db_pool = get_db_pool()
         with db_pool.get_session() as session:

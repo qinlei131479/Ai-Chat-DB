@@ -63,12 +63,27 @@ def _resolve_api_token(token: str) -> dict | None:
         session.commit()
 
         return {
-            "id": str(user.id),
+            "id": int(user.id),
             "username": user.userName or "",
             "role": user.role or "user",
             "auth_type": "api_token",
             "token_id": record.id,
         }
+
+
+def _normalize_payload(payload: dict) -> dict:
+    """统一 payload 字段类型，便于下游权限判断。"""
+    if "id" in payload and payload["id"] is not None:
+        payload = {**payload, "id": int(payload["id"])}
+    return payload
+
+
+def resolve_user_payload_from_token(token: str) -> dict | None:
+    """
+    从 Authorization 头或裸 token 解析用户 payload。
+    JWT 与 API Token 均支持；失败返回 None。
+    """
+    return resolve_token(token)
 
 
 def resolve_token(token: str) -> dict | None:
@@ -81,10 +96,11 @@ def resolve_token(token: str) -> dict | None:
         return None
 
     if token.startswith(API_TOKEN_PREFIX):
-        return _resolve_api_token(token)
+        payload = _resolve_api_token(token)
+        return _normalize_payload(payload) if payload else None
 
     try:
-        return _decode_jwt_payload(token)
+        return _normalize_payload(_decode_jwt_payload(token))
     except jwt.ExpiredSignatureError:
         logger.debug("JWT token expired")
         return None

@@ -16,7 +16,7 @@ from agent.excel.excel_duckdb_manager import (
 )
 from agent.excel.excel_graph import create_excel_graph
 from constants.code_enum import DataTypeEnum
-from common.auth_service import resolve_token
+from common.agent_util import get_user_id
 from services.user_service import (
     add_user_record,
     query_user_qa_record,
@@ -66,7 +66,7 @@ class ExcelAgent:
         response=None,
         chat_id: str = None,
         uuid_str: str = None,
-        user_token=None,
+        user_payload=None,
         file_list: list = None,
     ) -> None:
         """
@@ -75,7 +75,7 @@ class ExcelAgent:
         :param response:
         :param chat_id:
         :param uuid_str:
-        :param user_token:
+        :param user_payload: Controller @check_token 解析的用户信息
         :param file_list
         :return:
         """
@@ -108,9 +108,8 @@ class ExcelAgent:
             )
             graph: CompiledStateGraph = self.excel_graph
 
-            # 获取用户信息 标识对话状态
-            user_dict = resolve_token(user_token) or {}
-            task_id = user_dict.get("id", 1)
+            user_id = get_user_id(user_payload)
+            task_id = user_id
             task_context = {"cancelled": False}
             self.running_tasks[task_id] = task_context
 
@@ -147,8 +146,6 @@ class ExcelAgent:
                     as_type="agent",
                     name="表格问答",
                 ) as rootspan:
-                    user_info = resolve_token(user_token) or {}
-                    user_id = user_info.get("id")
                     rootspan.update_trace(session_id=chat_id, user_id=user_id)
 
                     async for chunk_dict in graph.astream(**stream_kwargs):
@@ -210,7 +207,7 @@ class ExcelAgent:
                     final_t02_answer,  # 只保存 summarize 信息
                     t04_answer_data,  # 保存图表数据
                     "FILEDATA_QA",
-                    user_token,
+                    user_id,
                     file_list,
                     sql_statement=sql_statement,  # 保存 SQL 语句
                 )

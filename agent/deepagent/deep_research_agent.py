@@ -47,7 +47,7 @@ from constants.code_enum import DataTypeEnum, IntentEnum
 from model.db_connection_pool import get_db_pool
 from services.datasource_service import DatasourceService
 from services.user_service import add_user_record
-from services.auth_service import resolve_token
+from common.agent_util import get_user_id
 
 logger = logging.getLogger(__name__)
 
@@ -412,7 +412,7 @@ class DeepAgent:
         response,
         session_id: Optional[str] = None,
         uuid_str: str = None,
-        user_token=None,
+        user_payload=None,
         file_list: dict = None,
         datasource_id: int = None,
     ):
@@ -424,7 +424,7 @@ class DeepAgent:
             response: SSE 响应对象
             session_id: 会话ID
             uuid_str: 唯一标识（兼容参数）
-            user_token: 用户令牌
+            user_payload: Controller @check_token 解析的用户信息
             file_list: 附件（兼容参数）
             datasource_id: 数据源ID
         """
@@ -437,9 +437,8 @@ class DeepAgent:
             )
             return
 
-        # 获取用户信息，生成会话标识
-        user_dict = resolve_token(user_token) or {}
-        task_id = user_dict.get("id", 1)
+        user_id = get_user_id(user_payload)
+        task_id = user_id
         effective_session_id = session_id or f"sql-agent-{datasource_id}-{task_id}"
 
         # 重置工具调用状态
@@ -549,7 +548,7 @@ class DeepAgent:
                         to2_answer=answer_collector,
                         to4_answer={},
                         qa_type=IntentEnum.REPORT_QA.value[0],
-                        user_token=user_token,
+                        user_id=user_id,
                         file_list=file_list,
                         datasource_id=datasource_id,
                     )

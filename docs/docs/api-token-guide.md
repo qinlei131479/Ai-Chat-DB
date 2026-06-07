@@ -195,7 +195,9 @@ psql "$SQLALCHEMY_DATABASE_URI" -f scripts/migrations/002_t_api_token_comments.s
 
 | 路径 | 说明 |
 | --- | --- |
-| `services/auth_service.py` | `resolve_token()` 统一鉴权 |
+| `services/auth_service.py` | `resolve_token()` / `resolve_user_payload_from_token()` 统一鉴权 |
+| `services/user_service.py` | `get_user_info(request)` 优先复用 `request.state.user_payload` |
+| `common/agent_util.py` | `get_user_id(user_payload)` Agent 层取用户 ID |
 | `services/api_token_service.py` | Token CRUD |
 | `controllers/api_token_api.py` | 管理 API |
 | `common/token_decorator.py` | `@check_token` |

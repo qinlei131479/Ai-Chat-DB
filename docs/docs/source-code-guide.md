@@ -422,8 +422,8 @@ flowchart LR
     E --> F[@check_token 接口]
 ```
 
-- `@check_token`（`common/token_decorator.py`）调用 `services/auth_service.resolve_token()`
-- 业务层通过 `decode_jwt_token()` / `get_user_info()` 获取用户身份，无需区分凭证类型
+- `@check_token`（`common/token_decorator.py`）调用 `services/auth_service.resolve_token()`，结果写入 `request.state.user_payload`
+- 业务层通过 `get_user_info(request)` 或 `common/agent_util.get_user_id(user_payload)` 获取用户身份，无需区分凭证类型
 - Token 管理接口额外使用 `@check_jwt_token`，拒绝 `auth_type=api_token` 的请求
 
 ### 13.3 数据表

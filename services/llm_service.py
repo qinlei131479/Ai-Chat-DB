@@ -7,9 +7,9 @@ from agent.common.enhanced_common_agent import EnhancedCommonAgent
 from agent.deepagent.deep_research_agent import DeepAgent
 from agent.excel.excel_agent import ExcelAgent
 from agent.text2sql.text2_sql_agent import Text2SqlAgent
+from common.agent_util import get_user_id
 from common.exception import MyException
 from constants.code_enum import IntentEnum, SysCodeEnum
-from services.auth_service import resolve_token
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ deep_agent = DeepAgent()
 class LLMRequest:
     """聊天请求路由服务：按 qa_type 分发到本地 Agent。"""
 
-    async def exec_query(self, res, req_obj=None, token=None):
+    async def exec_query(self, res, req_obj=None, user_payload=None):
         try:
             if req_obj is None:
                 req_body_content = res.request.body
@@ -39,12 +39,9 @@ class LLMRequest:
             query = req_obj.get("query")
             cleaned_query = re.sub(r"\s+", "", query) if query else ""
 
-            if token is None:
-                token = res.request.headers.get("Authorization")
-                if not token:
-                    raise MyException(SysCodeEnum.c_401)
-                if token.startswith("Bearer "):
-                    token = token.split(" ")[1]
+            if user_payload is None:
+                user_payload = getattr(res.request.state, "user_payload", None)
+            get_user_id(user_payload)
 
             selected_skills = req_obj.get("selected_skills")
 
@@ -54,17 +51,17 @@ class LLMRequest:
                     res,
                     chat_id,
                     uuid_str,
-                    token,
+                    user_payload,
                     file_list,
                     selected_skills=selected_skills,
                 )
             elif qa_type == IntentEnum.DATABASE_QA.value[0]:
                 await sql_agent.run_agent(
-                    query, res, chat_id, uuid_str, token, datasource_id
+                    query, res, chat_id, uuid_str, user_payload, datasource_id
                 )
             elif qa_type == IntentEnum.FILEDATA_QA.value[0]:
                 await excel_agent.run_excel_agent(
-                    cleaned_query, res, chat_id, uuid_str, token, file_list
+                    cleaned_query, res, chat_id, uuid_str, user_payload, file_list
                 )
             elif qa_type == IntentEnum.REPORT_QA.value[0]:
                 await deep_agent.run_agent(
@@ -72,7 +69,7 @@ class LLMRequest:
                     res,
                     chat_id,
                     uuid_str,
-                    token,
+                    user_payload,
                     file_list,
                     datasource_id,
                 )
@@ -89,14 +86,7 @@ class LLMRequest:
 
 async def stop_chat(request, task_id, qa_type) -> dict:
     """停止正在进行的 Agent 对话流。"""
-    token = request.headers.get("Authorization")
-    if not token:
-        raise MyException(SysCodeEnum.c_401)
-    if token.startswith("Bearer "):
-        token = token.split(" ")[1]
-
-    user_dict = resolve_token(token) or {}
-    cancel_task_id = user_dict["id"]
+    cancel_task_id = get_user_id(getattr(request.state, "user_payload", None))
 
     if qa_type == IntentEnum.COMMON_QA.value[0]:
         success = await common_agent.cancel_task(cancel_task_id)

@@ -126,44 +126,25 @@ async def generate_jwt_token(user_id, username, role="user"):
     return token
 
 
-async def decode_jwt_token(token):
-    """解析 Bearer token（JWT 或 API Token）并返回 payload"""
-    from services.auth_service import resolve_token, strip_bearer_token
-
-    payload = resolve_token(strip_bearer_token(token))
-    if payload is None:
-        return None, 401, "Invalid or expired token"
-    return payload
-
-
 async def get_user_info(request) -> dict:
-    """获取登录用户信息"""
-    token = request.headers.get("Authorization")
+    """获取当前请求的用户信息，优先复用 @check_token 写入的 user_payload。"""
+    payload = getattr(request.state, "user_payload", None)
+    if payload:
+        return payload
 
-    # 检查 Authorization 头是否存在
+    from services.auth_service import resolve_user_payload_from_token
+
+    token = request.headers.get("Authorization")
     if not token:
         logging.error("Authorization header is missing")
         raise MyException(SysCodeEnum.c_401)
 
-    # 检查 Authorization 头格式是否正确
-    if not token.startswith("Bearer "):
-        logging.error("Invalid Authorization header format")
-        raise MyException(SysCodeEnum.c_400)
-
-    # 提取 token
-    token = token.split(" ")[1].strip()
-
-    # 检查 token 是否为空
-    if not token:
-        logging.error("Token is empty or whitespace")
-        raise MyException(SysCodeEnum.c_400)
-
-    user_info = await decode_jwt_token(token)
-    if not user_info or isinstance(user_info, tuple):
-        logging.error("Failed to decode token")
+    payload = resolve_user_payload_from_token(token)
+    if not payload:
+        logging.error("Failed to resolve token")
         raise MyException(SysCodeEnum.c_401)
 
-    return user_info
+    return payload
 
 
 async def add_user_record(
@@ -173,7 +154,7 @@ async def add_user_record(
     to2_answer: List[str],
     to4_answer: dict[str, Any],
     qa_type: str,
-    user_token: str,
+    user_id: int,
     file_list: dict[str, Any] = None,
     datasource_id: int = None,
     sql_statement: str = "",
@@ -183,11 +164,8 @@ async def add_user_record(
     :param sql_statement: SQL语句（数据问答时保存，其他类型使用默认值空字符串）
     """
     try:
-        # 1. 解析用户信息
-        user_info = await decode_jwt_token(user_token)
-        user_id = user_info.get("id")
         if not user_id:
-            raise ValueError("Invalid user token: missing user_id")
+            raise ValueError("Invalid user_id")
 
         # 2. 组装 answer 数据 - 修复部分：确保所有元素转换为字符串
         t02_content = "".join(str(item) for item in (to2_answer or []))

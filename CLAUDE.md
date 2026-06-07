@@ -142,7 +142,7 @@ web/src/
 - **RAG（Text2SQL）**：BM25 + FAISS 表检索在 `db_service.py`；术语/训练样本 RAG 在 `agent/text2sql/rag/`；表关系来自 PostgreSQL `t_datasource.table_relation`（JSONB）
 - **MCP 集成**：仅 `COMMON_QA` 使用，通过环境变量 `MCP_HUB_COMMON_QA_GROUP_URL` 连接外部 mcp-hub
 - **Skills**：`SKILL.md`（含 YAML frontmatter）作为 LLM 上下文加载，非可执行工具
-- **认证**：`Authorization: Bearer <token>`；`resolve_token()`（`services/auth_service.py`）统一解析登录 JWT（7 天）与永久 API Token（`aix_*`，表 `t_api_token`）；`decode_jwt_token()` 为薄封装。Token 管理接口仅 JWT（`@check_jwt_token`）。详见 `docs/docs/api-token-guide.md`
+- **认证**：`Authorization: Bearer <token>`；`resolve_token()` / `resolve_user_payload_from_token()`（`services/auth_service.py`）统一解析登录 JWT（7 天）与永久 API Token（`aix_*`，表 `t_api_token`）；`@check_token` 将结果写入 `request.state.user_payload`，Controller/Agent 直接复用，禁止二次解析 token。Token 管理接口仅 JWT（`@check_jwt_token`）。详见 `docs/docs/api-token-guide.md`
 - **LLM 配置**：所有 Agent 通过 `common/llm_util.py` 读取数据库表 `t_ai_model`，不是 `.env` 中的 API Key
 
 ### 环境变量

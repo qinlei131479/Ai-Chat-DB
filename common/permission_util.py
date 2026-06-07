@@ -35,17 +35,15 @@ def is_admin(user_id: int) -> bool:
 
 async def check_admin_permission(request):
     """
-    检查当前用户是否为管理员，如果不是则抛出异常
-    
-    Args:
-        request: 请求对象
-        
-    Raises:
-        MyException: 如果用户不是管理员，抛出权限拒绝异常
+    检查当前用户是否为管理员，如果不是则抛出异常。
+    需配合 @check_token 使用，或确保 Authorization 头有效。
     """
-    from services.user_service import get_user_info
-    
-    user_info = await get_user_info(request)
+    user_info = getattr(request.state, "user_payload", None)
+    if not user_info:
+        from services.user_service import get_user_info
+
+        user_info = await get_user_info(request)
+
     role = user_info.get("role")
     
     if role != 'admin':
