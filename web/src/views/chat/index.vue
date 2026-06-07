@@ -350,7 +350,11 @@ const onRecycleQa = async (index: number) => {
 // 赞 结果反馈
 const onPraiseFeadBack = async (index: number) => {
   const item = conversationItems.value[index]
-  const res = await GlobalAPI.fead_back(item.chat_id, 'like')
+  if (!item.record_id) {
+    window.$ModalMessage.warning('记录尚未保存，请稍后再反馈')
+    return
+  }
+  const res = await GlobalAPI.send_feedback(item.record_id, 'like')
   if (res.ok) {
     window.$ModalMessage.destroyAll()
     window.$ModalMessage.success('感谢反馈', {
@@ -368,7 +372,11 @@ const onBeginRead = async (index: number) => {
 // 踩 结果反馈
 const onBelittleFeedback = async (index: number) => {
   const item = conversationItems.value[index]
-  const res = await GlobalAPI.fead_back(item.chat_id, 'dislike')
+  if (!item.record_id) {
+    window.$ModalMessage.warning('记录尚未保存，请稍后再反馈')
+    return
+  }
+  const res = await GlobalAPI.send_feedback(item.record_id, 'dislike')
   if (res.ok) {
     window.$ModalMessage.destroyAll()
     window.$ModalMessage.success('感谢反馈', {
@@ -770,7 +778,7 @@ const handleCreateStylized = async (
 
   // 若正在加载，则点击后恢复初始状态
   if (stylizingLoading.value) {
-    // 停止dify 对话
+    // 停止对话流
     await GlobalAPI.stop_chat(businessStore.$state.task_id, currentQaType)
     stylizingLoading.value = false
     onCompletedReader(conversationItems.value.length - 1)

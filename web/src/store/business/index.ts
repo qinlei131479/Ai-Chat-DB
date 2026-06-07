@@ -24,7 +24,7 @@ export const useBusinessStore = defineStore('business-store', {
       qa_type: 'COMMON_QA',
       // 全局保存文件问答地址
       file_list: [],
-      // 全局保存dify 任务id
+      // 全局保存流式任务 id
       task_id: '',
       // 全局保存记录ID，用于查询SQL语句
       record_id: null,
@@ -248,7 +248,7 @@ export const useBusinessStore = defineStore('business-store', {
         }
 
         // 调用后端接口拿大模型结果
-        GlobalAPI.createOllama3Stylized(query_str, qa_type, uuid, chat_id, file_list, datasource_id, selected_skills)
+        GlobalAPI.streamChatAnswer(query_str, qa_type, uuid, chat_id, file_list, datasource_id, selected_skills)
           .then(async (res) => resolve(await processResponse(res)))
           .catch((err) => {
             console.error('Request failed:', err)

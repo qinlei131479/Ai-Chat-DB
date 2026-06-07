@@ -257,7 +257,7 @@ async function handleViewTutorial(skill: SkillInfo) {
   const token = userStore.getUserToken()
 
   try {
-    const res = await fetch(`${location.origin}/sanic/system/skill/tutorial`, {
+    const res = await fetch(`${location.origin}/api/system/skill/tutorial`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

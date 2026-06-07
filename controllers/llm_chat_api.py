@@ -12,29 +12,19 @@ from common.token_decorator import check_token
 from constants.code_enum import SysCodeEnum
 from model.db_connection_pool import get_db_pool
 from model.datasource_models import DatasourceAuth
-from model.schemas import (
-    DifyGetSuggestedRequest,
-    LLMGetAnswerRequest,
-    ResumeChatRequest,
-    StopChatRequest,
-)
-from services.llm_service import (
-    LLMRequest,
-    common_agent,
-    query_dify_suggested,
-    stop_dify_chat,
-)
+from model.schemas import LLMGetAnswerRequest, ResumeChatRequest, StopChatRequest
+from services.llm_service import LLMRequest, common_agent, stop_chat
 from services.user_service import decode_jwt_token
 
-router = APIRouter(prefix="/dify", tags=["对话服务"])
+router = APIRouter(prefix="/chat", tags=["对话服务"])
 
 llm = LLMRequest()
 
 
-@router.post("/get_answer")
+@router.post("/answer")
 @check_token
 async def get_answer(request: Request, body: LLMGetAnswerRequest):
-    """调用画布获取数据流式返回"""
+    """SSE 流式聊天接口"""
     try:
         token = request.headers.get("Authorization")
         if token and token.startswith("Bearer "):
@@ -78,11 +68,11 @@ async def get_answer(request: Request, body: LLMGetAnswerRequest):
     except MyException:
         raise
     except Exception as e:
-        logging.error(f"Error Invoke diFy: {e}")
+        logging.error(f"Error invoking chat: {e}")
         raise MyException(SysCodeEnum.c_9999)
 
 
-@router.post("/resume_chat")
+@router.post("/resume")
 @check_token
 async def resume_chat(request: Request, body: ResumeChatRequest):
     """恢复暂停的 Agent 对话"""
@@ -101,17 +91,9 @@ async def resume_chat(request: Request, body: ResumeChatRequest):
     return create_sse_response(request, stream_handler)
 
 
-@router.post("/get_dify_suggested")
+@router.post("/stop")
 @check_token
 @async_json_resp
-async def dify_suggested(request: Request, body: DifyGetSuggestedRequest):
-    """获取 Dify 问题建议"""
-    return await query_dify_suggested(body.chat_id)
-
-
-@router.post("/stop_chat")
-@check_token
-@async_json_resp
-async def stop_chat(request: Request, body: StopChatRequest):
+async def stop_chat_api(request: Request, body: StopChatRequest):
     """停止聊天"""
-    return await stop_dify_chat(request, body.task_id, body.qa_type)
+    return await stop_chat(request, body.task_id, body.qa_type)

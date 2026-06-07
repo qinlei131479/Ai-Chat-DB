@@ -119,14 +119,16 @@ CREATE TABLE t_user_qa_record (
   datasource_id BIGINT,
   file_key TEXT,
   sql_statement TEXT,
+  rating VARCHAR(10),
   create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 COMMENT ON TABLE t_user_qa_record IS '问答记录表';
 COMMENT ON COLUMN t_user_qa_record.user_id IS '用户id';
 COMMENT ON COLUMN t_user_qa_record.uuid IS '自定义id';
-COMMENT ON COLUMN t_user_qa_record.conversation_id IS '对话id';
-COMMENT ON COLUMN t_user_qa_record.message_id IS '消息id';
+COMMENT ON COLUMN t_user_qa_record.conversation_id IS '对话id（已废弃，历史遗留）';
+COMMENT ON COLUMN t_user_qa_record.message_id IS '消息id（已废弃，历史遗留）';
+COMMENT ON COLUMN t_user_qa_record.rating IS '用户反馈：like/dislike';
 COMMENT ON COLUMN t_user_qa_record.task_id IS '任务id';
 COMMENT ON COLUMN t_user_qa_record.chat_id IS '对话id';
 COMMENT ON COLUMN t_user_qa_record.question IS '用户问题';

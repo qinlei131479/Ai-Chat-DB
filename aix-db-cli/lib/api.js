@@ -43,13 +43,13 @@ function jsonRequest(baseUrl, method, path, body, token) {
 }
 
 export async function loginApi(baseUrl, username, password) {
-  const json = await jsonRequest(baseUrl, 'POST', '/sanic/user/login', { username, password }, null)
+  const json = await jsonRequest(baseUrl, 'POST', '/api/user/login', { username, password }, null)
   if (json.code === 200 && json.data?.token) return json.data.token
   throw new Error(json.msg || '登录失败')
 }
 
 export async function getDatasources(baseUrl, token) {
-  const json = await jsonRequest(baseUrl, 'GET', '/sanic/datasource/list', null, token)
+  const json = await jsonRequest(baseUrl, 'GET', '/api/datasource/list', null, token)
   if (json.code === 200) return json.data || []
   throw new Error(json.msg || 'Failed to fetch datasources')
 }
@@ -72,7 +72,7 @@ export function parseSSEBuffer(buffer) {
 
 export async function streamChat(baseUrl, token, { query, datasourceId, qaType = 'DATABASE_QA', timeoutSecs = 180 }, onEvent) {
   return new Promise((resolve, reject) => {
-    const url = new URL('/sanic/dify/get_answer', baseUrl)
+    const url = new URL('/api/chat/answer', baseUrl)
     const body = JSON.stringify({
       query,
       qa_type: qaType,

@@ -414,7 +414,7 @@ const initializeGraph = (container: HTMLElement, resolve: () => void, reject: (e
 const getTableData = async () => {
   loading.value = true
   try {
-    const url = new URL(`${location.origin}/sanic/datasource/get/${props.dsId}`)
+    const url = new URL(`${location.origin}/api/datasource/get/${props.dsId}`)
     const response = await fetch(url, { method: 'POST' })
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
@@ -527,7 +527,7 @@ const addNode = async (node: any) => {
 const clickTable = async (table: any) => {
   loading.value = true
   try {
-    const url = new URL(`${location.origin}/sanic/datasource/fieldList/${table.id}`)
+    const url = new URL(`${location.origin}/api/datasource/fieldList/${table.id}`)
     const response = await fetch(url, { method: 'POST' })
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
@@ -573,7 +573,7 @@ const save = async () => {
   }
   try {
     const cells = graph.toJSON().cells || []
-    const url = new URL(`${location.origin}/sanic/datasource/tableRelation`)
+    const url = new URL(`${location.origin}/api/datasource/tableRelation`)
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

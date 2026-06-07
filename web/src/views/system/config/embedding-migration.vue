@@ -280,7 +280,7 @@ const startMigration = async () => {
 
   try {
     const token = userStore.getUserToken()
-    const response = await fetch(`${location.origin}/sanic/system/embedding-migration/recalculate`, {
+    const response = await fetch(`${location.origin}/api/system/embedding-migration/recalculate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

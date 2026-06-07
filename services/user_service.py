@@ -13,7 +13,6 @@ from sqlalchemy.orm import Session
 
 from common.exception import MyException
 from constants.code_enum import SysCodeEnum, IntentEnum, DataTypeEnum
-from constants.dify_rest_api import DiFyRestApi
 from model.db_connection_pool import get_db_pool
 from model.db_models import TUserQaRecord, TUser
 from model.serializers import model_to_dict
@@ -165,65 +164,6 @@ async def get_user_info(request) -> dict:
         raise MyException(SysCodeEnum.c_401)
 
     return user_info
-
-
-async def add_question_record(
-    uuid_str, user_token, conversation_id, message_id, task_id, chat_id, question, t02_answer, t04_answer, qa_type
-):
-    """
-    @:param uuid_str: 唯一ID
-    @param user_token: 用户token
-    @param conversation_id: dify会话ID
-    @param message_id: 消息ID
-    @param task_id: 任务ID
-    @param chat_id: 聊天ID
-    @param question: 问题
-    @param t02_answer: 回答
-    @param t04_answer: 回答
-    @param qa_type: 问答类型
-    记录用户问答记录，如果记录已存在，则更新之；否则，创建新记录。
-    """
-    try:
-        # 解析token信息
-        user_dict = await decode_jwt_token(user_token)
-        user_id = user_dict["id"]
-
-        # 文件问答时保存 minio/key
-        file_key = ""
-        if qa_type == IntentEnum.FILEDATA_QA.value[0]:
-            file_key = question.split("|")[0]
-            question = question.split("|")[1]
-
-        sql = f"select * from t_user_qa_record where user_id={user_id} and chat_id='{chat_id}' and message_id='{message_id}'"
-        log_dict = execute_sql_dict(sql)
-
-        # 根据 message_id 判断是否是同一个问题
-        if len(log_dict) > 0:
-            sql = f"""update t_user_qa_record set to4_answer='{json.dumps(t04_answer, ensure_ascii=False)}' 
-                    where user_id={user_id} and chat_id='{chat_id}' and message_id='{message_id}'"""
-            execute_sql_update(sql)
-        else:
-            insert_params = (
-                uuid_str,
-                user_id,
-                conversation_id,
-                message_id,
-                task_id,
-                chat_id,
-                question,
-                json.dumps(t02_answer, ensure_ascii=False),
-                qa_type,
-                file_key,
-            )
-            sql = (
-                f" insert into t_user_qa_record(uuid,user_id,conversation_id, message_id, task_id,chat_id,question,to2_answer,qa_type,file_key) "
-                f"values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-            )
-            execute_sql_update(sql, insert_params)
-
-    except Exception as e:
-        traceback.print_exception(e)
-        logger.error(f"保存用户问答日志失败: {e}")
 
 
 async def add_user_record(
@@ -517,29 +457,22 @@ async def get_record_sql(record_id: int, user_id: int) -> dict:
         return {"sql_statement": ""}
 
 
-async def send_dify_feedback(chat_id, rating):
+async def save_feedback(user_id: int, record_id: int, rating: str) -> dict:
+    """保存用户对问答记录的点赞/点踩反馈。"""
+    if rating not in ("like", "dislike"):
+        raise MyException(SysCodeEnum.PARAM_ERROR, "rating 必须为 like 或 dislike")
+
+    update_sql = """
+        UPDATE t_user_qa_record
+        SET rating = %s
+        WHERE id = %s AND user_id = %s
     """
-    发送反馈给指定的消息ID。
+    rowcount = execute_sql_update(update_sql, (rating, record_id, user_id))
+    if not rowcount:
+        raise MyException(SysCodeEnum.DATA_NOT_FOUND, "问答记录不存在或无权操作")
 
-    :param chat_id: 消息的唯一标识符。
-    :param rating: 反馈评级（例如："like" 或 "dislike"）。
-    :return: 返回服务器响应。
-    """
-    # 查询对话记录
-    qa_record = query_user_qa_record(chat_id)
-    url = DiFyRestApi.replace_path_params(DiFyRestApi.DIFY_REST_FEEDBACK, {"message_id": qa_record[0]["message_id"]})
-    api_key = os.getenv("DIFY_DATABASE_QA_API_KEY")
-    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-    payload = {"rating": rating, "user": "abc-123"}
-
-    response = requests.post(url, headers=headers, json=payload)
-
-    # 检查请求是否成功
-    if response.status_code == 200:
-        logger.info("Feedback successfully sent.")
-    else:
-        logger.error(f"Failed to send feedback. Status code: {response.status_code},Response body: {response.text}")
-        raise
+    logger.info("Feedback saved: record_id=%s rating=%s", record_id, rating)
+    return {"status": "ok", "record_id": record_id, "rating": rating}
 
 
 async def query_user_list(page, size, name=None):

@@ -11,7 +11,7 @@
 | 格式 | `aix_` + 随机字符串，如 `aix_k7Hx9mP2nQ4rS6tU8vW0xY2zA4bC6dE8fGhIjKl` |
 | 有效期 | 永久（`expires_at = NULL`） |
 | 绑定账号 | 仅可绑定 `role=admin` 的用户 |
-| 作用范围 | 所有 `@check_token` 鉴权接口（含 `POST /dify/get_answer`） |
+| 作用范围 | 所有 `@check_token` 鉴权接口（含 `POST /chat/answer`） |
 | 管理接口 | 仅接受登录 JWT，**不接受** API Token |
 | 存储 | 数据库仅存 SHA-256 哈希，明文仅在创建时返回一次 |
 
@@ -43,7 +43,7 @@
 
 ## curl 调用示例
 
-以下示例假设后端直连地址为 `http://127.0.0.1:8088`。若经前端代理（Vite `2048` 或 Docker `18080`），路径前加 `/sanic` 前缀。
+以下示例假设后端直连地址为 `http://127.0.0.1:8088`。若经前端代理（Vite `2048` 或 Docker `18080`），路径前加 `/api` 前缀。
 
 ### 1. 登录获取 JWT（用于创建 Token）
 
@@ -86,7 +86,7 @@ curl -s -X GET 'http://127.0.0.1:8088/datasource/list' \
 **智能问答（COMMON_QA）**
 
 ```bash
-curl -N -X POST 'http://127.0.0.1:8088/dify/get_answer' \
+curl -N -X POST 'http://127.0.0.1:8088/chat/answer' \
   -H "Authorization: Bearer ${API_TOKEN}" \
   -H 'Content-Type: application/json' \
   -d '{
@@ -101,7 +101,7 @@ curl -N -X POST 'http://127.0.0.1:8088/dify/get_answer' \
 **数据问答（DATABASE_QA）**
 
 ```bash
-curl -N -X POST 'http://127.0.0.1:8088/dify/get_answer' \
+curl -N -X POST 'http://127.0.0.1:8088/chat/answer' \
   -H "Authorization: Bearer ${API_TOKEN}" \
   -H 'Content-Type: application/json' \
   -d '{
@@ -119,7 +119,7 @@ curl -N -X POST 'http://127.0.0.1:8088/dify/get_answer' \
 ### 经前端代理访问
 
 ```bash
-curl -N -X POST 'http://127.0.0.1:2048/sanic/dify/get_answer' \
+curl -N -X POST 'http://127.0.0.1:2048/api/chat/answer' \
   -H "Authorization: Bearer ${API_TOKEN}" \
   -H 'Content-Type: application/json' \
   -d '{"query":"你好","qa_type":"COMMON_QA","chat_id":"demo","uuid":"demo-uuid","file_list":[]}'
@@ -129,7 +129,7 @@ curl -N -X POST 'http://127.0.0.1:2048/sanic/dify/get_answer' \
 
 ## CLI 使用
 
-CLI 请求路径带 `/sanic` 前缀，请使用 **Web 代理地址**（非直连后端 8088）：
+CLI 请求路径带 `/api` 前缀，请使用 **Web 代理地址**（非直连后端 8088）：
 
 ```bash
 # 永久 API Token 登录

@@ -88,11 +88,11 @@ export default defineConfig(({ mode }) => {
           ws: true,
           rewrite: (path) => path.replace(/^\/siliconflow/, ''),
         },
-        '/sanic': {
+        '/api': {
           target: 'http://localhost:8088',
           changeOrigin: true,
           ws: true,
-          rewrite: (path) => path.replace(/^\/sanic/, ''),
+          rewrite: (path) => path.replace(/^\/api/, ''),
           // SSE 流式响应需要较长超时（DeepAgent 报告生成耗时较长）
           timeout: 1200000, // 20分钟
           proxyTimeout: 1200000,

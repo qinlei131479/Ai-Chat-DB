@@ -32,7 +32,7 @@ function startExtraction(itemId) {
   showAbModal.value = true
   progress.value = 0 // 初始化进度为0
   const eventSource = new EventSource(
-    `${location.origin}/sanic/ta/abstract_doc_func/${itemId}`,
+    `${location.origin}/api/ta/abstract_doc_func/${itemId}`,
   )
 
   eventSource.onmessage = function (event) {
@@ -240,7 +240,7 @@ function navigateToDetail(id) {
         ref="uploadDocRef"
         multiple
         :show-file-list="true"
-        action="sanic/file/upload_file"
+        action="api/file/upload_file"
         accept=".doc, .docx"
         @finish="finish_upload"
       >

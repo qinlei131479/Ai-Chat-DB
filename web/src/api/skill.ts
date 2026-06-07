@@ -23,7 +23,7 @@ export interface SkillContent {
 export async function fetch_skill_list(scope?: string): Promise<Response> {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/system/skill/list`)
+  const url = new URL(`${location.origin}/api/system/skill/list`)
   if (scope) {
     url.searchParams.append('scope', scope)
   }
@@ -45,7 +45,7 @@ export async function fetch_skill_list(scope?: string): Promise<Response> {
 export async function fetch_skill_content(name: string, scope?: string): Promise<Response> {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/system/skill/content`)
+  const url = new URL(`${location.origin}/api/system/skill/content`)
   url.searchParams.append('name', name)
   if (scope) {
     url.searchParams.append('scope', scope)
@@ -68,7 +68,7 @@ export async function fetch_skill_content(name: string, scope?: string): Promise
 export async function fetch_skill_tutorial(name: string, scope?: string): Promise<Response> {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/system/skill/tutorial`)
+  const url = new URL(`${location.origin}/api/system/skill/tutorial`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -104,7 +104,7 @@ function extractRepo(input: string): string {
 export async function preview_github_skills(repo: string): Promise<Response> {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/system/skill/preview`)
+  const url = new URL(`${location.origin}/api/system/skill/preview`)
   url.searchParams.append('repo', extractRepo(repo))
   const req = new Request(url, {
     mode: 'cors',
@@ -122,7 +122,7 @@ export async function preview_github_skills(repo: string): Promise<Response> {
 export async function install_from_github(repo: string, skills?: string[], scope?: string): Promise<Response> {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/system/skill/install/github`)
+  const url = new URL(`${location.origin}/api/system/skill/install/github`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -144,7 +144,7 @@ export async function install_from_zip(file: File, scope?: string): Promise<Resp
   const formData = new FormData()
   formData.append('file', file)
   formData.append('scope', scope ?? 'common')
-  const url = new URL(`${location.origin}/sanic/system/skill/install/upload`)
+  const url = new URL(`${location.origin}/api/system/skill/install/upload`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -162,7 +162,7 @@ export async function install_from_zip(file: File, scope?: string): Promise<Resp
 export async function uninstall_skill(name: string, scope?: string): Promise<Response> {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/system/skill/uninstall`)
+  const url = new URL(`${location.origin}/api/system/skill/uninstall`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -181,7 +181,7 @@ export async function uninstall_skill(name: string, scope?: string): Promise<Res
 export async function toggle_skill(name: string, enabled: boolean, scope?: string): Promise<Response> {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/system/skill/toggle`)
+  const url = new URL(`${location.origin}/api/system/skill/toggle`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',

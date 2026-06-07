@@ -8,7 +8,7 @@ from model.schemas import (
     AddUserRequest,
     DeleteUserRecordRequest,
     DeleteUserRequest,
-    DifyFeedbackRequest,
+    FeedbackRequest,
     GetRecordSqlRequest,
     LoginRequest,
     QueryUserListRequest,
@@ -27,7 +27,7 @@ from services.user_service import (
     query_user_list,
     query_user_record,
     query_user_record_list,
-    send_dify_feedback,
+    save_feedback,
     update_user,
 )
 
@@ -75,11 +75,12 @@ async def delete_user_qa_record(request: Request, body: DeleteUserRecordRequest)
     return await delete_user_record(user_info["id"], body.record_ids)
 
 
-@router.post("/dify_fead_back")
+@router.post("/feedback")
 @check_token
 @async_json_resp
-async def fead_back(request: Request, body: DifyFeedbackRequest):
-    return await send_dify_feedback(body.chat_id, body.rating)
+async def feedback(request: Request, body: FeedbackRequest):
+    user_info = await get_user_info(request)
+    return await save_feedback(user_info["id"], body.record_id, body.rating)
 
 
 @router.post("/get_record_sql")

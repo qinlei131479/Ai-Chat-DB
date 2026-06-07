@@ -369,15 +369,15 @@ class DeleteUserRecordResponse(BaseResponse):
     data: Dict[str, str] = Field(description="删除结果")
 
 
-class DifyFeedbackRequest(BaseModel):
-    """Dify反馈请求"""
+class FeedbackRequest(BaseModel):
+    """问答反馈请求"""
 
-    chat_id: str = Field(description="聊天ID")
+    record_id: int = Field(description="问答记录ID")
     rating: str = Field(description="评分，如：like/dislike")
 
 
-class DifyFeedbackResponse(BaseResponse):
-    """Dify反馈响应"""
+class FeedbackResponse(BaseResponse):
+    """问答反馈响应"""
 
     data: Dict[str, str] = Field(description="反馈结果")
 
@@ -463,7 +463,7 @@ class ApiTokenIdRequest(BaseModel):
     id: int = Field(description="Token ID")
 
 
-# ==================== Dify 服务相关模型 ====================
+# ==================== 聊天服务相关模型 ====================
 class LLMGetAnswerRequest(BaseModel):
     """获取LLM答案请求"""
 
@@ -481,18 +481,6 @@ class ResumeChatRequest(BaseModel):
 
     thread_id: str = Field(description="对话线程ID")
     user_input: str = Field(description="用户输入的回答")
-
-
-class DifyGetSuggestedRequest(BaseModel):
-    """获取Dify问题建议请求"""
-
-    chat_id: str = Field(description="聊天ID")
-
-
-class DifyGetSuggestedResponse(BaseResponse):
-    """获取Dify问题建议响应"""
-
-    data: Dict[str, List[str]] = Field(description="建议问题列表")
 
 
 class StopChatRequest(BaseModel):

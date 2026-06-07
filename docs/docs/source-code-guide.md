@@ -60,8 +60,8 @@ sequenceDiagram
     participant Svc as services/llm_service.py
     participant Agent as agent/*_agent.py
 
-    UI->>API: createOllama3Stylized(query, qa_type, ...)
-    API->>Ctrl: POST /sanic/dify/get_answer (SSE)
+    UI->>API: streamChatAnswer(query, qa_type, ...)
+    API->>Ctrl: POST /api/chat/answer (SSE)
     Ctrl->>Ctrl: check_token + 数据源权限校验
     Ctrl->>Svc: LLMRequest.exec_query()
     Svc->>Agent: 按 qa_type 调用对应 run_agent()
@@ -75,7 +75,7 @@ sequenceDiagram
 | --- | --- |
 | `web/src/views/chat/index.vue` | 主聊天页，维护 `qa_type`、消息列表、SSE 解析 |
 | `web/src/views/chat/default-page.vue` | 首页输入框，模式切换（智能/数据/表格/深度） |
-| `web/src/api/index.ts` | `createOllama3Stylized()` → `POST /sanic/dify/get_answer` |
+| `web/src/api/index.ts` | `streamChatAnswer()` → `POST /api/chat/answer` |
 | `web/src/store/business/index.ts` | Pinia 全局状态：`qa_type`、`datasource_id`、`file_list` |
 
 前端请求体核心字段：
@@ -97,7 +97,7 @@ sequenceDiagram
 | 文件 | 作用 |
 | --- | --- |
 | `serv.py` | 启动 FastAPI，`autodiscover(controllers)` 自动注册路由 |
-| `controllers/llm_chat_api.py` | `POST /dify/get_answer`，Token 校验，SSE 包装 |
+| `controllers/llm_chat_api.py` | `POST /chat/answer`，Token 校验，SSE 包装 |
 | `services/llm_service.py` | **`exec_query()` 核心路由**，按 `qa_type` 分发 Agent |
 | `common/sse_stream.py` | SSE 响应封装 |
 | `common/token_decorator.py` | `@check_token` 统一鉴权（JWT + API Token） |

@@ -9,7 +9,7 @@ import { useUserStore } from '@/store/business/userStore'
 export async function fetch_datasource_list() {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/list`)
+  const url = new URL(`${location.origin}/api/datasource/list`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'get',
@@ -26,7 +26,7 @@ export async function fetch_datasource_list() {
 export async function fetch_datasource_table_list(dsId: number | string) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/tableList/${dsId}`)
+  const url = new URL(`${location.origin}/api/datasource/tableList/${dsId}`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -43,7 +43,7 @@ export async function fetch_datasource_table_list(dsId: number | string) {
 export async function fetch_datasource_field_list(tableId: number | string) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/fieldList/${tableId}`)
+  const url = new URL(`${location.origin}/api/datasource/fieldList/${tableId}`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -60,7 +60,7 @@ export async function fetch_datasource_field_list(tableId: number | string) {
 export async function fetch_datasource_preview_data(dsId: number | string, buildData: any) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/previewData`)
+  const url = new URL(`${location.origin}/api/datasource/previewData`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -82,7 +82,7 @@ export async function fetch_datasource_preview_data(dsId: number | string, build
 export async function save_datasource_table(tableData: any) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/saveTable`)
+  const url = new URL(`${location.origin}/api/datasource/saveTable`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -101,7 +101,7 @@ export async function save_datasource_table(tableData: any) {
 export async function save_datasource_field(fieldData: any) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/saveField`)
+  const url = new URL(`${location.origin}/api/datasource/saveField`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -120,7 +120,7 @@ export async function save_datasource_field(fieldData: any) {
 export async function fetch_datasource_detail(id: number | string) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/get/${id}`)
+  const url = new URL(`${location.origin}/api/datasource/get/${id}`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -137,7 +137,7 @@ export async function fetch_datasource_detail(id: number | string) {
 export async function delete_datasource(id: number | string) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/delete/${id}`)
+  const url = new URL(`${location.origin}/api/datasource/delete/${id}`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -154,7 +154,7 @@ export async function delete_datasource(id: number | string) {
 export async function check_datasource_connection(data: any) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/check`)
+  const url = new URL(`${location.origin}/api/datasource/check`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -173,7 +173,7 @@ export async function check_datasource_connection(data: any) {
 export async function fetch_tables_by_conf(data: any) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/getTablesByConf`)
+  const url = new URL(`${location.origin}/api/datasource/getTablesByConf`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -192,7 +192,7 @@ export async function fetch_tables_by_conf(data: any) {
 export async function add_datasource(data: any) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/add`)
+  const url = new URL(`${location.origin}/api/datasource/add`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -211,7 +211,7 @@ export async function add_datasource(data: any) {
 export async function update_datasource(data: any) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/update`)
+  const url = new URL(`${location.origin}/api/datasource/update`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -234,7 +234,7 @@ export async function update_datasource(data: any) {
 export async function sync_datasource_tables(dsId: number | string, tables: any[], isSelectAll: boolean = false) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/syncTables/${dsId}`)
+  const url = new URL(`${location.origin}/api/datasource/syncTables/${dsId}`)
   
   // 根据表数量动态设置超时时间：每100张表增加1分钟，最少5分钟，最多30分钟
   const tableCount = tables.length
@@ -272,7 +272,7 @@ export async function sync_datasource_tables(dsId: number | string, tables: any[
 export async function get_authorized_users(datasourceId: number) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/getAuthorizedUsers/${datasourceId}`)
+  const url = new URL(`${location.origin}/api/datasource/getAuthorizedUsers/${datasourceId}`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',
@@ -289,7 +289,7 @@ export async function get_authorized_users(datasourceId: number) {
 export async function authorize_datasource(datasourceId: number, userIds: number[]) {
   const userStore = useUserStore()
   const token = userStore.getUserToken()
-  const url = new URL(`${location.origin}/sanic/datasource/authorize`)
+  const url = new URL(`${location.origin}/api/datasource/authorize`)
   const req = new Request(url, {
     mode: 'cors',
     method: 'post',

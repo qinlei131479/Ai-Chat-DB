@@ -218,9 +218,9 @@ MCP_HUB_COMMON_QA_GROUP_URL=<your-mcp-hub-url>
 
 表关系由数据源管理中的 ER 图编辑并保存到 PostgreSQL `t_datasource.table_relation`（JSONB）。Text2SQL 和深度问数均从此字段读取。
 
-### 前端 API 为什么带 `/sanic/` 前缀？
+### 前端 API 为什么带 `/api/` 前缀？
 
-历史兼容：前端通过 Vite 开发代理或 nginx 将 `/sanic/*` 重写为后端路径。后端实际为 FastAPI，路由如 `/dify/get_answer`，不含 `/sanic`。
+前端通过 Vite 开发代理或 nginx 将 `/api/*` 重写为后端路径。后端实际为 FastAPI，路由如 `/chat/answer`，不含 `/api` 前缀。
 
 ### 支持哪些数据库？
 
@@ -230,11 +230,19 @@ MCP_HUB_COMMON_QA_GROUP_URL=<your-mcp-hub-url>
 
 CSV / Excel 仅用于表格问答文件上传，不是 SQL 数据源类型。
 
+### 已有数据库如何升级反馈字段？
+
+若数据库在 `rating` 字段引入前已创建，请执行：
+
+```sql
+ALTER TABLE t_user_qa_record ADD COLUMN IF NOT EXISTS rating VARCHAR(10);
+```
+
 ### 如何用 curl / 脚本调用聊天接口？
 
 1. 在 **系统设置 → API Token** 创建永久 Token（或使用 JWT 调 `POST /user/api_token/add`）
 2. 请求头：`Authorization: Bearer aix_...`（完整明文，不是数据库中的 `token_hash`）
-3. `POST /dify/get_answer` 发起 SSE 聊天
+3. `POST /chat/answer` 发起 SSE 聊天
 
 完整示例见 [API Token 使用指南](./api-token-guide.md)。
 

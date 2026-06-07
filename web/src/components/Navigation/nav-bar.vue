@@ -13,7 +13,7 @@ withDefaults(defineProps<Props>(), {
 })
 
 const handleToRepo = () => {
-  const link = ref('https://github.com/apconw/sanic-web')
+  const link = ref('https://github.com/qinlei131479/Ai-Chat-DB')
   window.open(link.value, '_blank')
 }
 </script>

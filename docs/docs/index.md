@@ -58,7 +58,7 @@
 若需通过 **curl、CLI 或第三方系统** 调用 API（无需每次 Web 登录），可由管理员在 **系统设置 → API Token** 创建永久访问凭证。
 
 - 明文 Token 仅在创建时显示一次，请妥善保存
-- 可用于所有鉴权接口，含 `POST /dify/get_answer`
+- 可用于所有鉴权接口，含 `POST /chat/answer`
 - 详细说明与 curl 示例见 [API Token 使用指南](./api-token-guide.md)
 
 ### 第二步：配置数据源

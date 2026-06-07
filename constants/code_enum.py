@@ -70,14 +70,4 @@ class DataTypeEnum(Enum):
 
     STREAM_END = ("t99", "流式推流结束")
 
-
-class DiFyCodeEnum(Enum):
-    """
-    DiFy 返回数据流定义
-    """
-
-    MESSAGE = ("message", "答案")
-
-    MESSAGE_END = ("message_end", "结束")
-
-    MESSAGE_ERROR = ("error", "错误")
+    GENERATED_FILES = ("t16", "Agent生成的文件列表")

@@ -82,6 +82,7 @@ class TUserQaRecord(Base):
     datasource_id: Mapped[Optional[int]] = mapped_column(BigInteger, comment="数据源ID")
     file_key: Mapped[Optional[str]] = mapped_column(String(100), comment="文件minio/key")
     sql_statement: Mapped[Optional[str]] = mapped_column(Text, comment="SQL语句（数据问答时保存）")
+    rating: Mapped[Optional[str]] = mapped_column(String(10), comment="用户反馈：like/dislike")
     create_time: Mapped[Optional[datetime.datetime]] = mapped_column(
         TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"), comment="创建时间"
     )
