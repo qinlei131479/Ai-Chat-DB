@@ -24,7 +24,8 @@ from langgraph.types import Command
 from common.llm_util import get_llm
 from common.minio_util import MinioUtils
 from constants.code_enum import DataTypeEnum, IntentEnum
-from services.user_service import add_user_record, decode_jwt_token
+from common.auth_service import resolve_token
+from services.user_service import add_user_record
 logger = logging.getLogger(__name__)
 
 current_dir = Path(__file__).parent
@@ -556,9 +557,9 @@ class EnhancedCommonAgent:
             # 同时保留文本内容
             file_as_markdown = minio_utils.get_files_content_as_markdown(file_list) # type: ignore
 
-        # JWT 解码获取用户信息
-        user_dict = await decode_jwt_token(user_token)
-        task_id = user_dict["id"]
+        # 获取用户信息
+        user_dict = resolve_token(user_token) or {}
+        task_id = user_dict.get("id", 1)
         task_context = {"cancelled": False}
         self.running_tasks[task_id] = task_context
 
@@ -728,9 +729,9 @@ class EnhancedCommonAgent:
         user_token: str = None,
     ):
         """恢复暂停的 Agent，将用户回答注入并继续执行"""
-        # JWT 解码获取用户信息
-        user_dict = await decode_jwt_token(user_token)
-        task_id = user_dict["id"]
+        # 获取用户信息
+        user_dict = resolve_token(user_token) or {}
+        task_id = user_dict.get("id", 1)
         task_context = {"cancelled": False}
         self.running_tasks[task_id] = task_context
 

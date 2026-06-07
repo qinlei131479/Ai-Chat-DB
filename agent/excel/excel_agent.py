@@ -16,9 +16,9 @@ from agent.excel.excel_duckdb_manager import (
 )
 from agent.excel.excel_graph import create_excel_graph
 from constants.code_enum import DataTypeEnum
+from common.auth_service import resolve_token
 from services.user_service import (
     add_user_record,
-    decode_jwt_token,
     query_user_qa_record,
 )
 
@@ -109,8 +109,8 @@ class ExcelAgent:
             graph: CompiledStateGraph = self.excel_graph
 
             # 获取用户信息 标识对话状态
-            user_dict = await decode_jwt_token(user_token)
-            task_id = user_dict["id"]
+            user_dict = resolve_token(user_token) or {}
+            task_id = user_dict.get("id", 1)
             task_context = {"cancelled": False}
             self.running_tasks[task_id] = task_context
 
@@ -147,7 +147,7 @@ class ExcelAgent:
                     as_type="agent",
                     name="表格问答",
                 ) as rootspan:
-                    user_info = await decode_jwt_token(user_token)
+                    user_info = resolve_token(user_token) or {}
                     user_id = user_info.get("id")
                     rootspan.update_trace(session_id=chat_id, user_id=user_id)
 

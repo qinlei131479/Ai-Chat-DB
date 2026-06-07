@@ -11,7 +11,8 @@ from langgraph.graph.state import CompiledStateGraph
 from agent.text2sql.analysis.graph import create_graph
 from agent.text2sql.state.agent_state import AgentState
 from constants.code_enum import DataTypeEnum, IntentEnum
-from services.user_service import add_user_record, decode_jwt_token
+from common.auth_service import resolve_token
+from services.user_service import add_user_record
 
 # Langfuse 延迟导入，仅在启用 tracing 时导入
 
@@ -78,9 +79,9 @@ class Text2SqlAgent:
 
         try:
             # 获取用户信息（只调用一次）
-            user_dict = await decode_jwt_token(user_token)
+            user_dict = resolve_token(user_token) or {}
             user_id = user_dict.get("id", 1)  # 默认为管理员
-            task_id = user_dict["id"]
+            task_id = user_dict.get("id", 1)
 
             initial_state = AgentState(
                 user_query=query,

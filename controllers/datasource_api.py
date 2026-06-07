@@ -9,6 +9,7 @@ from fastapi import APIRouter, Request
 from common.exception import MyException
 from common.permission_util import check_admin_permission
 from common.res_decorator import async_json_resp
+from common.token_decorator import check_token
 from constants.code_enum import SysCodeEnum
 from model.db_connection_pool import get_db_pool
 from model.schemas import (
@@ -33,6 +34,7 @@ router = APIRouter(prefix="/datasource", tags=["数据服务"])
 
 
 @router.get("/list")
+@check_token
 @async_json_resp
 async def get_datasource_list(request: Request):
     """获取数据源列表"""
@@ -99,6 +101,7 @@ async def get_datasource_list(request: Request):
 
 
 @router.post("/add")
+@check_token
 @async_json_resp
 async def create_datasource(request: Request, body: CreateDatasourceRequest):
     """创建数据源（仅管理员）
@@ -132,6 +135,7 @@ async def create_datasource(request: Request, body: CreateDatasourceRequest):
 
 
 @router.post("/update")
+@check_token
 @async_json_resp
 async def update_datasource(request: Request, body: UpdateDatasourceRequest):
     """更新数据源（仅管理员）
@@ -165,6 +169,7 @@ async def update_datasource(request: Request, body: UpdateDatasourceRequest):
 
 
 @router.post("/syncTables/{ds_id}")
+@check_token
 @async_json_resp
 async def sync_tables(request: Request, ds_id: int, body: SyncTablesRequest):
     """同步数据源表和字段（仅管理员）
@@ -199,6 +204,7 @@ async def sync_tables(request: Request, ds_id: int, body: SyncTablesRequest):
 
 
 @router.post("/delete/{ds_id}")
+@check_token
 @async_json_resp
 async def delete_datasource(request: Request, ds_id: int):
     """删除数据源（仅管理员）"""
@@ -221,6 +227,7 @@ async def delete_datasource(request: Request, ds_id: int):
 
 
 @router.post("/get/{ds_id}")
+@check_token
 @async_json_resp
 async def get_datasource(request: Request, ds_id: int):
     """获取数据源详情"""
@@ -287,6 +294,7 @@ async def get_datasource(request: Request, ds_id: int):
 
 
 @router.post("/check")
+@check_token
 @async_json_resp
 async def check_datasource(request: Request, body: CheckDatasourceRequest):
     """测试数据源连接
@@ -327,6 +335,7 @@ async def check_datasource(request: Request, body: CheckDatasourceRequest):
 
 
 @router.post("/getTablesByConf")
+@check_token
 @async_json_resp
 async def get_tables_by_conf(request: Request, body: GetTablesByConfRequest):
     """根据配置获取表列表
@@ -348,6 +357,7 @@ async def get_tables_by_conf(request: Request, body: GetTablesByConfRequest):
 
 
 @router.post("/getFieldsByConf")
+@check_token
 @async_json_resp
 async def get_fields_by_conf(request: Request, body: GetFieldsByConfRequest):
     """根据配置获取字段列表
@@ -368,6 +378,7 @@ async def get_fields_by_conf(request: Request, body: GetFieldsByConfRequest):
 
 
 @router.post("/tableList/{ds_id}")
+@check_token
 @async_json_resp
 async def get_table_list(request: Request, ds_id: int):
     """获取数据源表列表"""
@@ -396,6 +407,7 @@ async def get_table_list(request: Request, ds_id: int):
 
 
 @router.post("/fieldList/{table_id}")
+@check_token
 @async_json_resp
 async def get_field_list(request: Request, table_id: int):
     """获取表字段列表"""
@@ -427,6 +439,7 @@ async def get_field_list(request: Request, table_id: int):
 
 
 @router.post("/saveTable")
+@check_token
 @async_json_resp
 async def save_table(request: Request, body: SaveTableRequest):
     """保存表信息
@@ -454,6 +467,7 @@ async def save_table(request: Request, body: SaveTableRequest):
 
 
 @router.post("/saveField")
+@check_token
 @async_json_resp
 async def save_field(request: Request, body: SaveFieldRequest):
     """保存字段信息
@@ -481,6 +495,7 @@ async def save_field(request: Request, body: SaveFieldRequest):
 
 
 @router.post("/previewData")
+@check_token
 @async_json_resp
 async def preview_data(request: Request, body: PreviewDataRequest):
     """预览表数据
@@ -508,6 +523,7 @@ async def preview_data(request: Request, body: PreviewDataRequest):
 
 
 @router.post("/tableRelation")
+@check_token
 @async_json_resp
 async def save_table_relation(request: Request, body: TableRelationRequest):
     """保存表关系
@@ -534,6 +550,7 @@ async def save_table_relation(request: Request, body: TableRelationRequest):
 
 
 @router.post("/getTableRelation/{ds_id}")
+@check_token
 @async_json_resp
 async def get_table_relation(request: Request, ds_id: int):
     """获取表关系"""
@@ -548,6 +565,7 @@ async def get_table_relation(request: Request, ds_id: int):
 
 
 @router.post("/getAuthorizedUsers/{datasource_id}")
+@check_token
 @async_json_resp
 async def get_authorized_users(request: Request, datasource_id: int):
     """获取已授权用户（仅管理员）
@@ -576,6 +594,7 @@ async def get_authorized_users(request: Request, datasource_id: int):
 
 
 @router.post("/authorize")
+@check_token
 @async_json_resp
 async def authorize_datasource(request: Request, body: DatasourceAuthRequest):
     """数据源授权（仅管理员）

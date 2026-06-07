@@ -14,7 +14,6 @@ from model.db_connection_pool import get_db_pool
 from model.datasource_models import DatasourceAuth
 from model.schemas import LLMGetAnswerRequest, ResumeChatRequest, StopChatRequest
 from services.llm_service import LLMRequest, common_agent, stop_chat
-from services.user_service import decode_jwt_token
 
 router = APIRouter(prefix="/chat", tags=["对话服务"])
 
@@ -30,11 +29,11 @@ async def get_answer(request: Request, body: LLMGetAnswerRequest):
         if token and token.startswith("Bearer "):
             token = token.split(" ")[1]
 
+        user_payload = request.state.user_payload
         req_dict = body.model_dump()
 
         if req_dict.get("qa_type") == "DATABASE_QA" and req_dict.get("datasource_id"):
-            user_dict = await decode_jwt_token(token)
-            user_id = user_dict.get("id", 1)
+            user_id = user_payload.get("id", 1)
             datasource_id = req_dict.get("datasource_id")
 
             if not is_admin(user_id):

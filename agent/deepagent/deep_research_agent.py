@@ -46,7 +46,8 @@ from common.llm_util import get_llm
 from constants.code_enum import DataTypeEnum, IntentEnum
 from model.db_connection_pool import get_db_pool
 from services.datasource_service import DatasourceService
-from services.user_service import add_user_record, decode_jwt_token
+from services.user_service import add_user_record
+from services.auth_service import resolve_token
 
 logger = logging.getLogger(__name__)
 
@@ -437,8 +438,8 @@ class DeepAgent:
             return
 
         # 获取用户信息，生成会话标识
-        user_dict = await decode_jwt_token(user_token)
-        task_id = user_dict["id"]
+        user_dict = resolve_token(user_token) or {}
+        task_id = user_dict.get("id", 1)
         effective_session_id = session_id or f"sql-agent-{datasource_id}-{task_id}"
 
         # 重置工具调用状态

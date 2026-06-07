@@ -9,7 +9,7 @@ from agent.excel.excel_agent import ExcelAgent
 from agent.text2sql.text2_sql_agent import Text2SqlAgent
 from common.exception import MyException
 from constants.code_enum import IntentEnum, SysCodeEnum
-from services.user_service import decode_jwt_token
+from services.auth_service import resolve_token
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +95,7 @@ async def stop_chat(request, task_id, qa_type) -> dict:
     if token.startswith("Bearer "):
         token = token.split(" ")[1]
 
-    user_dict = await decode_jwt_token(token)
+    user_dict = resolve_token(token) or {}
     cancel_task_id = user_dict["id"]
 
     if qa_type == IntentEnum.COMMON_QA.value[0]:
