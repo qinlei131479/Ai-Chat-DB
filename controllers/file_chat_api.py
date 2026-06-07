@@ -6,6 +6,7 @@ from fastapi import APIRouter, Body, File, Query, Request, UploadFile
 from common.exception import MyException
 from common.minio_util import MinioUtils
 from common.res_decorator import async_json_resp
+from common.token_decorator import check_token
 from constants.code_enum import SysCodeEnum
 from model.schemas import (
     ProcessFileLlmOutRequest,
@@ -28,6 +29,7 @@ def _resolve_file_key(
 
 
 @router.post("/read_file")
+@check_token
 @async_json_resp
 async def read_file(
     request: Request,
@@ -42,6 +44,7 @@ async def read_file(
 
 
 @router.post("/read_file_column")
+@check_token
 @async_json_resp
 async def read_file_column(
     request: Request,
@@ -56,18 +59,21 @@ async def read_file_column(
 
 
 @router.post("/upload_file")
+@check_token
 @async_json_resp
 async def upload_file(request: Request, file: UploadFile = File(...)):
     return await minio_utils.upload_file_from_upload(file)
 
 
 @router.post("/upload_file_and_parse")
+@check_token
 @async_json_resp
 async def upload_file_and_parse(request: Request, file: UploadFile = File(...)):
     return await minio_utils.upload_file_and_parse_from_upload(file)
 
 
 @router.post("/process_file_llm_out")
+@check_token
 @async_json_resp
 async def process_file_llm_out(
     request: Request,

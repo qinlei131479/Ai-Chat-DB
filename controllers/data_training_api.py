@@ -2,6 +2,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Query, Request
 
+from common.permission_util import check_admin_permission
 from common.res_decorator import async_json_resp
 from common.token_decorator import check_token
 from model.schemas import DeleteDataTrainingRequest, SaveDataTrainingRequest
@@ -25,6 +26,7 @@ async def page_list(
     size: int,
     question: Optional[str] = Query(None),
 ):
+    await check_admin_permission(request)
     return await page_data_training(page, size, question)
 
 
@@ -32,6 +34,7 @@ async def page_list(
 @check_token
 @async_json_resp
 async def save(request: Request, body: SaveDataTrainingRequest):
+    await check_admin_permission(request)
     if body.id:
         return await update_training(body.model_dump())
     return await create_training(body.model_dump())
@@ -41,6 +44,7 @@ async def save(request: Request, body: SaveDataTrainingRequest):
 @check_token
 @async_json_resp
 async def remove(request: Request, body: DeleteDataTrainingRequest):
+    await check_admin_permission(request)
     return await delete_training(body.ids)
 
 
@@ -48,4 +52,5 @@ async def remove(request: Request, body: DeleteDataTrainingRequest):
 @check_token
 @async_json_resp
 async def enable(request: Request, id: int, enabled: str):
+    await check_admin_permission(request)
     return await enable_training(id, enabled.lower() == "true")

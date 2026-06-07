@@ -9,6 +9,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 
+from common.permission_util import check_admin_permission
 from common.res_decorator import async_json_resp
 from common.sse_stream import create_sse_response
 from common.token_decorator import check_token
@@ -32,6 +33,7 @@ class RecalculateRequest(BaseModel):
 @check_token
 @async_json_resp
 async def get_model_info(request: Request):
+    await check_admin_permission(request)
     return await get_current_embedding_model_info()
 
 
@@ -39,6 +41,7 @@ async def get_model_info(request: Request):
 @check_token
 async def recalculate_embeddings(request: Request, body: RecalculateRequest):
     """重新计算 embedding（SSE 流式返回进度）"""
+    await check_admin_permission(request)
     modules = body.modules
 
     async def stream_handler(response):
@@ -97,6 +100,7 @@ async def recalculate_embeddings(request: Request, body: RecalculateRequest):
 @async_json_resp
 async def recalculate_embeddings_sync(request: Request, body: RecalculateRequest):
     """重新计算 embedding（同步返回）"""
+    await check_admin_permission(request)
 
     def progress_callback(module, current, total, message):
         logger.info(f"[{module}] {message} ({current}/{total})")

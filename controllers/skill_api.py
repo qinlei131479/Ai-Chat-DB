@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from starlette.responses import JSONResponse
 
 from common.llm_util import get_llm
+from common.permission_util import check_admin_permission
 from common.res_decorator import async_json_resp
 from common.sse_stream import create_sse_response
 from common.token_decorator import check_token
@@ -61,6 +62,7 @@ async def get_skill_list(request: Request, scope: str = Query("common")):
 @check_token
 @async_json_resp
 async def install_from_github(request: Request, body: GithubInstallRequest):
+    await check_admin_permission(request)
     try:
         scope = body.scope if body.scope in ("common", "deep") else "common"
         if not body.repo:
@@ -81,6 +83,7 @@ async def install_from_upload(
     file: UploadFile = File(...),
     scope: str = Form("common"),
 ):
+    await check_admin_permission(request)
     try:
         if scope not in ("common", "deep"):
             scope = "common"
@@ -102,6 +105,7 @@ async def install_from_upload(
 @check_token
 @async_json_resp
 async def uninstall_skill(request: Request, body: SkillNameRequest):
+    await check_admin_permission(request)
     try:
         scope = body.scope if body.scope in ("common", "deep") else "common"
         if not body.name:
@@ -119,6 +123,7 @@ async def uninstall_skill(request: Request, body: SkillNameRequest):
 @check_token
 @async_json_resp
 async def toggle_skill(request: Request, body: SkillToggleRequest):
+    await check_admin_permission(request)
     try:
         scope = body.scope if body.scope in ("common", "deep") else "common"
         if not body.name:
@@ -137,6 +142,7 @@ async def toggle_skill(request: Request, body: SkillToggleRequest):
 @check_token
 @async_json_resp
 async def preview_github_repo(request: Request, repo: str = Query(...)):
+    await check_admin_permission(request)
     try:
         if not repo:
             return {"success": False, "message": "repo 参数不能为空"}

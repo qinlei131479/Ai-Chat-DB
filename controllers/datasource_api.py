@@ -7,7 +7,12 @@ import logging
 from fastapi import APIRouter, Request
 
 from common.exception import MyException
-from common.permission_util import check_admin_permission
+from common.permission_util import (
+    check_admin_permission,
+    check_datasource_access,
+    is_request_admin,
+    user_id_from_request,
+)
 from common.res_decorator import async_json_resp
 from common.token_decorator import check_token
 from constants.code_enum import SysCodeEnum
@@ -26,7 +31,6 @@ from model.schemas import (
     UpdateDatasourceRequest,
 )
 from services.datasource_service import DatasourceService
-from services.user_service import get_user_info
 
 logger = logging.getLogger(__name__)
 
@@ -42,9 +46,9 @@ async def get_datasource_list(request: Request):
         db_pool = get_db_pool()
         with db_pool.get_session() as session:
 
-            user_info = await get_user_info(request)
+            user_id = user_id_from_request(request)
             datasources = DatasourceService.get_datasource_list(
-                session, user_info["id"]
+                session, user_id
             )
 
             result = []
@@ -116,9 +120,9 @@ async def create_datasource(request: Request, body: CreateDatasourceRequest):
 
         db_pool = get_db_pool()
         with db_pool.get_session() as session:
-            user_info = await get_user_info(request)
+            user_id = user_id_from_request(request)
             datasource = DatasourceService.create_datasource(
-                session, data, user_info["id"]
+                session, data, user_id
             )
 
             return {
@@ -232,14 +236,17 @@ async def delete_datasource(request: Request, ds_id: int):
 async def get_datasource(request: Request, ds_id: int):
     """获取数据源详情"""
     try:
+        await check_datasource_access(request, ds_id)
+        admin = is_request_admin(request)
+
         db_pool = get_db_pool()
         with db_pool.get_session() as session:
             datasource = DatasourceService.get_datasource_by_id(session, ds_id)
             if not datasource:
                 raise MyException(SysCodeEnum.DATA_NOT_FOUND, "数据源不存在")
 
-            # 解密配置信息
-            configuration = datasource.configuration
+            # 解密配置信息（仅管理员返回敏感连接配置）
+            configuration = datasource.configuration if admin else None
             if configuration:
                 try:
                     import json

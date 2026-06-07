@@ -70,6 +70,8 @@ const options = [
   },
 ]
 
+const userStore = useUserStore()
+
 // 处理文件上传的函数
 const handleFileUpload = async (fileInfo: ExtendedUploadFileInfo) => {
   const formData = new FormData()
@@ -77,9 +79,18 @@ const handleFileUpload = async (fileInfo: ExtendedUploadFileInfo) => {
     formData.append('file', fileInfo.file)
   }
 
+  const token = userStore.getUserToken()
+  if (!token) {
+    window.$ModalMessage.error('请先登录后再上传文件')
+    return
+  }
+
   try {
     const response = await fetch('/api/file/upload_file_and_parse', {
       method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
       body: formData,
     })
 

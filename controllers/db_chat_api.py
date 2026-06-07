@@ -1,10 +1,10 @@
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Form, Query, Request
 
 from common.exception import MyException
 from common.res_decorator import async_json_resp
+from common.token_decorator import check_token
 from constants.code_enum import SysCodeEnum
 from services.db_qadata_process import select_report_by_title
 from services.text2_sql_service import exe_sql_query
@@ -13,6 +13,7 @@ router = APIRouter(prefix="/llm", tags=["数据问答"])
 
 
 @router.post("/process_llm_out")
+@check_token
 @async_json_resp
 async def process_llm_out(
     request: Request, llm_text: str = Form(...)
@@ -27,6 +28,7 @@ async def process_llm_out(
 
 
 @router.get("/query_guided_report")
+@check_token
 @async_json_resp
 async def query_guided_report(
     request: Request, query_str: str = Query(...)

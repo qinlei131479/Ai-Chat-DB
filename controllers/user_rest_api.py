@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request
 
 from common.exception import MyException
+from common.permission_util import check_admin_permission, user_id_from_request
 from common.res_decorator import async_json_resp
 from common.token_decorator import check_token
 from constants.code_enum import SysCodeEnum
@@ -23,7 +24,6 @@ from services.user_service import (
     delete_user_record,
     generate_jwt_token,
     get_record_sql,
-    get_user_info,
     query_user_list,
     query_user_record,
     query_user_record_list,
@@ -49,9 +49,9 @@ async def login(request: Request, body: LoginRequest):
 @check_token
 @async_json_resp
 async def query_user_qa_record(request: Request, body: QueryUserRecordRequest):
-    user_info = await get_user_info(request)
+    user_id = user_id_from_request(request)
     return await query_user_record(
-        user_info["id"], body.page, body.size, body.search_text, body.chat_id
+        user_id, body.page, body.size, body.search_text, body.chat_id
     )
 
 
@@ -61,9 +61,9 @@ async def query_user_qa_record(request: Request, body: QueryUserRecordRequest):
 async def query_user_record_list_api(
     request: Request, body: QueryUserRecordListRequest
 ):
-    user_info = await get_user_info(request)
+    user_id = user_id_from_request(request)
     return await query_user_record_list(
-        user_info["id"], body.page, body.size, body.search_text
+        user_id, body.page, body.size, body.search_text
     )
 
 
@@ -71,30 +71,31 @@ async def query_user_record_list_api(
 @check_token
 @async_json_resp
 async def delete_user_qa_record(request: Request, body: DeleteUserRecordRequest):
-    user_info = await get_user_info(request)
-    return await delete_user_record(user_info["id"], body.record_ids)
+    user_id = user_id_from_request(request)
+    return await delete_user_record(user_id, body.record_ids)
 
 
 @router.post("/feedback")
 @check_token
 @async_json_resp
 async def feedback(request: Request, body: FeedbackRequest):
-    user_info = await get_user_info(request)
-    return await save_feedback(user_info["id"], body.record_id, body.rating)
+    user_id = user_id_from_request(request)
+    return await save_feedback(user_id, body.record_id, body.rating)
 
 
 @router.post("/get_record_sql")
 @check_token
 @async_json_resp
 async def get_record_sql_api(request: Request, body: GetRecordSqlRequest):
-    user_info = await get_user_info(request)
-    return await get_record_sql(body.record_id, user_info["id"])
+    user_id = user_id_from_request(request)
+    return await get_record_sql(body.record_id, user_id)
 
 
 @router.post("/list")
 @check_token
 @async_json_resp
 async def user_list(request: Request, body: QueryUserListRequest):
+    await check_admin_permission(request)
     return await query_user_list(body.page, body.size, body.name)
 
 
@@ -102,6 +103,7 @@ async def user_list(request: Request, body: QueryUserListRequest):
 @check_token
 @async_json_resp
 async def user_add(request: Request, body: AddUserRequest):
+    await check_admin_permission(request)
     return await add_user(body.userName, body.password, body.mobile)
 
 
@@ -109,6 +111,7 @@ async def user_add(request: Request, body: AddUserRequest):
 @check_token
 @async_json_resp
 async def user_update(request: Request, body: UpdateUserRequest):
+    await check_admin_permission(request)
     return await update_user(body.id, body.userName, body.mobile, body.password)
 
 
@@ -116,4 +119,5 @@ async def user_update(request: Request, body: UpdateUserRequest):
 @check_token
 @async_json_resp
 async def user_delete(request: Request, body: DeleteUserRequest):
+    await check_admin_permission(request)
     return await delete_user(body.id)

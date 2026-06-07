@@ -14,11 +14,14 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
   if (to.meta.requiresAuth && !userStore.isLoggedIn) {
-    // 如果目标路由需要认证且用户未登录，则重定向到登录页面
     next('/login')
-  } else {
-    next()
+    return
   }
+  if (to.meta.requiresAdmin && !userStore.isAdmin) {
+    next({ name: 'ChatIndex' })
+    return
+  }
+  next()
 })
 
 export async function setupRouter(app: App) {

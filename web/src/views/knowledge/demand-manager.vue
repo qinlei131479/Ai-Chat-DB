@@ -4,6 +4,10 @@ import { NLayout, NLayoutContent, NLayoutHeader } from 'naive-ui'
 import * as GlobalAPI from '@/api'
 
 const router = useRouter()
+const userStore = useUserStore()
+const uploadHeaders = computed(() => ({
+  Authorization: `Bearer ${userStore.getUserToken()}`,
+}))
 
 // 文件上传
 const uploadDocRef = ref()
@@ -241,6 +245,7 @@ function navigateToDetail(id) {
         multiple
         :show-file-list="true"
         action="api/file/upload_file"
+        :headers="uploadHeaders"
         accept=".doc, .docx"
         @finish="finish_upload"
       >

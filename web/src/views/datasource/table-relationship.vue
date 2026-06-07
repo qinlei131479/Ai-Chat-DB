@@ -411,11 +411,19 @@ const initializeGraph = (container: HTMLElement, resolve: () => void, reject: (e
 // ... 其余方法（getTableData, addNode, clickTable, save, handleDrop 等）保持不变 ...
 // （此处省略以节省篇幅，实际使用时保留原逻辑）
 
+const userStore = useUserStore()
+
 const getTableData = async () => {
   loading.value = true
   try {
+    const token = userStore.getUserToken()
     const url = new URL(`${location.origin}/api/datasource/get/${props.dsId}`)
-    const response = await fetch(url, { method: 'POST' })
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }

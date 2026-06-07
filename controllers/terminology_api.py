@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request
 
+from common.permission_util import check_admin_permission
 from common.res_decorator import async_json_resp
 from common.token_decorator import check_token
 from model.schemas import (
@@ -25,6 +26,7 @@ router = APIRouter(prefix="/terminology", tags=["术语管理"])
 @check_token
 @async_json_resp
 async def list_terminology(request: Request, body: QueryTerminologyRequest):
+    await check_admin_permission(request)
     return await query_terminology_list(
         body.page, body.size, body.word, body.dslist
     )
@@ -34,6 +36,7 @@ async def list_terminology(request: Request, body: QueryTerminologyRequest):
 @check_token
 @async_json_resp
 async def save_term(request: Request, body: SaveTerminologyRequest):
+    await check_admin_permission(request)
     if body.id:
         return await update_terminology(
             body.id,
@@ -56,6 +59,7 @@ async def save_term(request: Request, body: SaveTerminologyRequest):
 @check_token
 @async_json_resp
 async def delete_term(request: Request, body: DeleteTerminologyRequest):
+    await check_admin_permission(request)
     return await delete_terminology(body.ids)
 
 
@@ -63,6 +67,7 @@ async def delete_term(request: Request, body: DeleteTerminologyRequest):
 @check_token
 @async_json_resp
 async def enable_term(request: Request, id: int, enabled: int):
+    await check_admin_permission(request)
     return await enable_terminology(id, bool(enabled))
 
 
@@ -70,6 +75,7 @@ async def enable_term(request: Request, id: int, enabled: int):
 @check_token
 @async_json_resp
 async def get_term(request: Request, id: int):
+    await check_admin_permission(request)
     return await get_terminology_detail(id)
 
 
@@ -77,4 +83,5 @@ async def get_term(request: Request, id: int):
 @check_token
 @async_json_resp
 async def gen_synonyms(request: Request, body: GenerateSynonymsRequest):
+    await check_admin_permission(request)
     return await generate_synonyms_by_llm(body.word)
