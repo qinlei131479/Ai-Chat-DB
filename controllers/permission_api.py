@@ -4,6 +4,7 @@ from fastapi import APIRouter, Request
 
 from common.exception import MyException
 from common.res_decorator import async_json_resp
+from common.token_decorator import check_token
 from constants.code_enum import SysCodeEnum
 from model.db_connection_pool import get_db_pool
 from model.schemas import SavePermissionRequest
@@ -15,6 +16,7 @@ router = APIRouter(prefix="/ds_permission", tags=["权限管理"])
 
 
 @router.post("/list")
+@check_token
 @async_json_resp
 async def get_permission_list(request: Request):
     """获取权限规则列表"""
@@ -28,6 +30,7 @@ async def get_permission_list(request: Request):
 
 
 @router.post("/save")
+@check_token
 @async_json_resp
 async def save_permission(request: Request, body: SavePermissionRequest):
     """保存权限规则"""
@@ -47,6 +50,7 @@ async def save_permission(request: Request, body: SavePermissionRequest):
 
 
 @router.post("/delete/{rule_id}")
+@check_token
 @async_json_resp
 async def delete_permission(request: Request, rule_id: int):
     """删除权限规则"""
