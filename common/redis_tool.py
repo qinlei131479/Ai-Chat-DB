@@ -56,7 +56,7 @@ class RedisTool:
 
 # 使用示例
 if __name__ == "__main__":
-    redis_tool = RedisTool(host="localhost", port=16379, password="difyai123456")
+    redis_tool = RedisTool(host="localhost", port=16379, password="ai123456")
 
     # 设置键值对
     result = redis_tool.set_key("test_key", "Hello, Redis!")
